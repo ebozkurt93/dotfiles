@@ -1,0 +1,24 @@
+# Aliases
+
+# convenience aliases
+alias cd..='cd ..'
+alias ..='cd ..'
+alias cd...='cd ../..'
+alias ...='cd ../..'
+alias ls='ls -G'
+alias l='ls -lF'
+alias dir='ls'
+alias la='ls -lah'
+alias ll='ls -l'
+alias vi='vim'
+alias sr='exec $SHELL'
+
+# docker
+alias d='docker'
+alias dr='docker run --rm -i -t'
+alias dx='docker exec -i -t'
+alias db='docker build -t'
+
+# docker-compose
+alias dcu='docker-compose up'
+alias dcd='docker-compose down'
