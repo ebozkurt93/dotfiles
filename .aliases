@@ -40,3 +40,5 @@ alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s &&
 
 # work related stuff
 alias pycharm='open -a /Applications/PyCharm.app'
+# get schema and run frontend
+alias frr='yarn run get-schema; yarn run start'
