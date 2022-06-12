@@ -38,7 +38,11 @@ alias mirror='~/Documents/mirror'
 # temporary, refetch apartments 
 alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
 
+alias code='open -a /Applications/Visual\ Studio\ Code.app/'
+
 # work related stuff
 alias pycharm='open -a /Applications/PyCharm.app'
 # get schema and run frontend
 alias frr='yarn run get-schema; yarn run start'
+alias pip-upgrade='pip install --upgrade pip'
+
