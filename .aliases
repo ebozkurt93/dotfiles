@@ -23,6 +23,9 @@ alias db='docker build -t'
 alias dcu='docker-compose up'
 alias dcd='docker-compose down'
 
+# tmux
+alias t='tmux'
+
 # running some docker containers
 alias torrent-up='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml up -d'
 alias torrent-down='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml down'
