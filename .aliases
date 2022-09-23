@@ -26,6 +26,8 @@ alias dcd='docker-compose down'
 # tmux
 alias t='tmux'
 
+alias cat='bat --paging=never'
+
 # running some docker containers
 alias torrent-up='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml up -d'
 alias torrent-down='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml down'
@@ -49,5 +51,6 @@ alias code='open -a /Applications/Visual\ Studio\ Code.app/'
 alias pycharm='open -a /Applications/PyCharm.app'
 # get schema and run frontend
 alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run start'
+alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
 alias pip-upgrade='pip install --upgrade pip'
 
