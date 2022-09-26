@@ -2,3 +2,4 @@
 
 stow zsh
 stow vim
+stow tmux
