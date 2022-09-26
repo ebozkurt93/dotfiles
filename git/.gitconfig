@@ -1,0 +1,15 @@
+[init]
+	defaultBranch = master
+
+[alias]
+	empty = "commit --allow-empty"
+
+[user]
+	email = ebozkurt93@gmail.com
+	name = Erdem Bozkurt
+
+# alva/work related settings
+[includeIf "gitdir:~/repositories/"]
+	[user]
+		email = erdem@alvalabs.io
+		name = Erdem Bozkurt
