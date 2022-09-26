@@ -1,4 +1,25 @@
-# Aliases
+export CDPATH=.:~/
+# this one is separated just for brevity
+export CDPATH=$CDPATH:~/personal-repositories
+
+# Functions
+function mcd
+{
+  command mkdir $1 && cd $1
+}
+
+if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
+  # Change iterm2 profile. Usage it2prof ProfileName (case sensitive)
+  it2prof() { echo -e "\033]50;SetProfile=$1\a" }
+
+  alias code='open -a /Applications/Visual\ Studio\ Code.app/'
+
+  # homebrew related settings
+  # asdf
+  . /opt/homebrew/opt/asdf/libexec/asdf.sh
+  # fzf
+  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+fi
 
 # convenience aliases
 alias cd..='cd ..'
@@ -44,13 +65,4 @@ alias mirror='~/Documents/mirror'
 
 # temporary, refetch apartments 
 alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
-
-alias code='open -a /Applications/Visual\ Studio\ Code.app/'
-
-# work related stuff
-alias pycharm='open -a /Applications/PyCharm.app'
-# get schema and run frontend
-alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run start'
-alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
-alias pip-upgrade='pip install --upgrade pip'
 

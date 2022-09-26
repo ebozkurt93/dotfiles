@@ -1,17 +1,4 @@
-export CDPATH=.:~/:~/repositories
-#export XBAR_PLUGINS_PATH='/Users/erdembozkurt/Library/Application Support/xbar/plugins'
-#export BITBAR_PLUGINS_PATH='$HOME/Documents/bitbar_plugins'
-
-# Load aliases from .aliases file (.zshrc)
-source $HOME/.aliases
-
-# Functions
-function mcd
-{
-  command mkdir $1 && cd $1
-}
-
-# Alva related config
+export CDPATH=$CDPATH:~/repositories
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/erdembozkurt/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/erdembozkurt/google-cloud-sdk/path.zsh.inc'; fi
@@ -43,6 +30,24 @@ export CPPFLAGS="-I/opt/homebrew/opt/openssl@3/include -I/opt/homebrew/opt/libpq
 export GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true
 export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=true
 
-alias pip=pip3
+# this was not in our config, but seems to fix some errors that pop up
+# https://github.com/ray-project/ray/issues/24917#issuecomment-1131190980
+# export GRPC_ENABLE_FORK_SUPPORT=0
+
+#alias pip=pip3
+
+ulimit -n 10256222
 
 export PATH=/Applications/Postgres.app/Contents/Versions/10/bin:$PATH
+
+# this can be needed when installing different terraform versions
+# export TFENV_ARCH=amd64
+
+# work related stuff
+alias pycharm='open -a /Applications/PyCharm.app'
+## get schema and run frontend
+alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run start'
+alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
+
+alias pip-upgrade='pip install --upgrade pip'
+
