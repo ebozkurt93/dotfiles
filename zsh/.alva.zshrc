@@ -43,7 +43,6 @@ export PATH=/Applications/Postgres.app/Contents/Versions/10/bin:$PATH
 # this can be needed when installing different terraform versions
 # export TFENV_ARCH=amd64
 
-# work related stuff
 alias pycharm='open -a /Applications/PyCharm.app'
 ## get schema and run frontend
 alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run start'

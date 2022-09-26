@@ -1,8 +1,6 @@
 #!/bin/sh
 
-stow zsh
-stow vim
-stow tmux
-stow fzf
-stow git
-stow asdf
+ directories="zsh vim tmux fzf git asdf"
+ stow $directories
+ # add -D flag to unstow
+#  stow -D $directories
