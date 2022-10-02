@@ -39,6 +39,8 @@ alias d='docker'
 alias dr='docker run --rm -i -t'
 alias dx='docker exec -i -t'
 alias db='docker build -t'
+# remove all stopped docker containers
+alias drm="d ps -a | grep Exited | awk '{print $1}' | tr '\n' ' ' | xargs docker rm"
 
 # docker-compose
 alias dcu='docker-compose up'
