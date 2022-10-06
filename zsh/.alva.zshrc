@@ -49,4 +49,8 @@ alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run sta
 alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
 
 alias pip-upgrade='pip install --upgrade pip'
-
+function __reset_alva_pubsub_container {
+  docker ps -a | grep eu.gcr.io/alva-backend/pubsub:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f
+  docker run -d --restart always -p 8085:8085 eu.gcr.io/alva-backend/pubsub:latest
+}
+alias drs="__reset_alva_pubsub_container"
