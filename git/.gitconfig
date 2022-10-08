@@ -13,3 +13,5 @@
 	[user]
 		email = erdem@alvalabs.io
 		name = Erdem Bozkurt
+	[core]
+		excludesfile = ~/dotfiles/git/alva.gitignore
