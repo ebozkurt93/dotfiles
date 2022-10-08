@@ -5,7 +5,7 @@ export CDPATH=$CDPATH:~/personal-repositories
 # Functions
 function mcd
 {
-  command mkdir $1 && cd $1
+  command mkdir -p $1 && cd $1
 }
 
 if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
@@ -68,3 +68,11 @@ alias mirror='~/Documents/mirror'
 # temporary, refetch apartments 
 alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
 
+
+# given a file pattern and commands, this function will rerun commands whenever files change
+function res {
+  find . -name "$1" | entr -r ${@:2}
+}
+
+alias dev-rust='res "*.rs" cargo run'
+alias dev-go='res "*.go" go run .'

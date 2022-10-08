@@ -44,8 +44,9 @@ export PATH=/Applications/Postgres.app/Contents/Versions/10/bin:$PATH
 # export TFENV_ARCH=amd64
 
 alias pycharm='open -a /Applications/PyCharm.app'
-## get schema and run frontend
+# get schema and run frontend
 alias frr='yarn run get-schema; yarn run generate-typescript-types; yarn run start'
+# run alva-app using staging as backend
 alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
 
 alias pip-upgrade='pip install --upgrade pip'
