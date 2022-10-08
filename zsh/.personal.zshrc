@@ -13,6 +13,7 @@ if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
   it2prof() { echo -e "\033]50;SetProfile=$1\a" }
 
   alias code='open -a /Applications/Visual\ Studio\ Code.app/'
+  alias smerge='open -a /Applications/Sublime\ Merge.app/'
 
   # homebrew related settings
   # asdf
