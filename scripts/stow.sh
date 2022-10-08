@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd ..
+
 # .DS_Store files are creating issues when running stow
 find . -name ".DS_Store" -delete
 

@@ -1,0 +1,33 @@
+# Development
+cask "docker"
+cask "iterm2"
+cask "visual-studio-code"
+cask "sublime-merge"
+
+# work apps
+cask "zoom"
+cask "slack"
+
+# generic apps
+cask "spotify"
+cask "pocket-casts"
+cask "google-chrome"
+cask "firefox"
+cask "bitbar"
+cask "vlc"
+cask "obsidian"
+cask "macpass"
+cask "authy"
+cask "signal"
+
+# other
+cask "rectangle"
+cask "bartender"
+cask "raycast"
+cask "maccy"
+cask "nordvpn"
+cask "calendar-366"
+cask "contexts"
+cask "monitorcontrol"
+# cask "teamviewer"
+# cask "wireguard-tools"

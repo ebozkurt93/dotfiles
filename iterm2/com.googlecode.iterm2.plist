@@ -1128,7 +1128,7 @@
 				</dict>
 			</dict>
 			<key>Mouse Reporting</key>
-			<true/>
+			<false/>
 			<key>Name</key>
 			<string>Erdem</string>
 			<key>Non Ascii Font</key>
