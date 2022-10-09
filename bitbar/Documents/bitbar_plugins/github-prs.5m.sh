@@ -15,13 +15,13 @@ json_format="assignees,author,authorAssociation,body,closedAt,commentsCount,crea
 prs_file=~/Documents/bitbar_plugins/tmp/prs.txt
 
 if [ "$1" = 'refetch-prs' ]; then
-	rm $prs_file
-	# adding empty array since no results makes jq fail
-	echo '[]' >> "$prs_file"
-	for q in "${queries[@]}"; do
-		`echo gh search prs "$q" --json "$json_format" | xargs` >> "$prs_file"
-	done
-	exit
+  rm $prs_file
+  # adding empty array since no results makes jq fail
+  echo '[]' >> "$prs_file"
+  for q in "${queries[@]}"; do
+    `echo gh search prs "$q" --json "$json_format" | xargs` >> "$prs_file"
+  done
+  exit
 fi
 
 
@@ -43,13 +43,13 @@ while read -r line; do urls+=("$line"); done <<<"$urls"
 echo "PRs: $(echo $content | jq -r length)| dropdown=true $style"
 echo "---"
 if [ $length != 0 ]; then
-	for q in "${!pr_names[@]}"; do
-		if [[ $q = 0 ]]; then
-			continue
-		fi
-		printf "%-30s %-50s %-20s %2s | href=${urls[$q]} $style\n" "${pr_names[$q]}" "${pr_titles[$q]}" "👤 ${authors[$q]}" "💬 ${comment_counts[$q]}"
-	done
-echo "---"
+  for q in "${!pr_names[@]}"; do
+    if [[ $q = 0 ]]; then
+      continue
+    fi
+    printf "%-30s %-50s %-20s %2s | href=${urls[$q]} $style\n" "${pr_names[$q]}" "${pr_titles[$q]}" "👤 ${authors[$q]}" "💬 ${comment_counts[$q]}"
+  done
+  echo "---"
 fi
 
 echo "Refetch PRs | bash=\"$0\" param1=refetch-prs refresh=true terminal=false $style"
