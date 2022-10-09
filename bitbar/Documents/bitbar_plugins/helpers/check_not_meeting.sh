@@ -1,0 +1,1 @@
+test -f ~/Documents/bitbar_plugins/tmp/meeting && echo 0 || echo 1
