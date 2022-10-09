@@ -47,7 +47,8 @@ if [ "$1" = 'clone-vscode' ]; then
 fi
 
 if [ "$1" = 'refetch-repos' ]; then
-  curl -H "Authorization: token $(cat ~/Documents/bitbar_plugins/tmp/github_token.txt)" -s 'https://api.github.com/orgs/alvalabs/repos?per_page=100' | jq -r '.[] | select(.archived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
+  # curl -H "Authorization: token $(cat ~/Documents/bitbar_plugins/tmp/github_token.txt)" -s 'https://api.github.com/orgs/alvalabs/repos?per_page=100' | jq -r '.[] | select(.archived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
+  gh repo list alvalabs --json name,isArchived -L 100 | jq -r '.[] | select(.isArchived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
   exit
 fi
 
