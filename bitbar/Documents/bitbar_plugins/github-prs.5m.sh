@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# bitbar cannot access jq for some reason
-JQ=/opt/homebrew/bin/jq
-GH=/opt/homebrew/bin/gh
+source ~/.zprofile
+~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
+
 style="size=13"
 
 queries=(
@@ -19,21 +19,21 @@ if [ "$1" = 'refetch-prs' ]; then
 	# adding empty array since no results makes jq fail
 	echo '[]' >> "$prs_file"
 	for q in "${queries[@]}"; do
-		`echo $GH search prs "$q" --json "$json_format" | xargs` >> "$prs_file"
+		`echo gh search prs "$q" --json "$json_format" | xargs` >> "$prs_file"
 	done
 	exit
 fi
 
 
-content=$(cat $prs_file | $JQ -s 'add' | $JQ -r unique_by\(.id\) | $JQ -r sort_by\(.updatedAt\))
-length="$(echo $content | $JQ -r length)"
-echo "PRs: $(echo $content | $JQ -r length)| dropdown=true $style"
-echo "---"
-results=$(echo $content | $JQ -r '.[] | "\(.repository.name)#\(.number)\t\(.title)\t👤 \(.author.login)\t💬 \(.commentsCount)"')
-urls=$(echo $content | $JQ -r '.[] | "\(.url)"')
+content=$(cat $prs_file | jq -s 'add' | jq -r unique_by\(.id\) | jq -r sort_by\(.updatedAt\))
+length="$(echo $content | jq -r length)"
+results=$(echo $content | jq -r '.[] | "\(.repository.name)#\(.number)\t\(.title)\t👤 \(.author.login)\t💬 \(.commentsCount)"')
+urls=$(echo $content | jq -r '.[] | "\(.url)"')
 while read -r line; do results+=("$line"); done <<<"$results"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
+echo "PRs: $(echo $content | jq -r length)| dropdown=true $style"
+echo "---"
 if [ $length != 0 ]; then
 	for q in "${!results[@]}"; do
 		if [[ $q = 0 ]]; then
@@ -44,5 +44,5 @@ if [ $length != 0 ]; then
 echo "---"
 fi
 
-echo "Refetch PRs | bash=\"$0\" param1=refetch-prs refresh=true terminal=false size=13"
+echo "Refetch PRs | bash=\"$0\" param1=refetch-prs refresh=true terminal=false $style"
 echo "Refresh | refresh=true $style"

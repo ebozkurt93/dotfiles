@@ -1,21 +1,7 @@
 #!/bin/bash
 
-# default to exit on all times if on vacation
-if [ -f ~/Documents/bitbar_plugins/tmp/holiday ]; then
-exit
-fi
-
-if [ ! -f ~/Documents/bitbar_plugins/tmp/work ]; then
-  case "$(date +%a)" in 
-    Sat|Sun) exit;; # Do not show these repos at weekend
-  esac
-
-  # check if we are in or close to workhours
-  H=$(date +%H | sed 's/^0*//')
-  if !((7 <= H && H < 17)); then
-    exit
-  fi
-fi
+source ~/.zprofile
+~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
 
 echo "repos| dropdown=true size=13"
 echo "---"
@@ -104,4 +90,6 @@ done
 echo "---"
 echo "Docker | bash=\"$0\" param1=open param2=/Applications/Docker.app terminal=false size=13"
 echo "Postgres | bash=\"$0\" param1=open param2=/Applications/Postgres.app terminal=false size=13"
-# echo "Refetch repos | bash=\"$0\" param1=refetch-repos terminal=false size=13"
+echo "---"
+echo "Refetch repos | bash=\"$0\" param1=refetch-repos refresh=true terminal=false size=13"
+echo "Refresh | refresh=true size=13"
