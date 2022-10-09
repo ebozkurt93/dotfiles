@@ -27,19 +27,27 @@ fi
 
 content=$(cat $prs_file | jq -s 'add' | jq -r unique_by\(.id\) | jq -r sort_by\(.updatedAt\))
 length="$(echo $content | jq -r length)"
-results=$(echo $content | jq -r '.[] | "\(.repository.name)#\(.number)\t\(.title)\t👤 \(.author.login)\t💬 \(.commentsCount)"')
+
+pr_names=$(echo $content | jq -r '.[] | "\(.repository.name)#\(.number)"')
+pr_titles=$(echo $content | jq -r '.[] | "\(.title)"')
+authors=$(echo $content | jq -r '.[] | "\(.author.login)"')
+comment_counts=$(echo $content | jq -r '.[] | "\(.commentsCount)"')
 urls=$(echo $content | jq -r '.[] | "\(.url)"')
-while read -r line; do results+=("$line"); done <<<"$results"
+
+while read -r line; do pr_names+=("$line"); done <<<"$pr_names"
+while read -r line; do pr_titles+=("$line"); done <<<"$pr_titles"
+while read -r line; do authors+=("$line"); done <<<"$authors"
+while read -r line; do comment_counts+=("$line"); done <<<"$comment_counts"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
 echo "PRs: $(echo $content | jq -r length)| dropdown=true $style"
 echo "---"
 if [ $length != 0 ]; then
-	for q in "${!results[@]}"; do
+	for q in "${!pr_names[@]}"; do
 		if [[ $q = 0 ]]; then
 			continue
 		fi
-		echo "${results[$q]} | href=${urls[$q]} $style"
+		printf "%-30s %-50s %-20s %2s | href=${urls[$q]} $style\n" "${pr_names[$q]}" "${pr_titles[$q]}" "👤 ${authors[$q]}" "💬 ${comment_counts[$q]}"
 	done
 echo "---"
 fi
