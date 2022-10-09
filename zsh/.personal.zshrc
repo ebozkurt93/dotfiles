@@ -32,7 +32,8 @@ alias l='ls -lF'
 alias dir='ls'
 alias la='ls -lah'
 alias ll='ls -l'
-alias vi='vim'
+alias vi='nvim'
+alias vim='nvim'
 alias sr='exec $SHELL'
 
 # docker
