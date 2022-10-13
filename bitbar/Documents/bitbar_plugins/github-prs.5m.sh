@@ -17,7 +17,7 @@ pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,
 
 prs_file=~/Documents/bitbar_plugins/tmp/prs.txt
 
-if [ "$1" = 'refetch' ]; then
+if [ "$1" = 'refetch-prs' ]; then
   all_pr_ids=""
   for q in "${queries[@]}"; do
     prs=$(`echo gh search prs "$q" --json "$search_json_format" | xargs`)
@@ -25,7 +25,6 @@ if [ "$1" = 'refetch' ]; then
     all_pr_ids+=" $pr_ids"
   done
   all_pr_ids=$(echo "$all_pr_ids" | tr ' ' '\n' | sort | uniq | xargs)
-  echo $all_pr_ids
 
   read -a all_pr_ids <<< $all_pr_ids
   rm $prs_file
