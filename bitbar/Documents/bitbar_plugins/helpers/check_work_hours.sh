@@ -4,8 +4,8 @@ exit 1
 fi
 
 if [ ! -f ~/Documents/bitbar_plugins/tmp/work ]; then
-  case "$(date +%a)" in 
-    Sat|Sun) exit 1;; # Do not show these repos at weekend
+  case "$(date +%a)" in
+    Sat|Sun) exit 1;; # Exit if weekend
   esac
 
   # check if we are in or close to workhours
