@@ -10,3 +10,5 @@ echo "Done with stow"
 echo "Handling asdf"
 ./asdf.sh -I
 echo "Done with asdf"
+
+mkdir -p ~/Documents/bitbar_plugins/tmp
