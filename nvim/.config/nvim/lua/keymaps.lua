@@ -3,6 +3,7 @@ vim.keymap.set('n', '<leader>w', '<cmd>write<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>q', '<cmd>quit<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>e', '<cmd>e!<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><C-q>', '<cmd>quitall<cr>', {noremap = true})
+vim.keymap.set('n', '<leader><CS-q>', '<cmd>qa!<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><space>', function()
 	vim.cmd(':let @/ = ""')
 	print "Cleared search"

@@ -16,6 +16,7 @@ packer.init({
 --- startup and add configure plugins
 packer.startup(function(use)
   use { 'nvim-telescope/telescope.nvim', tag = '0.1.0', requires = { { 'nvim-lua/plenary.nvim'} } }
+  use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
   use 'L3MON4D3/LuaSnip'
 
   -- lsp and autocompletion
