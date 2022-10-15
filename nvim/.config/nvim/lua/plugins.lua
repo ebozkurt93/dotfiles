@@ -15,12 +15,20 @@ packer.init({
 })
 --- startup and add configure plugins
 packer.startup(function(use)
-  -- add you plugins here like:
-  -- use 'neovim/nvim-lspconfig'
-  use { 'ellisonleao/gruvbox.nvim' }
-  use { 'Shatur/neovim-ayu' }
-  --use { 'Shatur/neovim-ayu', commit = 'bae6314522e47172564203d4f1c56dc1e39c1c14' }
-  use { 'nvim-telescope/telescope.nvim', tag = '0.1.0', requires = { {'nvim-lua/plenary.nvim'} }
-}
+  use { 'nvim-telescope/telescope.nvim', tag = '0.1.0', requires = { { 'nvim-lua/plenary.nvim'} } }
+  use 'L3MON4D3/LuaSnip'
+
+  -- lsp and autocompletion
+  use 'neovim/nvim-lspconfig'
+  use 'hrsh7th/nvim-cmp'
+  use 'hrsh7th/cmp-nvim-lsp'
+  use 'hrsh7th/cmp-path'
+  use 'hrsh7th/cmp-buffer'
+  use 'saadparwaiz1/cmp_luasnip'
+
+  -- themes
+  use 'ellisonleao/gruvbox.nvim'
+  use 'Shatur/neovim-ayu'
+  use 'shaunsingh/nord.nvim'
   end
 )

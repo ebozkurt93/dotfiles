@@ -3,5 +3,6 @@ require("reload")
 require("prefs")
 require("plugins")
 require("keymaps")
+require("lsp")
 require("themes")
 
