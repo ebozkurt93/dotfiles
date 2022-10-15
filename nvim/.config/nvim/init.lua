@@ -28,6 +28,7 @@ vim.opt.laststatus = 2
 vim.g.mapleader = ' '
 vim.keymap.set('n', '<leader>w', '<cmd>write<cr>', {desc = 'Save', noremap = true})
 vim.keymap.set('n', '<leader>q', '<cmd>quit<cr>', {desc = 'Quit', noremap = true})
+vim.keymap.set('n', '<leader><C-q>', '<cmd>quitall<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><space>', function()
 	vim.cmd(':let @/ = ""')
 	print "Cleared search"
@@ -61,4 +62,17 @@ vnoremap <A-k> :m '<-2<CR>gv=gv
 
 -- todo: find a better keybinding for this
 vim.keymap.set('n', '<C-z>', '<cmd>set invwrap<cr>', {noremap = true})
+
+-- window resizing
+-- todo: not sure about these keymaps, go over these later
+vim.keymap.set('n', '<SCA-h>', '<cmd>:vertical resize -1<cr>', {noremap = true})
+vim.keymap.set('n', '<SCA-l>', '<cmd>:vertical resize +1<cr>', {noremap = true})
+vim.keymap.set('n', '<SCA-j>', '<cmd>:resize +1<cr>', {noremap = true})
+vim.keymap.set('n', '<SCA-k>', '<cmd>:resize -1<cr>', {noremap = true})
+
+
+require("plugins")
+
+vim.opt.background='dark'
+vim.cmd [[ colorscheme gruvbox ]]
 
