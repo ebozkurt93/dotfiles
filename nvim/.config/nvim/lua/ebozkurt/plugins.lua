@@ -20,6 +20,9 @@ packer.startup(function(use)
   use { "nvim-telescope/telescope-file-browser.nvim" }
   use 'L3MON4D3/LuaSnip'
 
+  use { 'nvim-treesitter/nvim-treesitter', run = function() require('nvim-treesitter.install').update({ with_sync = true }) end, }
+  use { 'nvim-treesitter/playground' }
+
   -- lsp and autocompletion
   use 'neovim/nvim-lspconfig'
   use 'hrsh7th/nvim-cmp'

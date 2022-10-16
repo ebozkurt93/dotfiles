@@ -2,6 +2,7 @@
 local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 local bufopts = { noremap = true, silent = true, buffer = 0 }
 
+-- go install golang.org/x/tools/gopls@latest
 require'lspconfig'.gopls.setup{
   capabilities = capabilities,
   on_attach = function()
@@ -51,6 +52,7 @@ local function get_python_path(workspace)
 end
 
 
+-- npm install -g pyright
 require'lspconfig'.pyright.setup{
   capabilities = capabilities,
   before_init = function(_, config)

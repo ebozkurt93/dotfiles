@@ -4,19 +4,10 @@ local previewers = require("telescope.previewers")
 require('telescope').load_extension('fzf')
 require('telescope').load_extension('file_browser')
 
-local function merge(...)
-  local result = {}
-  for _, t in ipairs{...} do
-    for k, v in pairs(t) do
-      result[k] = v
-    end
-    local mt = getmetatable(t)
-    if mt then
-      setmetatable(result, mt)
-    end
-  end
-  return result
-end
+local shared_keys = {
+	["<C-p>"] = action_layout.toggle_preview,
+	["<C-o>"] = action_layout.toggle_mirror,
+}
 
 require('telescope').setup{
   defaults = {
@@ -26,21 +17,14 @@ require('telescope').setup{
 	--file_previewer = require("telescope.previewers").vim_buffer_cat.new,
 	--grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
 	--qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
+	layout_config = {
+		prompt_position = 'top',
+	},
     mappings = {
-      i = {
-        -- map actions.which_key to <C-h> (default: <C-/>)
-        -- actions.which_key shows the mappings for your picker,
-        -- e.g. git_{create, delete, ...}_branch for the git_branches picker
+      i = vim.tbl_extend('force', shared_keys, {
         ["<C-h>"] = "which_key",
-		-- this seems to be done by default
-        --["<C-q>"] = actions.send_to_fqlist,
-        ["<C-p>"] = action_layout.toggle_preview,
-        ["<C-o>"] = action_layout.toggle_mirror,
-      },
-      n = {
-        ["<C-p>"] = action_layout.toggle_preview,
-        ["<C-o>"] = action_layout.toggle_mirror,
-      }
+	  }),
+      n = shared_keys
     }
   },
   pickers = {
@@ -57,10 +41,8 @@ require('telescope').setup{
 		  theme = 'ivy',
 		  hijack_netrw = true,
 		  mappings = {
-			  ['i'] = {
-					["<C-p>"] = action_layout.toggle_preview,
-					["<C-o>"] = action_layout.toggle_mirror,
-			  }
+			  ['i'] = shared_keys,
+			  ['n'] = shared_keys,
 		  }
 	  }
     -- Your extension configuration goes here:

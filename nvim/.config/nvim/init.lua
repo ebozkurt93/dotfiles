@@ -4,6 +4,7 @@ require("ebozkurt.prefs")
 require("ebozkurt.plugins")
 require("ebozkurt.keymaps")
 require("ebozkurt.telescope")
+require("ebozkurt.treesitter")
 require("ebozkurt.lsp")
 require("ebozkurt.themes")
 
