@@ -25,10 +25,17 @@ local function get_python_path(workspace)
 --	  return path.join(current_pyenv_path, 'bin', 'python')
 --  end
 
-  -- try to find pipenv environment
-  local ppath = vim.fn.system('pipenv --venv | head -n 1 | xargs echo'):gsub("^%s*(.-)%s*$", "%1")
-  if string.find(ppath, '.local/share') then
-	  return path.join(ppath, 'bin', 'python')
+--  -- try to find pipenv environment
+--  local ppath = vim.fn.system('pipenv --venv | head -n 1 | xargs echo'):gsub("^%s*(.-)%s*$", "%1")
+--  if string.find(ppath, '.local/share') then
+--	  return path.join(ppath, 'bin', 'python')
+--  end
+
+-- Find and use virtualenv from pipenv in workspace directory.
+  local match = vim.fn.glob(path.join(workspace, 'Pipfile'))
+  if match ~= '' then
+    local venv = vim.fn.trim(vim.fn.system('PIPENV_PIPFILE=' .. match .. ' pipenv --venv'))
+    return path.join(venv, 'bin', 'python')
   end
 
   -- Find and use virtualenv in workspace directory.

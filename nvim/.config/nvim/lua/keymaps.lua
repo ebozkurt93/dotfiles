@@ -52,6 +52,8 @@ vim.keymap.set('n', 'ff', builtin.find_files, {})
 vim.keymap.set('n', 'fg', builtin.live_grep, {})
 vim.keymap.set('n', 'fb', builtin.buffers, {})
 vim.keymap.set('n', 'fh', builtin.help_tags, {})
+vim.keymap.set('n', 'f.', '<cmd>Telescope fd cwd=~/dotfiles/nvim/.config/nvim<cr>', {})
+vim.keymap.set('n', 'f/', '<cmd>Telescope live_grep cwd=~/dotfiles/nvim/.config/nvim<cr>', {})
 
 
 vim.api.nvim_create_autocmd('User', {
@@ -72,6 +74,9 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+-- quickfix
 vim.keymap.set('n', '<leader>ck', '<cmd>cnext<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>cj', '<cmd>cprev<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>ce', '<cmd>copen<cr>', {noremap = true})
+vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', {noremap = true})
+
