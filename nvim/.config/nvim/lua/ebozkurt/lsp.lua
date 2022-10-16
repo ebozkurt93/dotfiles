@@ -1,13 +1,14 @@
 -- Set up lspconfig.
 local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
-local bufopts = { noremap = true, silent = true, buffer = 0 }
+--local bufopts = { noremap = true, silent = true, buffer = 0 }
+local my_on_attach = function ()
+  vim.api.nvim_exec_autocmds('User', {pattern = 'LspAttached'})
+end
 
 -- go install golang.org/x/tools/gopls@latest
 require'lspconfig'.gopls.setup{
   capabilities = capabilities,
-  on_attach = function()
-  vim.api.nvim_exec_autocmds('User', {pattern = 'LspAttached'})
-  end,
+  on_attach = my_on_attach,
 }
 
 -- local util = require('lspconfig/util')
@@ -32,7 +33,7 @@ local function get_python_path(workspace)
 --	  return path.join(ppath, 'bin', 'python')
 --  end
 
--- Find and use virtualenv from pipenv in workspace directory.
+  -- Find and use virtualenv from pipenv in workspace directory.
   local match = vim.fn.glob(path.join(workspace, 'Pipfile'))
   if match ~= '' then
     local venv = vim.fn.trim(vim.fn.system('PIPENV_PIPFILE=' .. match .. ' pipenv --venv'))
@@ -55,14 +56,29 @@ end
 -- npm install -g pyright
 require'lspconfig'.pyright.setup{
   capabilities = capabilities,
+--  settings = {
+--    python =  {
+--        analysis = {
+--        autoSearchPaths = false,
+--        useLibraryCodeForTypes = false,
+--        diagnosticMode = 'openFilesOnly',
+--      }
+--    }
+--  },
   before_init = function(_, config)
     config.settings.python.pythonPath = get_python_path(config.root_dir)
 
   end,
-  on_attach = function()
-  vim.api.nvim_exec_autocmds('User', {pattern = 'LspAttached'})
-  end,
+  on_attach = my_on_attach,
 }
+
+-- brew install lua-language-server
+require'lspconfig'.sumneko_lua.setup {
+  cmd = {"lua-language-server"},
+  capabilities = capabilities,
+  on_attach = my_on_attach,
+}
+
 
 -- Set up nvim-cmp.
 local cmp = require'cmp'
@@ -103,6 +119,7 @@ cmp.setup.filetype('gitcommit', {
     { name = 'buffer' },
   })
 })
+]]--
 
 -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
 cmp.setup.cmdline({ '/', '?' }, {
@@ -122,5 +139,4 @@ cmp.setup.cmdline(':', {
   })
 })
 
-]]--
 

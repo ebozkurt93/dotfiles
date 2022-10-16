@@ -40,3 +40,7 @@ require'nvim-treesitter.configs'.setup {
     additional_vim_regex_highlighting = false,
   },
 }
+
+-- use treesitter for folding
+vim.opt.foldenable = false
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"

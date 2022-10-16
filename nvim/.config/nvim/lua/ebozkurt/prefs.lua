@@ -32,3 +32,6 @@ vim.opt.laststatus = 2
 
 vim.opt.signcolumn = 'auto'
 vim.opt.completeopt = {'menu', 'menuone', 'noselect'}
+
+--vim.opt.foldlevel = 1
+--vim.opt.foldmethod = "expr"

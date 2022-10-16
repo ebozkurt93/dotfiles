@@ -42,10 +42,10 @@ vim.keymap.set('n', '<C-z>', '<cmd>set invwrap<cr>', {noremap = true})
 
 -- window resizing
 -- todo: not sure about these keymaps, go over these later
-vim.keymap.set('n', '<SCA-h>', '<cmd>:vertical resize -1<cr>', {noremap = true})
-vim.keymap.set('n', '<SCA-l>', '<cmd>:vertical resize +1<cr>', {noremap = true})
-vim.keymap.set('n', '<SCA-j>', '<cmd>:resize +1<cr>', {noremap = true})
-vim.keymap.set('n', '<SCA-k>', '<cmd>:resize -1<cr>', {noremap = true})
+vim.keymap.set('n', '<SA-h>', '<cmd>:vertical resize -1<cr>', {noremap = true})
+vim.keymap.set('n', '<SA-l>', '<cmd>:vertical resize +1<cr>', {noremap = true})
+vim.keymap.set('n', '<SA-j>', '<cmd>:resize +1<cr>', {noremap = true})
+vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', {noremap = true})
 
 --telescope
 local builtin = require('telescope.builtin')
@@ -84,3 +84,8 @@ vim.keymap.set('n', '<leader>cj', '<cmd>cprev<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>ce', '<cmd>copen<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', {noremap = true})
 
+--vim.keymap.set('n', '<C-w>s', function()
+--	vim.cmd('vsplit')
+--	--vim.cmd('<c-w>s<cr>')
+--end, {noremap = true})
+--

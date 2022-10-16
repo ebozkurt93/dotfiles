@@ -84,6 +84,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/cmp-buffer",
     url = "https://github.com/hrsh7th/cmp-buffer"
   },
+  ["cmp-cmdline"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/cmp-cmdline",
+    url = "https://github.com/hrsh7th/cmp-cmdline"
+  },
   ["cmp-nvim-lsp"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/cmp-nvim-lsp",
@@ -109,6 +114,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neovim-ayu",
     url = "https://github.com/Shatur/neovim-ayu"
   },
+  ["nlua.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nlua.nvim",
+    url = "https://github.com/tjdevries/nlua.nvim"
+  },
   ["nord.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nord.nvim",
@@ -124,10 +134,25 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-lspconfig",
     url = "https://github.com/neovim/nvim-lspconfig"
   },
+  ["nvim-treesitter"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
+    url = "https://github.com/nvim-treesitter/nvim-treesitter"
+  },
+  playground = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/playground",
+    url = "https://github.com/nvim-treesitter/playground"
+  },
   ["plenary.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/plenary.nvim",
     url = "https://github.com/nvim-lua/plenary.nvim"
+  },
+  ["telescope-file-browser.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/telescope-file-browser.nvim",
+    url = "https://github.com/nvim-telescope/telescope-file-browser.nvim"
   },
   ["telescope-fzf-native.nvim"] = {
     loaded = true,
