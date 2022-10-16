@@ -8,8 +8,10 @@ vim.keymap.set('n', '<leader><space>', function()
 	vim.cmd(':let @/ = ""')
 	print "Cleared search"
 end, {desc = 'Clear search highlights'})
-vim.keymap.set('n', '<leader>r', '<cmd>set invrelativenumber<cr>', {noremap = true})
--- vim.keymap.set('n', '<leader>sv', '<cmd>source $MYVIMRC<cr>', {desc = 'Source neovim config', noremap = true})
+vim.keymap.set('n', '<leader>n', function()
+	local current = vim.opt.relativenumber:get()
+	vim.opt.relativenumber = not current
+end, {noremap = true})
 vim.keymap.set('n', '<leader>sv', '<cmd>lua ReloadConfig()<cr>', {noremap = true, silent = false})
 
 -- center things after jump
@@ -19,7 +21,6 @@ vim.keymap.set('n', '<C-d>', '<C-d>zz', {noremap = true})
 vim.keymap.set('i', 'jk', '<ESC>', {noremap = true})
 
 -- yank to clipboard
-vim.keymap.set('v', '<leader>y', '"+y', {noremap = true})
 vim.keymap.set('v', '<leader>y', '"+y', {noremap = true})
 
 -- move lines up/down
@@ -52,6 +53,7 @@ vim.keymap.set('n', 'ff', builtin.find_files, {})
 vim.keymap.set('n', 'fg', builtin.live_grep, {})
 vim.keymap.set('n', 'fb', builtin.buffers, {})
 vim.keymap.set('n', 'fh', builtin.help_tags, {})
+vim.keymap.set('n', 'fj', builtin.jumplist, {})
 vim.keymap.set('n', 'f.', '<cmd>Telescope fd cwd=~/dotfiles/nvim/.config/nvim<cr>', {})
 vim.keymap.set('n', 'f/', '<cmd>Telescope live_grep cwd=~/dotfiles/nvim/.config/nvim<cr>', {})
 

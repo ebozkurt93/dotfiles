@@ -1,8 +1,9 @@
 -- this needs to be on top, since everything is resetted with reload
-require("reload")
-require("prefs")
-require("plugins")
-require("keymaps")
-require("lsp")
-require("themes")
+require("ebozkurt.reload")
+require("ebozkurt.prefs")
+require("ebozkurt.plugins")
+require("ebozkurt.keymaps")
+require("ebozkurt.telescope")
+require("ebozkurt.lsp")
+require("ebozkurt.themes")
 
