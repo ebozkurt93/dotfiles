@@ -1,6 +1,23 @@
 local action_layout = require "telescope.actions.layout"
 local previewers = require("telescope.previewers")
 
+require('telescope').load_extension('fzf')
+require('telescope').load_extension('file_browser')
+
+local function merge(...)
+  local result = {}
+  for _, t in ipairs{...} do
+    for k, v in pairs(t) do
+      result[k] = v
+    end
+    local mt = getmetatable(t)
+    if mt then
+      setmetatable(result, mt)
+    end
+  end
+  return result
+end
+
 require('telescope').setup{
   defaults = {
     -- Default configuration for telescope goes here:
@@ -36,6 +53,16 @@ require('telescope').setup{
     -- builtin picker
   },
   extensions = {
+	  file_browser = {
+		  theme = 'ivy',
+		  hijack_netrw = true,
+		  mappings = {
+			  ['i'] = {
+					["<C-p>"] = action_layout.toggle_preview,
+					["<C-o>"] = action_layout.toggle_mirror,
+			  }
+		  }
+	  }
     -- Your extension configuration goes here:
     -- extension_name = {
     --   extension_config_key = value,
@@ -43,3 +70,4 @@ require('telescope').setup{
     -- please take a look at the readme of the extension you want to configure
   }
 }
+
