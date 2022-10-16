@@ -4,19 +4,54 @@ local bufopts = { noremap = true, silent = true, buffer = 0 }
 
 require'lspconfig'.gopls.setup{
   capabilities = capabilities,
-
   on_attach = function()
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
-  vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
-  vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, bufopts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-  --vim.keymap.set('n', 'gcr', vim.lsp.buf.clear_references, bufopts)
-  vim.keymap.set('n', '<leader>dj', vim.diagnostic.goto_next, bufopts)
-  vim.keymap.set('n', '<leader>dk', vim.diagnostic.goto_prev, bufopts)
-  vim.keymap.set('n', '<leader>dl', '<cmd>Telescope diagnostics<cr>', bufopts)
-  vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, bufopts)
+  vim.api.nvim_exec_autocmds('User', {pattern = 'LspAttached'})
+  end,
+}
+
+-- local util = require('lspconfig/util')
+-- local path = util.path
+local path = require('lspconfig/util').path
+
+local function get_python_path(workspace)
+  -- Use activated virtualenv.
+  if vim.env.VIRTUAL_ENV then
+    return path.join(vim.env.VIRTUAL_ENV, 'bin', 'python')
+  end
+
+--  local default_pyenv_path = vim.fn.system('pyenv which python')
+--  local current_pyenv_path = vim.fn.system(workspace .. 'cd %s && pyenv which python')
+--  if default_pyenv_path ~= current_pyenv_path then
+--	  return path.join(current_pyenv_path, 'bin', 'python')
+--  end
+
+  -- try to find pipenv environment
+  local ppath = vim.fn.system('pipenv --venv | head -n 1 | xargs echo'):gsub("^%s*(.-)%s*$", "%1")
+  if string.find(ppath, '.local/share') then
+	  return path.join(ppath, 'bin', 'python')
+  end
+
+  -- Find and use virtualenv in workspace directory.
+  for _, pattern in ipairs({'*', '.*'}) do
+    local match = vim.fn.glob(path.join(workspace, pattern, 'pyvenv.cfg'))
+    if match ~= '' then
+      return path.join(path.dirname(match), 'bin', 'python')
+    end
+  end
+
+  -- Fallback to system Python.
+  return exepath('python3') or exepath('python') or 'python'
+end
+
+
+require'lspconfig'.pyright.setup{
+  capabilities = capabilities,
+  before_init = function(_, config)
+    config.settings.python.pythonPath = get_python_path(config.root_dir)
+
+  end,
+  on_attach = function()
+  vim.api.nvim_exec_autocmds('User', {pattern = 'LspAttached'})
   end,
 }
 

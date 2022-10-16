@@ -54,4 +54,24 @@ vim.keymap.set('n', 'fb', builtin.buffers, {})
 vim.keymap.set('n', 'fh', builtin.help_tags, {})
 
 
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'LspAttached',
+    desc = 'LSP actions',
+	callback = function()
+	  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
+	  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
+	  vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
+	  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
+	  vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, bufopts)
+	  vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
+	  --vim.keymap.set('n', 'gcr', vim.lsp.buf.clear_references, bufopts)
+	  vim.keymap.set('n', '<leader>dj', vim.diagnostic.goto_next, bufopts)
+	  vim.keymap.set('n', '<leader>dk', vim.diagnostic.goto_prev, bufopts)
+	  vim.keymap.set('n', '<leader>dl', '<cmd>Telescope diagnostics<cr>', bufopts)
+	  vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, bufopts)
+	end
+})
 
+vim.keymap.set('n', '<leader>ck', '<cmd>cnext<cr>', {noremap = true})
+vim.keymap.set('n', '<leader>cj', '<cmd>cprev<cr>', {noremap = true})
+vim.keymap.set('n', '<leader>ce', '<cmd>copen<cr>', {noremap = true})
