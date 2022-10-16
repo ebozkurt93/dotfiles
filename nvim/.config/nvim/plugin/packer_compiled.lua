@@ -104,6 +104,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/cmp_luasnip",
     url = "https://github.com/saadparwaiz1/cmp_luasnip"
   },
+  ["completion-nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/completion-nvim",
+    url = "https://github.com/nvim-lua/completion-nvim"
+  },
   ["gruvbox.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/gruvbox.nvim",
@@ -113,11 +118,6 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neovim-ayu",
     url = "https://github.com/Shatur/neovim-ayu"
-  },
-  ["nlua.nvim"] = {
-    loaded = true,
-    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nlua.nvim",
-    url = "https://github.com/tjdevries/nlua.nvim"
   },
   ["nord.nvim"] = {
     loaded = true,

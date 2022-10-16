@@ -9,6 +9,12 @@ local shared_keys = {
 	["<C-o>"] = action_layout.toggle_mirror,
 }
 
+local picker_options = {
+	hidden = false,
+	follow = true,
+	no_ignore = false,
+}
+
 require('telescope').setup{
   defaults = {
     -- Default configuration for telescope goes here:
@@ -28,6 +34,8 @@ require('telescope').setup{
     }
   },
   pickers = {
+	  find_files = picker_options,
+	  live_grep = picker_options,
     -- Default configuration for builtin pickers goes here:
     -- picker_name = {
     --   picker_config_key = value,
