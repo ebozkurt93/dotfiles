@@ -78,5 +78,13 @@ function res {
   find . -name "$1" | entr -r ${@:2}
 }
 
+function __find_repos {
+  cd $(find ~/dotfiles ~/repositories -maxdepth 1 -type d | fzf)
+}
+
+zle -N __find_repos
+bindkey "^f" __find_repos
+
 alias dev-rust='res "*.rs" cargo run'
 alias dev-go='res "*.go" go run .'
+
