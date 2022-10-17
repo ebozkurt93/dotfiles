@@ -6,6 +6,7 @@ vim.opt.mouse = 'a'
 -- todo: check what this does, I've copied this from my previous config but not sure I really understand
 vim.opt.modelines = 0
 vim.opt.belloff = 'all'
+vim.opt.swapfile = false
 --vim.opt.colorcolumn = {80, 120}
 
 -- search
@@ -29,6 +30,12 @@ vim.opt.listchars:append({precedes = '…'})
 
 -- statusbar
 vim.opt.laststatus = 2
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'LuaLineInitialized',
+	callback = function()
+		vim.opt.showmode = false
+	end
+})
 
 vim.opt.signcolumn = 'auto'
 vim.opt.completeopt = {'menu', 'menuone', 'noselect'}

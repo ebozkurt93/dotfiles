@@ -60,14 +60,26 @@ vim.keymap.set('n', '<leader>f.', helpers.find_files_nvim_config, {})
 vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
 vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
 
+-- probably not working as expected
+function center_after_command(operation)
+	if operation then
+		operation()
+	end
+	vim.schedule(function() 
+		vim.cmd([[norm zz]])
+	end)
+end
+
 -- LSP
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'LspAttached',
     desc = 'LSP actions',
 	callback = function()
+
 	  -- todo: center screen after some of the commands
 	  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
 	  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
+	  --vim.keymap.set('n', 'gd', center_after_command(vim.lsp.buf.definition), bufopts)
 	  vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
 	  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
 	  vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, bufopts)
@@ -80,6 +92,22 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+--harpoon
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'Harpoon',
+	callback = function()
+		local ui = require("harpoon.ui")
+		local mark = require("harpoon.mark")
+		vim.keymap.set('n', '<leader>e', function () ui.toggle_quick_menu() end, {noremap = true})
+		vim.keymap.set('n', '<leader>a', function () mark.add_file() end, {noremap = true})
+		vim.keymap.set('n', '<leader>1', function () ui.nav_file(1) end, {noremap = true})
+		vim.keymap.set('n', '<leader>2', function () ui.nav_file(2) end, {noremap = true})
+		vim.keymap.set('n', '<leader>3', function () ui.nav_file(3) end, {noremap = true})
+		vim.keymap.set('n', '<leader>4', function () ui.nav_file(4) end, {noremap = true})
+		vim.keymap.set('n', '<leader>5', function () ui.nav_file(5) end, {noremap = true})
+	end
+})
+
 -- quickfix
 vim.keymap.set('n', '<leader>ck', '<cmd>cnext<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>cj', '<cmd>cprev<cr>', {noremap = true})
@@ -87,7 +115,8 @@ vim.keymap.set('n', '<leader>ce', '<cmd>copen<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', {noremap = true})
 
 --vim.keymap.set('n', '<C-w>s', function()
---	vim.cmd('vsplit')
---	--vim.cmd('<c-w>s<cr>')
+--	vim.cmd([[
+--	split
+--	execute "normal! \<c-w>j"
+--	]])
 --end, {noremap = true})
---
