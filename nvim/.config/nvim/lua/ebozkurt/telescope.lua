@@ -10,7 +10,8 @@ local shared_keys = {
 }
 
 local picker_options = {
-	hidden = false,
+	-- todo: set hidden back to false when you enable searching all git files
+	hidden = true,
 	follow = true,
 	no_ignore = false,
 }
@@ -23,6 +24,7 @@ require('telescope').setup{
 	--file_previewer = require("telescope.previewers").vim_buffer_cat.new,
 	--grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
 	--qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
+	sorting_strategy = 'ascending',
 	layout_config = {
 		prompt_position = 'top',
 	},

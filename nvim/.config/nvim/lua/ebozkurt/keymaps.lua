@@ -51,6 +51,7 @@ vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', {noremap = true})
 local builtin = require('telescope.builtin')
 local helpers = require('ebozkurt.helpers')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
+vim.keymap.set('n', '<leader>fr', builtin.git_files, {})
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
@@ -64,6 +65,7 @@ vim.api.nvim_create_autocmd('User', {
 	pattern = 'LspAttached',
     desc = 'LSP actions',
 	callback = function()
+	  -- todo: center screen after some of the commands
 	  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
 	  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
 	  vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
