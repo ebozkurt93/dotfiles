@@ -98,7 +98,7 @@ vim.api.nvim_create_autocmd('User', {
 	callback = function()
 		local ui = require("harpoon.ui")
 		local mark = require("harpoon.mark")
-		vim.keymap.set('n', '<leader>e', function () ui.toggle_quick_menu() end, {noremap = true})
+		vim.keymap.set('n', '<leader>h', function () ui.toggle_quick_menu() end, {noremap = true})
 		vim.keymap.set('n', '<leader>a', function () mark.add_file() end, {noremap = true})
 		vim.keymap.set('n', '<leader>1', function () ui.nav_file(1) end, {noremap = true})
 		vim.keymap.set('n', '<leader>2', function () ui.nav_file(2) end, {noremap = true})
