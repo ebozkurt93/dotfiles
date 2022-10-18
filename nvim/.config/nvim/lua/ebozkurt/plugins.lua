@@ -48,5 +48,6 @@ packer.startup(function(use)
   use 'Shatur/neovim-ayu'
   use 'shaunsingh/nord.nvim'
   use 'folke/tokyonight.nvim'
+  use { "catppuccin/nvim", as = "catppuccin" }
   end
 )
