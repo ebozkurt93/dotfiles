@@ -7,3 +7,7 @@ vim.cmd [[ colorscheme gruvbox ]]
 
 -- nord
 --vim.cmd [[ colorscheme nord ]]
+
+-- tokyonight
+-- vim.cmd[[colorscheme tokyonight]]
+-- vim.cmd[[colorscheme tokyonight-moon]]

@@ -6,9 +6,12 @@ require("ebozkurt.keymaps")
 require("ebozkurt.telescope")
 require("ebozkurt.treesitter")
 require("ebozkurt.lualine")
--- require("ebozkurt.nvim-tree")
+require("ebozkurt.nvim-tree")
 require("ebozkurt.comment")
 require("ebozkurt.harpoon")
+-- todo: for some reason this fails on reload, investigate later
+-- require("ebozkurt.colorizer")
+require("ebozkurt.possession")
 require("ebozkurt.lsp")
 require("ebozkurt.themes")
 

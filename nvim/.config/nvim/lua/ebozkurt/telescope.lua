@@ -24,16 +24,21 @@ require('telescope').setup{
 	--file_previewer = require("telescope.previewers").vim_buffer_cat.new,
 	--grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
 	--qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
+	-- default sorters were `get_fzy_sorter`, however these feel better
+	file_sorter = require('telescope.sorters').get_fuzzy_file,
+	-- generic_sorter = require('telescope.sorters').get_generic_fuzzy_sorter,
 	sorting_strategy = 'ascending',
 	layout_config = {
 		prompt_position = 'top',
 	},
+	color_devicons = false, -- sadly this doesn't help disable icons in find_files
+	wrap_results = true,
     mappings = {
       i = vim.tbl_extend('force', shared_keys, {
         ["<C-h>"] = "which_key",
 	  }),
       n = shared_keys
-    }
+    },
   },
   pickers = {
 	  find_files = picker_options,
@@ -63,3 +68,5 @@ require('telescope').setup{
   }
 }
 
+vim.api.nvim_exec_autocmds('User', {pattern = 'Telescope'})
+vim.api.nvim_exec_autocmds('User', {pattern = 'telescope+possession'})

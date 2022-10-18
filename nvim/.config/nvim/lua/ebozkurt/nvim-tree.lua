@@ -14,8 +14,18 @@ require("nvim-tree").setup({
   },
   renderer = {
     group_empty = true,
+	icons = {
+	-- do not have the fonts installed, therefore disabling the icons as well
+	show = {
+		file = false,
+		folder = false,
+		folder_arrow = false,
+	}
+	},
   },
   filters = {
     dotfiles = true,
   },
 })
+
+vim.api.nvim_exec_autocmds('User', {pattern = 'nvim-tree'})

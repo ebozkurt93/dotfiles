@@ -48,17 +48,23 @@ vim.keymap.set('n', '<SA-j>', '<cmd>:resize +1<cr>', {noremap = true})
 vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', {noremap = true})
 
 --telescope
-local builtin = require('telescope.builtin')
-local helpers = require('ebozkurt.helpers')
-vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
-vim.keymap.set('n', '<leader>fr', builtin.git_files, {})
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
-vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
-vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
-vim.keymap.set('n', '<leader>fj', builtin.jumplist, {})
-vim.keymap.set('n', '<leader>f.', helpers.find_files_nvim_config, {})
-vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
-vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'Telescope',
+	callback = function()
+		local builtin = require('telescope.builtin')
+		local helpers = require('ebozkurt.helpers')
+		vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
+		vim.keymap.set('n', '<leader>fr', builtin.git_files, {})
+		vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
+		vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
+		vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
+		vim.keymap.set('n', '<leader>fj', builtin.jumplist, {})
+		vim.keymap.set('n', '<leader>f.', helpers.find_files_nvim_config, {})
+		vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
+		vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
+		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
+	end
+})
 
 -- probably not working as expected
 function center_after_command(operation)
@@ -120,3 +126,24 @@ vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', {noremap = true})
 --	execute "normal! \<c-w>j"
 --	]])
 --end, {noremap = true})
+
+-- nvim-tree
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'nvim-tree',
+	callback = function()
+		-- todo: not sure if should keep both, decide
+		local nt_api = require("nvim-tree.api")
+		vim.keymap.set('n', '<C-p>', function () nt_api.tree.toggle() end, {noremap = true})
+		vim.keymap.set('n', '<C-l>', function () nt_api.tree.toggle(true) end, {noremap = true})
+	end
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'possession',
+	callback = function()
+		vim.keymap.set('n', '<C-s>', function () require('telescope').extensions.possession.list() end, {noremap = true})
+		local date = os.date("%Y-%m-%d-%H-%M-%S")
+		vim.keymap.set('n', '<S-s>', function () require('possession.session').save(date) end, {noremap = true})
+	end
+})
+
