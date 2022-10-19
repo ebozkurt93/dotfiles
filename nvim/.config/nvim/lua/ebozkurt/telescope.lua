@@ -1,9 +1,6 @@
 local action_layout = require "telescope.actions.layout"
 local previewers = require("telescope.previewers")
 
-require('telescope').load_extension('fzf')
-require('telescope').load_extension('file_browser')
-
 local shared_keys = {
 	["<C-p>"] = action_layout.toggle_preview,
 	["<C-o>"] = action_layout.toggle_mirror,
@@ -59,7 +56,7 @@ require('telescope').setup{
 			  ['i'] = shared_keys,
 			  ['n'] = shared_keys,
 		  }
-	  }
+	  },
     -- Your extension configuration goes here:
     -- extension_name = {
     --   extension_config_key = value,
@@ -67,6 +64,9 @@ require('telescope').setup{
     -- please take a look at the readme of the extension you want to configure
   }
 }
+
+require('telescope').load_extension('fzf')
+require('telescope').load_extension('file_browser')
 
 vim.api.nvim_exec_autocmds('User', {pattern = 'Telescope'})
 vim.api.nvim_exec_autocmds('User', {pattern = 'telescope+possession'})

@@ -82,6 +82,11 @@ require'lspconfig'.sumneko_lua.setup {
 
 -- Set up nvim-cmp.
 local cmp = require'cmp'
+local lspkind = require'lspkind'
+lspkind.init({
+	mode = 'symbol'
+})
+
 
 cmp.setup({
   snippet = {
@@ -98,17 +103,37 @@ cmp.setup({
   mapping = cmp.mapping.preset.insert({
     ['<C-b>'] = cmp.mapping.scroll_docs(-4),
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
+    ['<C-j>'] = cmp.mapping.select_next_item(),
+    --['<C-j>'] = cmp.mapping.select_next_item(),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.abort(),
     ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
   }),
+
   sources = cmp.config.sources({
+    { name = 'nvim_lua' },
     { name = 'nvim_lsp' },
     { name = 'luasnip' }, -- For luasnip users.
   }, {
     { name = 'buffer' },
-  })
+  }),
+  formatting = {
+	  format = lspkind.cmp_format {
+		  with_text = true,
+		  menu = {
+			buffer = '[buf]',
+			nvim_lsp = '[LSP]',
+			nvim_lua = '[api]',
+			path = '[path]',
+			luasnip = '[snip]',
+		  }
+	  }
+  },
+  experimental = {
+	  ghost_text = true
+  },
 })
+
 
 --[[
 -- Set configuration for specific filetype.

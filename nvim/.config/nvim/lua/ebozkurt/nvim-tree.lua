@@ -14,14 +14,14 @@ require("nvim-tree").setup({
   },
   renderer = {
     group_empty = true,
-	icons = {
+	-- icons = {
 	-- do not have the fonts installed, therefore disabling the icons as well
-	show = {
-		file = false,
-		folder = false,
-		folder_arrow = false,
-	}
-	},
+	-- show = {
+	-- 	file = false,
+	-- 	folder = false,
+	-- 	folder_arrow = false,
+	-- }
+	-- },
   },
   filters = {
     dotfiles = true,

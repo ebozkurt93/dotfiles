@@ -3,7 +3,7 @@ vim.keymap.set('n', '<leader>w', '<cmd>write<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>q', '<cmd>quit<cr>', {noremap = true})
 vim.keymap.set('n', '<leader>e', '<cmd>e!<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><C-q>', '<cmd>quitall<cr>', {noremap = true})
-vim.keymap.set('n', '<leader><CS-q>', '<cmd>qa!<cr>', {noremap = true})
+-- vim.keymap.set('n', '<leader><CS-q>', '<cmd>qa!<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><space>', function()
 	vim.cmd(':let @/ = ""')
 	print "Cleared search"
@@ -19,6 +19,12 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', {noremap = true})
 vim.keymap.set('n', '<C-d>', '<C-d>zz', {noremap = true})
 
 vim.keymap.set('i', 'jk', '<ESC>', {noremap = true})
+
+-- keep selection after indentation
+vim.cmd([[
+:vnoremap < <gv
+:vnoremap > >gv
+]])
 
 -- yank to clipboard
 vim.keymap.set('v', '<leader>y', '"+y', {noremap = true})

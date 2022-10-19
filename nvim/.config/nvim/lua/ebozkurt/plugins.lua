@@ -25,12 +25,14 @@ packer.startup(function(use)
   use 'neovim/nvim-lspconfig'
   use 'hrsh7th/nvim-cmp'
   use 'hrsh7th/cmp-nvim-lsp'
+  use 'hrsh7th/cmp-nvim-lua'
   use 'hrsh7th/cmp-path'
   use 'hrsh7th/cmp-buffer'
   use 'hrsh7th/cmp-cmdline'
   use 'saadparwaiz1/cmp_luasnip'
   --use 'tjdevries/nlua.nvim'
   use 'nvim-lua/completion-nvim'
+  use 'onsails/lspkind.nvim'
 
   use { 'numToStr/Comment.nvim', config = function() require('Comment').setup() end }
   --use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}
@@ -42,6 +44,7 @@ packer.startup(function(use)
   use { 'ThePrimeagen/harpoon', requires = { { 'nvim-lua/plenary.nvim'} } }
   use 'NvChad/nvim-colorizer.lua'
   use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
+  use 'tpope/vim-surround'
 
   -- themes
   use 'ellisonleao/gruvbox.nvim'
@@ -51,3 +54,4 @@ packer.startup(function(use)
   use { "catppuccin/nvim", as = "catppuccin" }
   end
 )
+
