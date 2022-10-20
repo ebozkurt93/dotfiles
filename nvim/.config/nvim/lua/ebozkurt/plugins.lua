@@ -48,6 +48,8 @@ packer.startup(function(use)
   use 'tpope/vim-surround'
   use 'lewis6991/gitsigns.nvim'
   use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim' }
+  use 'tpope/vim-fugitive'
+  use 'ruanyl/vim-gh-line'
 
   -- themes
   use 'ellisonleao/gruvbox.nvim'
