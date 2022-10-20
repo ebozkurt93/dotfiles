@@ -1,5 +1,4 @@
 local action_layout = require "telescope.actions.layout"
-local previewers = require("telescope.previewers")
 
 local shared_keys = {
 	["<C-p>"] = action_layout.toggle_preview,

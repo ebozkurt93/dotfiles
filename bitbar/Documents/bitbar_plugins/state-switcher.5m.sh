@@ -12,11 +12,12 @@ if [ "$1" = 'toggle' ]; then
   echo $file_path
   if printf '%s\0' "${states[@]}" | grep -Fxqz -- "$2"; then
       test -f $file_path && rm $file_path || touch $file_path
-
-  # kill BitBar
-  ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill
-  # restart BitBar
-  open -a /Applications/BitBar.app
+    if [ "$3" != 'no-restart' ]; then
+      # kill BitBar
+      ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill
+      # restart BitBar
+      open -a /Applications/BitBar.app
+    fi
   fi
 fi
 
@@ -26,5 +27,8 @@ for state in "${states[@]}"; do
   file_path=`get_file_path $state`
   echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state terminal=false $style"
+  echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌) |\
+   bash=\"$0\" param1=toggle param2=$state param3=no-restart alternate=true refresh=true terminal=false $style"
 done
 echo "Refresh | refresh=true $style"
+

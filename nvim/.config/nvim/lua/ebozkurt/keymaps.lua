@@ -69,6 +69,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
 		vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
 		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
+		vim.keymap.set('n', '<leader>fc', builtin.commands, {})
 	end
 })
 
@@ -148,8 +149,13 @@ vim.api.nvim_create_autocmd('User', {
 	pattern = 'possession',
 	callback = function()
 		vim.keymap.set('n', '<C-s>', function () require('telescope').extensions.possession.list() end, {noremap = true})
-		local date = os.date("%Y-%m-%d-%H-%M-%S")
-		vim.keymap.set('n', '<S-s>', function () require('possession.session').save(date) end, {noremap = true})
+		vim.keymap.set('n', '<S-s>', function ()
+			local date = os.date("%Y-%m-%d-%H-%M-%S")
+			local path = vim.fs.basename(vim.fn.getcwd())
+			local name = path .. '-' .. date
+			require('possession.session').save(name)
+		end, {noremap = true})
+		vim.keymap.set('n', '<S-z>', function() require('ebozkurt.session').delete_session() end, {noremap = true})
 	end
 })
 

@@ -33,6 +33,7 @@ packer.startup(function(use)
   --use 'tjdevries/nlua.nvim'
   use 'nvim-lua/completion-nvim'
   use 'onsails/lspkind.nvim'
+  use 'windwp/nvim-autopairs'
 
   use { 'numToStr/Comment.nvim', config = function() require('Comment').setup() end }
   --use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}
@@ -45,6 +46,7 @@ packer.startup(function(use)
   use 'NvChad/nvim-colorizer.lua'
   use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
   use 'tpope/vim-surround'
+  use 'lewis6991/gitsigns.nvim'
 
   -- themes
   use 'ellisonleao/gruvbox.nvim'

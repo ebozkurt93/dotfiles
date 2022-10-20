@@ -12,6 +12,8 @@ require("ebozkurt.harpoon")
 -- todo: for some reason this fails on reload, investigate later
 -- require("ebozkurt.colorizer")
 require("ebozkurt.possession")
+require("ebozkurt.gitsigns")
 require("ebozkurt.lsp")
 require("ebozkurt.themes")
+require("ebozkurt.session")
 
