@@ -47,6 +47,7 @@ packer.startup(function(use)
   use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
   use 'tpope/vim-surround'
   use 'lewis6991/gitsigns.nvim'
+  use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim' }
 
   -- themes
   use 'ellisonleao/gruvbox.nvim'
