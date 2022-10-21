@@ -39,8 +39,10 @@ packer.startup(function(use)
   --use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}
   use { 'nvim-lualine/lualine.nvim' }
   use { 'nvim-tree/nvim-tree.lua',
-  requires = {
-    'nvim-tree/nvim-web-devicons', -- optional, for file icons
+	  -- this might be needed for the icons displayed etc 
+	  -- curl -fLo "Droid Sans Mono for Powerline Nerd Font Complete.otf" https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
+	  requires = {
+		'nvim-tree/nvim-web-devicons', -- optional, for file icons
   }, }
   use { 'ThePrimeagen/harpoon', requires = { { 'nvim-lua/plenary.nvim'} } }
   use 'NvChad/nvim-colorizer.lua'

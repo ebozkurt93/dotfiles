@@ -39,7 +39,6 @@ function M.delete_session()
 				if marked_items_count == 0 then
 					local selected = action_state.get_selected_entry()
 					delete_item(selected['value'])
-					do return end
 				else
 					for k, v in pairs(marked_items) do
 						delete_item(k['value'])

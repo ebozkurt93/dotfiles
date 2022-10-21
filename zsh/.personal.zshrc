@@ -36,6 +36,7 @@ alias ll='ls -l'
 alias vi='nvim'
 alias vim='nvim'
 alias viconf='(cd ~/dotfiles/nvim/.config/nvim && vi)'
+alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias sr='exec $SHELL'
 
 # docker

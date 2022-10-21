@@ -9,7 +9,7 @@ local picker_options = {
 	-- todo: set hidden back to false when you enable searching all git files
 	hidden = true,
 	follow = true,
-	no_ignore = false,
+	no_ignore = true,
 }
 
 require('telescope').setup{

@@ -27,6 +27,9 @@ require("nvim-tree").setup({
 	-- with this flag as false, dotfiles are visible
     dotfiles = false,
   },
+  git = {
+	  ignore = false,
+  },
 })
 
 vim.api.nvim_exec_autocmds('User', {pattern = 'nvim-tree'})
