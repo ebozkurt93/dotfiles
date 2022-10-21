@@ -24,7 +24,8 @@ require("nvim-tree").setup({
 	-- },
   },
   filters = {
-    dotfiles = true,
+	-- with this flag as false, dotfiles are visible
+    dotfiles = false,
   },
 })
 

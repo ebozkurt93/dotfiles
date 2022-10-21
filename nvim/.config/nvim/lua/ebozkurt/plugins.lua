@@ -57,6 +57,7 @@ packer.startup(function(use)
   use 'shaunsingh/nord.nvim'
   use 'folke/tokyonight.nvim'
   use { "catppuccin/nvim", as = "catppuccin" }
+  use { 'rose-pine/neovim', as = 'rose-pine' }
   end
 )
 

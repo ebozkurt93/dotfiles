@@ -15,3 +15,9 @@ vim.cmd [[ colorscheme gruvbox ]]
 -- vim.g.catppuccin_flavour = "macchiato" -- latte, frappe, macchiato, mocha
 -- require("catppuccin").setup()
 -- vim.api.nvim_command "colorscheme catppuccin"
+
+-- rose-pine
+require('rose-pine').setup({
+	dark_variant = 'moon',
+})
+vim.cmd('colorscheme rose-pine')
