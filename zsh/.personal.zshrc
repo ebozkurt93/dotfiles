@@ -80,9 +80,10 @@ function res {
 }
 
 function __find_repos {
-  cd $(find ~/dotfiles ~/repositories -maxdepth 1 -type d | fzf)
+  cd $(cat <(echo ~/dotfiles) <(find ~/repositories -maxdepth 1 -type d) | sort | fzf)
+  # if this is missing, prompt shows old directory till another command runs
+  zle reset-prompt
 }
-
 zle -N __find_repos
 bindkey "^f" __find_repos
 

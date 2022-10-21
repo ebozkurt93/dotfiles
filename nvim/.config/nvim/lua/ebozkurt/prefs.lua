@@ -31,6 +31,10 @@ vim.opt.listchars:append({trail = '·'})
 vim.opt.listchars:append({extends = '…'})
 vim.opt.listchars:append({precedes = '…'})
 
+-- windows/splits
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+
 -- statusbar
 vim.opt.laststatus = 2
 vim.api.nvim_create_autocmd('User', {

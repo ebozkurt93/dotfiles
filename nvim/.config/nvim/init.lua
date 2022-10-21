@@ -16,6 +16,7 @@ require("ebozkurt.gitsigns")
 require("ebozkurt.neogit")
 require("ebozkurt.vim-gh-line")
 require("ebozkurt.lsp")
+require("ebozkurt.luasnip")
 require("ebozkurt.themes")
 require("ebozkurt.session")
 

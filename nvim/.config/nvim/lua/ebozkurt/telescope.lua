@@ -23,6 +23,12 @@ require('telescope').setup{
 	-- default sorters were `get_fzy_sorter`, however these feel better
 	file_sorter = require('telescope.sorters').get_fuzzy_file,
 	-- generic_sorter = require('telescope.sorters').get_generic_fuzzy_sorter,
+	file_ignore_patterns = {
+		'node_modules/',
+		'.git/',
+		'.git-crypt/',
+		'.idea/'
+	},
 	sorting_strategy = 'ascending',
 	layout_config = {
 		prompt_position = 'top',

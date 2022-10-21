@@ -150,6 +150,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/lualine.nvim",
     url = "https://github.com/nvim-lualine/lualine.nvim"
   },
+  neogit = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neogit",
+    url = "https://github.com/TimUntersberger/neogit"
+  },
   ["neovim-ayu"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neovim-ayu",
@@ -210,6 +215,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/possession.nvim",
     url = "https://github.com/jedrzejboczar/possession.nvim"
   },
+  ["rose-pine"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/rose-pine",
+    url = "https://github.com/rose-pine/neovim"
+  },
   ["telescope-file-browser.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/telescope-file-browser.nvim",
@@ -229,6 +239,16 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/tokyonight.nvim",
     url = "https://github.com/folke/tokyonight.nvim"
+  },
+  ["vim-fugitive"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-fugitive",
+    url = "https://github.com/tpope/vim-fugitive"
+  },
+  ["vim-gh-line"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-gh-line",
+    url = "https://github.com/ruanyl/vim-gh-line"
   },
   ["vim-surround"] = {
     loaded = true,
