@@ -10,4 +10,4 @@ neotest.setup({
   },
 })
 
-vim.api.nvim_exec_autocmds('User', {pattern = 'dap'})
+vim.api.nvim_exec_autocmds('User', {pattern = 'neotest'})
