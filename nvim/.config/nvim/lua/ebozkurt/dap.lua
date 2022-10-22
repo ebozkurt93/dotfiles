@@ -17,9 +17,10 @@ end
 
 require("dapui").setup()
 
--- language specific config
+-- language specific configurations
+--
 -- go install github.com/go-delve/delve/cmd/dlv@master
-require('dap-go').setup(vim.keymap.set('n', '<leader>td', function() require('dap-go').debug_test() end, {}))
+require('dap-go').setup()
 
 -- python -m venv ~/.local/share/virtualenvs/debugpy
 -- ~/.local/share/virtualenvs/debugpy/bin/python -m pip install debugpy
