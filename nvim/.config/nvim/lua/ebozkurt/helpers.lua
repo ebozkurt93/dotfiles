@@ -36,7 +36,7 @@ function M.live_grep_nvim_config()
 end
 
 -- Change tmux window title based on vim project
-group = vim.api.nvim_create_augroup('renameTmuxWindow', {clear = true})
+local group = vim.api.nvim_create_augroup('renameTmuxWindow', {clear = true})
 vim.api.nvim_create_autocmd('VimEnter', {
 	callback = function ()
 		local path = vim.fs.basename(vim.fn.getcwd())

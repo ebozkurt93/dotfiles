@@ -43,11 +43,9 @@ vnoremap <A-k> :m '<-2<CR>gv=gv
 -- vim.keymap.set('v', '<A-k>', "<cmd>m '<-2<cr>gv=gv", {noremap = true})
 
 
--- todo: find a better keybinding for this
 vim.keymap.set('n', '<C-z>', '<cmd>set invwrap<cr>', { noremap = true })
 
 -- window resizing
--- todo: not sure about these keymaps, go over these later
 vim.keymap.set('n', '<SA-h>', '<cmd>:vertical resize -1<cr>', { noremap = true })
 vim.keymap.set('n', '<SA-l>', '<cmd>:vertical resize +1<cr>', { noremap = true })
 vim.keymap.set('n', '<SA-j>', '<cmd>:resize +1<cr>', { noremap = true })
@@ -73,23 +71,12 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
--- probably not working as expected
-function center_after_command(operation)
-	if operation then
-		operation()
-	end
-	vim.schedule(function()
-		vim.cmd([[norm zz]])
-	end)
-end
-
 -- LSP
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'LspAttached',
 	desc = 'LSP actions',
 	callback = function()
-
-		-- todo: center screen after some of the commands
+		local bufopts = { noremap = true, silent = true, buffer = 0 }
 		vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
 		--vim.keymap.set('n', 'gd', center_after_command(vim.lsp.buf.definition), bufopts)
@@ -132,7 +119,6 @@ vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', { noremap = true })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'nvim-tree',
 	callback = function()
-		-- todo: not sure if should keep both, decide
 		local nt_api = require("nvim-tree.api")
 		vim.keymap.set('n', '<C-p>', function() nt_api.tree.toggle() end, { noremap = true })
 		vim.keymap.set('n', '<C-l>', function() nt_api.tree.toggle(true) end, { noremap = true })
@@ -150,6 +136,7 @@ vim.api.nvim_create_autocmd('User', {
 			require('possession.session').save(name)
 		end, { noremap = true })
 		vim.keymap.set('n', '<S-z>', function() require('ebozkurt.session').delete_session() end, { noremap = true })
+		vim.keymap.set('n', '<S-q>', function() require('ebozkurt.session').copy_session() end, { noremap = true })
 	end
 })
 
@@ -172,5 +159,29 @@ vim.api.nvim_create_autocmd('User', {
 				ls.change_choice(1)
 			end
 		end, { silent = true })
+	end
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'trouble',
+	callback = function()
+		vim.keymap.set("n", "<leader>xx", "<cmd>TroubleToggle<cr>",
+			{ silent = true, noremap = true }
+		)
+		vim.keymap.set("n", "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>",
+			{ silent = true, noremap = true }
+		)
+		vim.keymap.set("n", "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>",
+			{ silent = true, noremap = true }
+		)
+		vim.keymap.set("n", "<leader>xl", "<cmd>TroubleToggle loclist<cr>",
+			{ silent = true, noremap = true }
+		)
+		vim.keymap.set("n", "<leader>xq", "<cmd>TroubleToggle quickfix<cr>",
+			{ silent = true, noremap = true }
+		)
+		vim.keymap.set("n", "gR", "<cmd>TroubleToggle lsp_references<cr>",
+			{ silent = true, noremap = true }
+		)
 	end
 })

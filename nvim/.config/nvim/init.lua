@@ -9,7 +9,7 @@ require("ebozkurt.lualine")
 require("ebozkurt.nvim-tree")
 require("ebozkurt.comment")
 require("ebozkurt.harpoon")
--- todo: for some reason this fails on reload, investigate later
+-- fix: for some reason this fails on reload, investigate later
 -- require("ebozkurt.colorizer")
 require("ebozkurt.possession")
 require("ebozkurt.gitsigns")
@@ -17,6 +17,8 @@ require("ebozkurt.neogit")
 require("ebozkurt.vim-gh-line")
 require("ebozkurt.lsp")
 require("ebozkurt.luasnip")
+require("ebozkurt.trouble")
+-- require("ebozkurt.todo-comments")
 require("ebozkurt.themes")
 require("ebozkurt.session")
 
