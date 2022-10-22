@@ -185,3 +185,33 @@ vim.api.nvim_create_autocmd('User', {
 		)
 	end
 })
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'dap',
+	callback = function()
+		local dap = require('dap')
+		vim.keymap.set('n', '<F1>', function() dap.step_back() end, {})
+		vim.keymap.set('n', '<F2>', function() dap.step_into() end, {})
+		vim.keymap.set('n', '<F3>', function() dap.step_over() end, {})
+		vim.keymap.set('n', '<F4>', function() dap.step_out() end, {})
+		vim.keymap.set('n', '<F5>', function() dap.continue() end, {})
+		vim.keymap.set('n', '<leader>b', function() dap.toggle_breakpoint() end, {})
+		vim.keymap.set('n', '<leader>B', function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, {})
+		vim.keymap.set('n', '<leader>lp', function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, {})
+		vim.keymap.set('n', '<leader>dr', function() dap.repl.open() end, {})
+		vim.keymap.set('n', '<leader>dt', function() dapui.toggle() end, {})
+		vim.keymap.set('n', '<leader>df', function() require 'telescope'.extensions.dap.commands {} end, {})
+	end
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'neotest',
+	callback = function()
+		local neotest = require('neotest')
+		vim.keymap.set('n', '<leader>tr', function() neotest.run.run() end, {})
+		vim.keymap.set('n', '<leader>tR', function() neotest.run.run(vim.fn.expand("%")) end, {})
+		vim.keymap.set('n', '<leader>td', function() neotest.run.run({ strategy = "dap" }) end, {})
+		vim.keymap.set('n', '<leader>ts', function() neotest.run.stop() end, {})
+		-- vim.keymap.set('n', '<leader>ta', function() neotest.run.attach() end, {})
+	end
+})

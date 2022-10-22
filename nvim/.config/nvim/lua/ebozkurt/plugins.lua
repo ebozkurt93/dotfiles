@@ -56,8 +56,26 @@ packer.startup(function(use)
 
 	use { "folke/trouble.nvim", requires = "kyazdani42/nvim-web-devicons" }
 	use { "folke/which-key.nvim" }
-	-- Lua
+
 	use { "folke/todo-comments.nvim", requires = "nvim-lua/plenary.nvim" }
+
+	-- debugging
+	use 'mfussenegger/nvim-dap'
+	use { "rcarriga/nvim-dap-ui", requires = {"mfussenegger/nvim-dap"} }
+	use 'leoluz/nvim-dap-go'
+	use 'mfussenegger/nvim-dap-python'
+	use 'theHamsta/nvim-dap-virtual-text'
+	use 'nvim-telescope/telescope-dap.nvim'
+
+	use { "nvim-neotest/neotest",
+  requires = {
+    "nvim-lua/plenary.nvim",
+    "nvim-treesitter/nvim-treesitter",
+    "antoinemadec/FixCursorHold.nvim"
+  }
+}
+	use 'nvim-neotest/neotest-python'
+	use 'nvim-neotest/neotest-go'
 
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
