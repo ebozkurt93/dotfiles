@@ -8,7 +8,7 @@ vim.opt.modelines = 0
 vim.opt.belloff = 'all'
 vim.opt.swapfile = false
 vim.opt.modifiable = true
--- vim.opt.colorcolumn = {80, 120}
+vim.opt.colorcolumn = {80, 120}
 -- vim.opt.title = true
 -- vim.opt.titlestring='%{expand(\"%:p:h\")}'
 
