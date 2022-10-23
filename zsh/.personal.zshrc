@@ -80,7 +80,12 @@ function res {
 }
 
 function __find_repos {
-  cd $(cat <(echo ~/dotfiles) <(find ~/repositories -maxdepth 1 -type d) | sort | fzf)
+
+  local p=(~/repositories)
+  if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
+    p+=(~/personal-repositories)
+  fi
+  cd $(cat <(echo ~/dotfiles) <(find ${p[@]} -maxdepth 1 -type d) | sort | fzf)
   # if this is missing, prompt shows old directory till another command runs
   zle reset-prompt
 }
