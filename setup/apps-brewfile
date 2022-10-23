@@ -1,6 +1,6 @@
 # Development
 cask "docker"
-cask "iterm2"
+cask "kitty"
 cask "visual-studio-code"
 cask "sublime-merge"
 

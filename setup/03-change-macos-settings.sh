@@ -126,7 +126,7 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   "/Applications/Sublime Merge.app"
   "/Applications/Slack.app"
   "/Applications/SQLPro for Postgres.app"
-  "/Applications/iTerm.app"
+  "/Applications/kitty.app"
   "{'tile-type'='small-spacer-tile';}"
   "/Applications/Obsidian.app"
   "/Applications/MacPass.app"
