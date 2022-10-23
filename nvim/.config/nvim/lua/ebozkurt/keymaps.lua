@@ -190,6 +190,7 @@ vim.api.nvim_create_autocmd('User', {
 	pattern = 'dap',
 	callback = function()
 		local dap = require('dap')
+		local dapui = require('dapui')
 		vim.keymap.set('n', '<F1>', function() dap.step_back() end, {})
 		vim.keymap.set('n', '<F2>', function() dap.step_into() end, {})
 		vim.keymap.set('n', '<F3>', function() dap.step_over() end, {})
