@@ -1,5 +1,3 @@
-export CDPATH=$CDPATH:~/repositories
-
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/erdembozkurt/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/erdembozkurt/google-cloud-sdk/path.zsh.inc'; fi
 

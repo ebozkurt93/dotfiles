@@ -1,7 +1,3 @@
-export CDPATH=.:~/
-# this one is separated just for brevity
-export CDPATH=$CDPATH:~/personal-repositories
-
 # Functions
 function mcd
 {
