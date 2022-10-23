@@ -5,6 +5,9 @@
 
 vim.api.nvim_exec_autocmds('User', { pattern = 'LuaLineInitialized' })
 
+-- can be used for passing symbols in luasnip
+-- local s = require('lspsaga.symbolwinbar').get_symbol_node
+
 require('lualine').setup {
 	options = {
 		icons_enabled = true,
