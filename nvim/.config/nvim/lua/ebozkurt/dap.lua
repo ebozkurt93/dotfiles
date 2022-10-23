@@ -27,4 +27,4 @@ require('dap-go').setup()
 -- relative paths do not work, therefore this
 local exact_path = vim.fn.trim(vim.fn.system('cd ~/.local/share/virtualenvs/debugpy/bin/ && echo $PWD')) .. '/python'
 local dap_python = require('dap-python')
-dap_python.setup(exact_path, { pythonPath = require('ebozkurt.helpers').get_python_path(cwd) })
+dap_python.setup(exact_path, { pythonPath = require('ebozkurt.helpers').get_python_path(vim.fn.getcwd()) })
