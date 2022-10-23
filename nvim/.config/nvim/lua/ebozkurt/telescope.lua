@@ -45,6 +45,7 @@ require('telescope').setup{
   pickers = {
 	  find_files = picker_options,
 	  live_grep = picker_options,
+	  jumplist = vim.tbl_extend('force', picker_options, {fname_width = 70}),
     -- Default configuration for builtin pickers goes here:
     -- picker_name = {
     --   picker_config_key = value,

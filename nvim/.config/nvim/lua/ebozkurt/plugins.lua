@@ -46,7 +46,10 @@ packer.startup(function(use)
 			'nvim-tree/nvim-web-devicons', -- optional, for file icons
 		}, }
 	use { 'ThePrimeagen/harpoon', requires = { { 'nvim-lua/plenary.nvim' } } }
+
 	use 'NvChad/nvim-colorizer.lua'
+	use { "xiyaowong/virtcolumn.nvim", config = function() require("virt-column").setup() end }
+
 	use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
 	use 'tpope/vim-surround'
 	use 'lewis6991/gitsigns.nvim'
@@ -67,6 +70,7 @@ packer.startup(function(use)
 	use 'theHamsta/nvim-dap-virtual-text'
 	use 'nvim-telescope/telescope-dap.nvim'
 
+	-- testing
 	use { "nvim-neotest/neotest",
 		requires = {
 			"nvim-lua/plenary.nvim",
@@ -76,8 +80,6 @@ packer.startup(function(use)
 	}
 	use 'nvim-neotest/neotest-python'
 	use 'nvim-neotest/neotest-go'
-
-	use "xiyaowong/virtcolumn.nvim"
 
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
