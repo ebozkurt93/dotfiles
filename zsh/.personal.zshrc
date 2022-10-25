@@ -35,6 +35,14 @@ alias vim='nvim'
 alias viconf='(cd ~/dotfiles/nvim/.config/nvim && vi)'
 alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias sr='exec $SHELL'
+local function __state_switcher_toggle() {
+  local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
+  selected_state=$($p states | tr ' ' '\n' | sort | fzf)
+  if [[ ! -z $selected_state ]]; then
+    $p toggle $selected_state
+  fi
+}
+alias st="__state_switcher_toggle"
 
 # docker
 alias d='docker'

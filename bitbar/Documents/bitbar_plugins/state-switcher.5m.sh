@@ -7,6 +7,11 @@ function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
 }
 
+if [ "$1" = 'states' ]; then
+	  echo ${states[@]}
+	  exit
+fi
+
 if [ "$1" = 'toggle' ]; then
   file_path=`get_file_path $2`
   echo $file_path
@@ -14,9 +19,10 @@ if [ "$1" = 'toggle' ]; then
       test -f $file_path && rm $file_path || touch $file_path
     if [ "$3" != 'no-restart' ]; then
       # kill BitBar
-      ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill
+      ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
       # restart BitBar
       open -a /Applications/BitBar.app
+	  exit
     fi
   fi
 fi

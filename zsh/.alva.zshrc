@@ -57,5 +57,5 @@ function __reset_alva_pubsub_container {
 alias drs="__reset_alva_pubsub_container"
 
 function __run_plantuml_server {
-  docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
+  docker run -d -p 8180:8080 plantuml/plantuml-server:jetty
 }
