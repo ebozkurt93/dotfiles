@@ -13,6 +13,7 @@ saga.init_lsp_saga({
 	-- 	quit = "q",
 	-- 	exec = "<CR>",
 	-- },
+	finder_request_timeout = 10000,
 	code_action_icon = "",
 	code_action_lightbulb = {
 		enable = false,

@@ -30,10 +30,18 @@ require 'lspconfig'.pyright.setup {
 	--  },
 	before_init = function(_, config)
 		config.settings.python.pythonPath = require('ebozkurt.helpers').get_python_path(config.root_dir)
-
 	end,
 	on_attach = my_on_attach,
 }
+
+-- -- pip install python-lsp-server
+-- require 'lspconfig'.pylsp.setup {
+-- 	capabilities = capabilities,
+-- 	before_init = function(_, config)
+-- 		config.settings.python.pythonPath = require('ebozkurt.helpers').get_python_path(config.root_dir)
+-- 	end,
+-- 	on_attach = my_on_attach,
+-- }
 
 -- brew install lua-language-server
 require 'lspconfig'.sumneko_lua.setup {

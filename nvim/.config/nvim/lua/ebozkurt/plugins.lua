@@ -82,6 +82,8 @@ packer.startup(function(use)
 	use 'nvim-neotest/neotest-python'
 	use 'nvim-neotest/neotest-go'
 
+	use 'RRethy/vim-illuminate'
+
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
 	use 'Shatur/neovim-ayu'

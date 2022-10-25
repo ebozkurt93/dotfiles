@@ -23,6 +23,7 @@ fi
 alias cd..='cd ..'
 alias ..='cd ..'
 alias cd...='cd ../..'
+alias ch='cd ~'
 alias ...='cd ../..'
 alias ls='ls -G'
 alias l='ls -lF'
