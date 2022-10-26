@@ -22,6 +22,7 @@ require("ebozkurt.dap")
 require("ebozkurt.neotest")
 require("ebozkurt.illuminate")
 require("ebozkurt.todo-comments")
+require("ebozkurt.nvim-ts-rainbow")
 require("ebozkurt.themes")
 require("ebozkurt.session")
 

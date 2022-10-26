@@ -80,6 +80,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/Comment.nvim",
     url = "https://github.com/numToStr/Comment.nvim"
   },
+  ["FixCursorHold.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/FixCursorHold.nvim",
+    url = "https://github.com/antoinemadec/FixCursorHold.nvim"
+  },
   LuaSnip = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/LuaSnip",
@@ -145,6 +150,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/lspkind.nvim",
     url = "https://github.com/onsails/lspkind.nvim"
   },
+  ["lspsaga.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/lspsaga.nvim",
+    url = "https://github.com/glepnir/lspsaga.nvim"
+  },
   ["lualine.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/lualine.nvim",
@@ -154,6 +164,21 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neogit",
     url = "https://github.com/TimUntersberger/neogit"
+  },
+  neotest = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest",
+    url = "https://github.com/nvim-neotest/neotest"
+  },
+  ["neotest-go"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest-go",
+    url = "https://github.com/nvim-neotest/neotest-go"
+  },
+  ["neotest-python"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest-python",
+    url = "https://github.com/nvim-neotest/neotest-python"
   },
   ["neovim-ayu"] = {
     loaded = true,
@@ -169,6 +194,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-autopairs",
     url = "https://github.com/windwp/nvim-autopairs"
+  },
+  ["nvim-bqf"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-bqf",
+    url = "https://github.com/kevinhwang91/nvim-bqf"
   },
   ["nvim-cmp"] = {
     loaded = true,
@@ -290,10 +320,20 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-gh-line",
     url = "https://github.com/ruanyl/vim-gh-line"
   },
+  ["vim-illuminate"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-illuminate",
+    url = "https://github.com/RRethy/vim-illuminate"
+  },
   ["vim-surround"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-surround",
     url = "https://github.com/tpope/vim-surround"
+  },
+  ["virtcolumn.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/virtcolumn.nvim",
+    url = "https://github.com/xiyaowong/virtcolumn.nvim"
   },
   ["which-key.nvim"] = {
     loaded = true,

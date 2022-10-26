@@ -49,12 +49,12 @@ packer.startup(function(use)
 	use { 'ThePrimeagen/harpoon', requires = { { 'nvim-lua/plenary.nvim' } } }
 
 	use 'NvChad/nvim-colorizer.lua'
-	use { "xiyaowong/virtcolumn.nvim", config = function() require("virt-column").setup() end }
+	use "xiyaowong/virtcolumn.nvim"
 
 	use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
 	use 'tpope/vim-surround'
 	use 'lewis6991/gitsigns.nvim'
-	use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim' }
+	use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim', commit = '691cf89f59ed887809db7854b670cdb944dc9559' }
 	use 'tpope/vim-fugitive'
 	use 'ruanyl/vim-gh-line'
 
@@ -83,6 +83,9 @@ packer.startup(function(use)
 	use 'nvim-neotest/neotest-go'
 
 	use 'RRethy/vim-illuminate'
+	use 'p00f/nvim-ts-rainbow'
+
+	use {'kevinhwang91/nvim-bqf'}
 
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
