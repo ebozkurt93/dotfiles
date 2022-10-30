@@ -1,0 +1,107 @@
+command_timeout = 3000
+
+[[battery.display]]
+threshold = 30
+
+[git_metrics]
+disabled = false
+
+[gcloud]
+disabled = true
+
+[terraform]
+format = "[$symbol$version $workspace]($style) "
+
+# [custom.home]
+# command = "echo home" # shows output of command
+# when = """test "$HOME" = "$PWD" """
+# format = "[$output]($style)"
+
+[custom.gcloud]
+command = """ gcloud config list account --format "value(core.account)" | xargs echo """
+when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"
+format = "☁  [$output]($style)"
+
+[aws]
+symbol = "  "
+
+[buf]
+symbol = " "
+
+[c]
+symbol = " "
+
+[conda]
+symbol = " "
+
+[dart]
+symbol = " "
+
+[directory]
+read_only = " "
+
+[docker_context]
+symbol = " "
+
+[elixir]
+symbol = " "
+
+[elm]
+symbol = " "
+
+[git_branch]
+symbol = " "
+
+[golang]
+symbol = " "
+
+[haskell]
+symbol = " "
+
+[hg_branch]
+symbol = " "
+
+[java]
+symbol = " "
+
+[julia]
+symbol = " "
+
+[lua]
+symbol = " "
+
+[memory_usage]
+symbol = " "
+
+[meson]
+symbol = "喝 "
+
+[nim]
+symbol = " "
+
+[nix_shell]
+symbol = " "
+
+[nodejs]
+symbol = " "
+
+[package]
+symbol = " "
+
+[python]
+symbol = " "
+
+[rlang]
+symbol = "ﳒ "
+
+[ruby]
+symbol = " "
+
+[rust]
+symbol = " "
+
+[scala]
+symbol = " "
+
+[spack]
+symbol = "🅢 "

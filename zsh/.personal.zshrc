@@ -103,3 +103,4 @@ alias dev-go='res "*.go" go run .'
 function __get_pid_for_port() {
 	echo "$(lsof -i:$1 -t)"
 }
+eval "$(starship init zsh)"
