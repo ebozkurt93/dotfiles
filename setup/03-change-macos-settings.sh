@@ -10,11 +10,11 @@ fi
 
 # Custom binaries
 echo ""
-echo "Install custom binaries(mirror, rclone)?"
+echo "Install custom binaries(mirror)?"
 read -r response
 if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   ./install-mirror.sh || (echo "Installing mirror failed, exiting..." && exit)
-  ./install-rclone.sh || (echo "Installing rclone failed, exiting..." && exit)
+  # ./install-rclone.sh || (echo "Installing rclone failed, exiting..." && exit)
 fi
 
 # Keyboard
