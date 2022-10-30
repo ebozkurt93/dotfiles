@@ -18,6 +18,9 @@ if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
 	export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
   # fzf
   [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+  # zsh-autosuggestions
+  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  bindkey '^ ' autosuggest-accept
 fi
 
 # convenience aliases
