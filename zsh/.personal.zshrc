@@ -1,3 +1,4 @@
+export PATH=$PATH:~/Documents/binaries
 # Functions
 function mcd
 {
@@ -72,7 +73,6 @@ alias ffmpeg='docker run --rm -i -t -v $PWD:/tmp/workdir jrottenberg/ffmpeg'
 # alias ledger='docker run --rm -v "$PWD":/data dcycle/ledger:1'
 alias ledger='docker run --rm -v "/Users/erdembozkurt/personal-repositories/junk/ledger-data":/data dcycle/ledger:1'
 alias ldg='ledger -f /data/sample.dat'
-alias mirror='~/Documents/mirror'
 
 
 # temporary, refetch apartments 
