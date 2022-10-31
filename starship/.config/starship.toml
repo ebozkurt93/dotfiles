@@ -20,7 +20,7 @@ format = "[$symbol$version $workspace]($style) "
 [custom.enabled-states]
 command = "~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states"
 # when = """test "$HOME" = "$PWD" """
-when = "test ! -z $(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states)"
+when = "test ! -z \"$(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states)\""
 format = "✅ [$output]($style) "
 
 [custom.gcloud]

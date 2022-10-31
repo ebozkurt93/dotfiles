@@ -92,7 +92,9 @@ function __find_repos {
   if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
     p+=(~/personal-repositories)
   fi
-  cd $(cat <(echo ~/dotfiles) <(find ${p[@]} -maxdepth 1 -type d) | sort | fzf)
+  selected_dir="$(cat <(echo ~/dotfiles) <(find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
+  test -z $selected_dir && return
+  cd $selected_dir
   # if this is missing, prompt shows old directory till another command runs
   zle reset-prompt
 }
@@ -108,7 +110,10 @@ function __get_pid_for_port() {
 eval "$(starship init zsh)"
 
 function __change_theme() {
-  themes=('gruvbox-dark' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow' 'ayu-dark' 'ayu-light')
+  themes=(
+  'gruvbox-dark' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
+  'ayu-dark' 'ayu-light' 'everforest-dark'
+  )
   selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
   test -z $selected_theme && return
   echo Selected $selected_theme
