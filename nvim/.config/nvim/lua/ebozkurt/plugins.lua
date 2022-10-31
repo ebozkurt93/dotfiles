@@ -89,7 +89,7 @@ packer.startup(function(use)
 
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
-	use 'Shatur/neovim-ayu'
+	use 'ayu-theme/ayu-vim'
 	use 'shaunsingh/nord.nvim'
 	use 'folke/tokyonight.nvim'
 	use { "catppuccin/nvim", as = "catppuccin" }

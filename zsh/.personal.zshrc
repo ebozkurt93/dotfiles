@@ -47,6 +47,8 @@ local function __state_switcher_toggle() {
   fi
 }
 alias st="__state_switcher_toggle"
+zle -N __state_switcher_toggle
+bindkey "^[s" __state_switcher_toggle
 
 # docker
 alias d='docker'
