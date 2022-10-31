@@ -17,6 +17,12 @@ format = "[$symbol$version $workspace]($style) "
 # when = """test "$HOME" = "$PWD" """
 # format = "[$output]($style)"
 
+[custom.enabled-states]
+command = "~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states"
+# when = """test "$HOME" = "$PWD" """
+when = "test ! -z $(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states)"
+format = "✅ [$output]($style) "
+
 [custom.gcloud]
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """
 when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"

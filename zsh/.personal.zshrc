@@ -88,7 +88,6 @@ function res {
 }
 
 function __find_repos {
-
   local p=(~/repositories)
   if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
     p+=(~/personal-repositories)
@@ -107,3 +106,21 @@ function __get_pid_for_port() {
 	echo "$(lsof -i:$1 -t)"
 }
 eval "$(starship init zsh)"
+
+function __change_theme() {
+  themes=('gruvbox-dark' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow' 'ayu-dark' 'ayu-light')
+  selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
+  test -z $selected_theme && return
+  echo Selected $selected_theme
+  kitty_conf=~/.config/kitty
+  nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
+  cp $kitty_conf/themes/$selected_theme.conf $kitty_conf/current-theme.conf
+  sed -i '' "1s/.*/local selected_theme = \'$selected_theme\'/" $nvim_themefile
+  zle reset-prompt
+}
+
+zle -N __change_theme
+# alt t
+bindkey "^[t" __change_theme
+bindkey "^k" clear-screen
+

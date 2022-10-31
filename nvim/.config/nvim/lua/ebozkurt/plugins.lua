@@ -94,5 +94,6 @@ packer.startup(function(use)
 	use 'folke/tokyonight.nvim'
 	use { "catppuccin/nvim", as = "catppuccin" }
 	use { 'rose-pine/neovim', as = 'rose-pine' }
+	use 'kvrohit/mellow.nvim'
 end
 )

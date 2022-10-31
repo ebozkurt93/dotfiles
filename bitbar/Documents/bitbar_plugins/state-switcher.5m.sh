@@ -7,9 +7,19 @@ function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
 }
 
+if [ "$1" = 'enabled-states' ]; then
+  selected=''
+  for state in "${states[@]}"; do
+    file_path=`get_file_path $state`
+	test ! -f $file_path || selected="$selected $state"
+  done
+  echo $selected
+  exit
+fi
+
 if [ "$1" = 'states' ]; then
-	  echo ${states[@]}
-	  exit
+  echo ${states[@]}
+  exit
 fi
 
 if [ "$1" = 'toggle' ]; then

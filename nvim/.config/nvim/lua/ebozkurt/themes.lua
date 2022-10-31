@@ -1,9 +1,9 @@
--- gruvbox
-vim.opt.background='dark'
-vim.cmd [[ colorscheme gruvbox ]]
+local selected_theme = 'rose-pine-moon-dark'
 
--- ayu
--- vim.cmd [[ colorscheme ayu-mirage ]]
+-- default is also gruvbox
+-- gruvbox
+vim.opt.background = 'dark'
+vim.cmd [[ colorscheme gruvbox ]]
 
 -- nord
 -- vim.cmd [[ colorscheme nord ]]
@@ -16,8 +16,26 @@ vim.cmd [[ colorscheme gruvbox ]]
 -- require("catppuccin").setup()
 -- vim.api.nvim_command "colorscheme catppuccin"
 
--- rose-pine
-require('rose-pine').setup({
-	dark_variant = 'moon',
-})
-vim.cmd('colorscheme rose-pine')
+if selected_theme == 'mellow' then
+	vim.cmd [[colorscheme mellow]]
+elseif selected_theme == 'rose-pine-moon-dark' then
+	require('rose-pine').setup({
+		dark_variant = 'moon',
+	})
+	vim.cmd('colorscheme rose-pine')
+elseif selected_theme == 'rose-pine-dawn-light' then
+	vim.opt.background = 'light'
+	require('rose-pine').setup({
+		dark_variant = 'dawn',
+	})
+	vim.cmd('colorscheme rose-pine')
+elseif selected_theme == 'gruvbox-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme gruvbox ]]
+elseif selected_theme == 'ayu-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme ayu-dark ]]
+elseif selected_theme == 'ayu-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme ayu-light ]]
+end

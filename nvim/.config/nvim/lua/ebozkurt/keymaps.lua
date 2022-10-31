@@ -139,7 +139,7 @@ vim.api.nvim_create_autocmd('User', {
 			local name = path .. '-' .. date
 			require('possession.session').save(name)
 		end, { noremap = true })
-		vim.keymap.set('n', '<S-z>', function() require('ebozkurt.session').delete_session() end, { noremap = true })
+		vim.keymap.set('n', '<A-q>', function() require('ebozkurt.session').delete_session() end, { noremap = true })
 		vim.keymap.set('n', '<S-q>', function() require('ebozkurt.session').copy_session() end, { noremap = true })
 	end
 })
@@ -219,6 +219,6 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>ts', function() neotest.run.stop() end, {})
 		vim.keymap.set('n', '<leader>tt', function() neotest.summary.toggle() end, {})
 		vim.keymap.set('n', '<leader>to', function() neotest.output.open() end, {})
-		-- vim.keymap.set('n', '<leader>ta', function() neotest.run.attach() end, {})
+		vim.keymap.set('n', '<leader>ta', function() neotest.run.attach() end, {})
 	end
 })
