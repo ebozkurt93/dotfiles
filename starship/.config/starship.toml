@@ -26,7 +26,7 @@ format = "✅ [$output]($style) "
 [custom.gcloud]
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """
 when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"
-format = "☁️ [$output]($style)"
+format = "☁️ [$output]($style) "
 
 [aws]
 symbol = "  "
