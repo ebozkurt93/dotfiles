@@ -1,1 +1,2 @@
 \w+\.gitignore
+*-git.conf

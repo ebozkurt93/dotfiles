@@ -10,8 +10,4 @@
 
 # alva/work related settings
 [includeIf "gitdir:~/repositories/"]
-	[user]
-		email = erdem@alvalabs.io
-		name = Erdem Bozkurt
-	[core]
-		excludesfile = ~/dotfiles/git/alva.gitignore
+	path = ~/dotfiles/git/alva-git.conf
