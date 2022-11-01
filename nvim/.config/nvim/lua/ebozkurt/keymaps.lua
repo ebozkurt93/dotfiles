@@ -13,6 +13,7 @@ vim.keymap.set('n', '<leader>n', function()
 	vim.opt.relativenumber = not current
 end, { noremap = true })
 vim.keymap.set('n', '<leader>sv', '<cmd>lua ReloadConfig()<cr>', { noremap = true, silent = false })
+vim.keymap.set('n', '<leader>st', '<cmd>lua ReloadTheme()<cr>', { noremap = true, silent = false })
 
 -- center things after jump
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
