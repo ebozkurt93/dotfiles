@@ -41,10 +41,10 @@ alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias sr='exec $SHELL'
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
-  selected_state=$($p states | tr ' ' '\n' | sort | fzf)
-  if [[ ! -z $selected_state ]]; then
-    $p toggle $selected_state
-  fi
+  local selected_state=$($p states | tr ' ' '\n' | sort | fzf)
+  test -z $selected_state && return
+  $p toggle $selected_state
+  zle reset-prompt
 }
 alias st="__state_switcher_toggle"
 zle -N __state_switcher_toggle
@@ -112,11 +112,11 @@ function __get_pid_for_port() {
 eval "$(starship init zsh)"
 
 function __change_theme() {
-  themes=(
+  local themes=(
   'gruvbox-dark' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
   'ayu-dark' 'ayu-light' 'everforest-dark'
   )
-  selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
+  local selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
   test -z $selected_theme && return
   echo Selected $selected_theme
   kitty_conf=~/.config/kitty
