@@ -87,6 +87,8 @@ packer.startup(function(use)
 
 	use {'kevinhwang91/nvim-bqf'}
 
+	use("nathom/filetype.nvim")
+
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
 	use 'ayu-theme/ayu-vim'
