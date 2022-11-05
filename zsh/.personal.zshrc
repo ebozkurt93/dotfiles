@@ -15,6 +15,7 @@ if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
   # homebrew related settings
   # asdf
   . /opt/homebrew/opt/asdf/libexec/asdf.sh
+  . ~/.asdf/plugins/java/set-java-home.zsh
 	export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
   # fzf
   [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

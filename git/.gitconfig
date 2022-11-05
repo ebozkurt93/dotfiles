@@ -11,3 +11,6 @@
 # alva/work related settings
 [includeIf "gitdir:~/repositories/"]
 	path = ~/dotfiles/git/alva-git.conf
+
+[includeIf "gitdir:~/bemlo/"]
+	path = ~/dotfiles/git/bemlo-git.conf
