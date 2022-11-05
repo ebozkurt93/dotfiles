@@ -12,67 +12,69 @@ local picker_options = {
 	no_ignore = true,
 }
 
-require('telescope').setup{
-  defaults = {
-    -- Default configuration for telescope goes here:
-    -- config_key = value,
-	--prompt_prefix = ' >',
-	--file_previewer = require("telescope.previewers").vim_buffer_cat.new,
-	--grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
-	--qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
-	-- default sorters were `get_fzy_sorter`, however these feel better
-	file_sorter = require('telescope.sorters').get_fuzzy_file,
-	-- generic_sorter = require('telescope.sorters').get_generic_fuzzy_sorter,
-	file_ignore_patterns = {
-		'node_modules/',
-		'.git/',
-		'.git-crypt/',
-		'.idea/'
+require('telescope').setup {
+	defaults = {
+		-- Default configuration for telescope goes here:
+		-- config_key = value,
+		--prompt_prefix = ' >',
+		--file_previewer = require("telescope.previewers").vim_buffer_cat.new,
+		--grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
+		--qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
+		-- default sorters were `get_fzy_sorter`, however these feel better
+		file_sorter = require('telescope.sorters').get_fuzzy_file,
+		-- generic_sorter = require('telescope.sorters').get_generic_fuzzy_sorter,
+		file_ignore_patterns = {
+			'node_modules/',
+			'.git/',
+			'.git-crypt/',
+			'.idea/'
+		},
+		sorting_strategy = 'ascending',
+		layout_config = {
+			prompt_position = 'top',
+		},
+		color_devicons = false, -- sadly this doesn't help disable icons in find_files
+		wrap_results = true,
+		mappings = {
+			i = vim.tbl_extend('force', shared_keys, {
+				["<C-h>"] = "which_key",
+			}),
+			n = shared_keys
+		},
 	},
-	sorting_strategy = 'ascending',
-	layout_config = {
-		prompt_position = 'top',
+	pickers = {
+		find_files = picker_options,
+		live_grep = vim.tbl_extend('force', picker_options, { additional_args = function(opts)
+			return { "--hidden" }
+		end }),
+		jumplist = vim.tbl_extend('force', picker_options, { fname_width = 70 }),
+		-- Default configuration for builtin pickers goes here:
+		-- picker_name = {
+		--   picker_config_key = value,
+		--   ...
+		-- }
+		-- Now the picker_config_key will be applied every time you call this
+		-- builtin picker
 	},
-	color_devicons = false, -- sadly this doesn't help disable icons in find_files
-	wrap_results = true,
-    mappings = {
-      i = vim.tbl_extend('force', shared_keys, {
-        ["<C-h>"] = "which_key",
-	  }),
-      n = shared_keys
-    },
-  },
-  pickers = {
-	  find_files = picker_options,
-	  live_grep = picker_options,
-	  jumplist = vim.tbl_extend('force', picker_options, {fname_width = 70}),
-    -- Default configuration for builtin pickers goes here:
-    -- picker_name = {
-    --   picker_config_key = value,
-    --   ...
-    -- }
-    -- Now the picker_config_key will be applied every time you call this
-    -- builtin picker
-  },
-  extensions = {
-	  file_browser = {
-		  theme = 'ivy',
-		  hijack_netrw = true,
-		  mappings = {
-			  ['i'] = shared_keys,
-			  ['n'] = shared_keys,
-		  }
-	  },
-    -- Your extension configuration goes here:
-    -- extension_name = {
-    --   extension_config_key = value,
-    -- }
-    -- please take a look at the readme of the extension you want to configure
-  }
+	extensions = {
+		file_browser = {
+			theme = 'ivy',
+			hijack_netrw = true,
+			mappings = {
+				['i'] = shared_keys,
+				['n'] = shared_keys,
+			}
+		},
+		-- Your extension configuration goes here:
+		-- extension_name = {
+		--   extension_config_key = value,
+		-- }
+		-- please take a look at the readme of the extension you want to configure
+	}
 }
 
 require('telescope').load_extension('fzf')
 require('telescope').load_extension('file_browser')
 
-vim.api.nvim_exec_autocmds('User', {pattern = 'Telescope'})
-vim.api.nvim_exec_autocmds('User', {pattern = 'telescope+possession'})
+vim.api.nvim_exec_autocmds('User', { pattern = 'Telescope' })
+vim.api.nvim_exec_autocmds('User', { pattern = 'telescope+possession' })
