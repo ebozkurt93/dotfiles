@@ -25,6 +25,8 @@ format = "✅ [$output]($style) "
 
 [custom.gcloud]
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """
+# this works and it is the method that starship is using, but it is slow and inaccurate at times
+# command = """ cat ~/.config/gcloud/configurations/config_$(cat ~/.config/gcloud/active_config) | grep 'account =' | sed -e 's/account = //' """
 when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"
 format = "☁️ [$output]($style) "
 

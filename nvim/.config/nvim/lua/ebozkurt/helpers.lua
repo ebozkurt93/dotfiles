@@ -21,21 +21,21 @@ function M.live_grep_nvim_config()
 end
 
 -- Change tmux window title based on vim project
-local group = vim.api.nvim_create_augroup('renameTmuxWindow', {clear = true})
-vim.api.nvim_create_autocmd('VimEnter', {
-	callback = function ()
-		local path = vim.fs.basename(vim.fn.getcwd())
-		vim.fn.system('tmux setw automatic-rename off')
-		vim.fn.system('tmux rename-window ' .. path)
-	end,
-	group = group
-})
-vim.api.nvim_create_autocmd('VimLeave', {
-	callback = function ()
-		vim.fn.system('tmux setw automatic-rename on')
-	end,
-	group = group
-})
+-- local group = vim.api.nvim_create_augroup('renameTmuxWindow', {clear = true})
+-- vim.api.nvim_create_autocmd('VimEnter', {
+-- 	callback = function ()
+-- 		local path = vim.fs.basename(vim.fn.getcwd())
+-- 		vim.fn.system('tmux setw automatic-rename off')
+-- 		vim.fn.system('tmux rename-window ' .. path)
+-- 	end,
+-- 	group = group
+-- })
+-- vim.api.nvim_create_autocmd('VimLeave', {
+-- 	callback = function ()
+-- 		vim.fn.system('tmux setw automatic-rename on')
+-- 	end,
+-- 	group = group
+-- })
 function M.get_python_path(workspace)
 	local path = require('lspconfig/util').path
 	-- Use activated virtualenv.

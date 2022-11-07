@@ -1,7 +1,7 @@
 #!/bin/bash
 
 style="size=13"
-states=("work" "meeting" "holiday" "personal")
+states=("work" "meeting" "holiday" "personal" "bemlo")
 
 function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1

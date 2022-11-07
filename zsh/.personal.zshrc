@@ -95,6 +95,9 @@ function __find_repos {
   if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
     p+=(~/personal-repositories)
   fi
+  if [ -f ~/Documents/bitbar_plugins/tmp/bemlo ]; then
+    p+=(~/bemlo)
+  fi
   selected_dir="$(cat <(echo ~/dotfiles) <(find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
   test -z $selected_dir && return
   cd $selected_dir
