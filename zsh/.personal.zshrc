@@ -117,7 +117,7 @@ eval "$(starship init zsh)"
 
 function __change_theme() {
   local themes=(
-  'gruvbox-dark' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
+  'gruvbox-dark' 'gruvbox-light' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
   'ayu-dark' 'ayu-light' 'everforest-dark'
   )
   local selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)

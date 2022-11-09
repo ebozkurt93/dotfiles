@@ -30,4 +30,5 @@ cask "calendar-366"
 cask "contexts"
 cask "monitorcontrol"
 # cask "teamviewer"
+# do not install wireguard this way unless you want to use it from cli
 # cask "wireguard-tools"

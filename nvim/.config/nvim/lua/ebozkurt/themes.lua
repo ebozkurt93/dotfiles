@@ -32,6 +32,9 @@ elseif selected_theme == 'rose-pine-dawn-light' then
 elseif selected_theme == 'gruvbox-dark' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme gruvbox ]]
+elseif selected_theme == 'gruvbox-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme gruvbox ]]
 elseif selected_theme == 'ayu-dark' then
 	vim.cmd [[ 
 	let ayucolor="dark"  " for light version of theme
