@@ -52,9 +52,9 @@ alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && 
 alias pip-upgrade='pip install --upgrade pip'
 function __reset_alva_pubsub_container {
   docker ps -a | grep eu.gcr.io/alva-backend/pubsub:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f
-  docker ps -a | grep eu.gcr.io/alva-backend/firestore:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f
+  # docker ps -a | grep eu.gcr.io/alva-backend/firestore:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker stop | xargs docker rm -f
   docker run -d --restart always -p 8085:8085 eu.gcr.io/alva-backend/pubsub:latest
-  docker run -d --restart always -p 8080:8080 -p 4001:4000 -v firestore-data:/data eu.gcr.io/alva-backend/firestore:latest
+  # docker run -d --restart always -p 8080:8080 -p 4001:4000 -v firestore-data:/data eu.gcr.io/alva-backend/firestore:latest
 }
 alias drs="__reset_alva_pubsub_container"
 

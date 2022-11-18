@@ -54,9 +54,10 @@ packer.startup(function(use)
 	use { 'jedrzejboczar/possession.nvim', requires = { 'nvim-lua/plenary.nvim' } }
 	use 'tpope/vim-surround'
 	use 'lewis6991/gitsigns.nvim'
-	use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim', commit = '691cf89f59ed887809db7854b670cdb944dc9559' }
+	use { 'TimUntersberger/neogit', requires = 'nvim-lua/plenary.nvim' }
 	use 'tpope/vim-fugitive'
 	use 'ruanyl/vim-gh-line'
+	use { 'sindrets/diffview.nvim', requires = 'nvim-lua/plenary.nvim' }
 
 	use { "folke/trouble.nvim", requires = "kyazdani42/nvim-web-devicons" }
 	use { "folke/which-key.nvim" }
@@ -98,5 +99,7 @@ packer.startup(function(use)
 	use { 'rose-pine/neovim', as = 'rose-pine' }
 	use 'kvrohit/mellow.nvim'
 	use 'sainnhe/everforest'
+	-- use {'shaunsingh/oxocarbon.nvim', branch = 'fennel'}
+	use 'B4mbus/oxocarbon-lua.nvim'
 end
 )
