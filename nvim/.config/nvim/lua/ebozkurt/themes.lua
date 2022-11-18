@@ -56,4 +56,10 @@ elseif selected_theme == 'oxocarbon' then
 elseif selected_theme == 'tokyonight-storm' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme tokyonight-storm ]]
+elseif selected_theme == 'oh-lucy' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme oh-lucy ]]
+elseif selected_theme == 'oh-lucy-evening' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme oh-lucy-evening ]]
 end

@@ -101,5 +101,6 @@ packer.startup(function(use)
 	use 'sainnhe/everforest'
 	-- use {'shaunsingh/oxocarbon.nvim', branch = 'fennel'}
 	use 'B4mbus/oxocarbon-lua.nvim'
+	use 'Yazeed1s/oh-lucy.nvim'
 end
 )
