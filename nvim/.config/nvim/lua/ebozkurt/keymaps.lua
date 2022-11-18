@@ -52,6 +52,8 @@ vim.keymap.set('n', '<SA-l>', '<cmd>:vertical resize +1<cr>', { noremap = true }
 vim.keymap.set('n', '<SA-j>', '<cmd>:resize +1<cr>', { noremap = true })
 vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', { noremap = true })
 
+vim.keymap.set('n', '<leader><C-w>', '<cmd>WinShift<cr>', { noremap = true })
+
 --telescope
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'Telescope',

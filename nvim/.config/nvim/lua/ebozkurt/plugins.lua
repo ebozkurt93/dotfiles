@@ -65,6 +65,8 @@ packer.startup(function(use)
 
 	use { "folke/todo-comments.nvim", requires = "nvim-lua/plenary.nvim" }
 
+	use 'sindrets/winshift.nvim'
+
 	-- debugging
 	use 'mfussenegger/nvim-dap'
 	use { "rcarriga/nvim-dap-ui", requires = { "mfussenegger/nvim-dap" } }
