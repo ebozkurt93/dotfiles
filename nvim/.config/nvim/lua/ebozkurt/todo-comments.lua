@@ -14,20 +14,23 @@ require("todo-comments").setup {
 		note = { icon = " ", color = "hint", alt = { "info" } },
 		test = { icon = "⏲ ", color = "test", alt = { "testing", "passed", "failed" } },
 	},
-search = {
-    command = "rg",
-    args = {
-      "--color=never",
-      "--no-heading",
-      "--with-filename",
-      "--line-number",
-      "--column",
-	  "-i" -- case insensitive search
-    },
-    -- regex that will be used to match keywords.
-    -- don't replace the (KEYWORDS) placeholder
-    -- pattern = [[\b(KEYWORDS):]], -- ripgrep regex
-    pattern = [[\b(KEYWORDS)\b]], -- match without the extra colon. You'll likely get false positives
-  },
+	highlight = {
+		multiline_pattern = "^.",
+		pattern = { [[.*<(KEYWORDS)\s*:]], [[.*<(KEYWORDS)\s*\(.+\)\s*:]] }
+	},
+	search = {
+		command = "rg",
+		args = {
+			"--color=never",
+			"--no-heading",
+			"--with-filename",
+			"--line-number",
+			"--column",
+			"-i" -- case insensitive search
+		},
+		-- regex that will be used to match keywords.
+		-- don't replace the (KEYWORDS) placeholder
+		-- pattern = [[\b(KEYWORDS):]], -- ripgrep regex
+		pattern = [[\b(KEYWORDS)\b]], -- match without the extra colon. You'll likely get false positives
+	},
 }
-
