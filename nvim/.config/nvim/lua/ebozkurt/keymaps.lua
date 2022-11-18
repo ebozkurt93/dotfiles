@@ -98,6 +98,17 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'lsplines',
+	callback = function(event)
+		vim.keymap.set('n', '<leader>l', function()
+			local lsplines_enabled = event.data.enabled
+			vim.diagnostic.config({ virtual_lines = not lsplines_enabled, virtual_text = lsplines_enabled })
+			event.data.enabled = not event.data.enabled
+		end, {})
+	end
+})
+
 --harpoon
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'Harpoon',

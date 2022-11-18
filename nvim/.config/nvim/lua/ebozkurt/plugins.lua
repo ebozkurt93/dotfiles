@@ -36,6 +36,7 @@ packer.startup(function(use)
 	use 'onsails/lspkind.nvim'
 	use 'windwp/nvim-autopairs'
 	use({ "glepnir/lspsaga.nvim", branch = "main" })
+	use({ "https://git.sr.ht/~whynothugo/lsp_lines.nvim" })
 
 	use { 'numToStr/Comment.nvim', config = function() require('Comment').setup() end }
 	--use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}
@@ -86,7 +87,7 @@ packer.startup(function(use)
 	use 'RRethy/vim-illuminate'
 	use 'p00f/nvim-ts-rainbow'
 
-	use {'kevinhwang91/nvim-bqf'}
+	use { 'kevinhwang91/nvim-bqf' }
 
 	use("nathom/filetype.nvim")
 
