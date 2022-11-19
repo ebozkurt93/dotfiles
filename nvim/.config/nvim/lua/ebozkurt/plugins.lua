@@ -89,6 +89,7 @@ packer.startup(function(use)
 
 	use 'RRethy/vim-illuminate'
 	use 'p00f/nvim-ts-rainbow'
+	use 'mbbill/undotree'
 
 	use { 'kevinhwang91/nvim-bqf' }
 

@@ -12,6 +12,9 @@ vim.opt.colorcolumn = {80, 120}
 -- vim.opt.title = true
 -- vim.opt.titlestring='%{expand(\"%:p:h\")}'
 
+vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+vim.opt.undofile = true
+
 -- search
 vim.opt.ignorecase = true
 vim.opt.smartcase = true

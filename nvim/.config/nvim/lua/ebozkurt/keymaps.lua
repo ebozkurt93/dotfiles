@@ -63,6 +63,7 @@ vim.keymap.set('n', 'th', '<cmd>:-tabmove<cr>', { noremap = true })
 vim.keymap.set('n', 'tl', '<cmd>:+tabmove<cr>', { noremap = true })
 
 vim.keymap.set('n', '<leader>m', '<cmd>:TSContextToggle<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>u', '<cmd>:UndotreeShow<cr>', { noremap = true })
 
 --telescope
 vim.api.nvim_create_autocmd('User', {
