@@ -21,6 +21,7 @@ packer.startup(function(use)
 	use { 'nvim-treesitter/nvim-treesitter',
 		run = function() require('nvim-treesitter.install').update({ with_sync = true }) end, }
 	use { 'nvim-treesitter/playground' }
+	use 'nvim-treesitter/nvim-treesitter-context'
 
 	-- lsp and autocompletion
 	use 'neovim/nvim-lspconfig'
