@@ -54,6 +54,14 @@ vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', { noremap = true })
 
 vim.keymap.set('n', '<leader><C-w>', '<cmd>WinShift<cr>', { noremap = true })
 
+-- tabs
+vim.keymap.set('n', 'tc', '<cmd>:tabnew<cr>', { noremap = true })
+vim.keymap.set('n', 'ts', '<cmd>:tab split<cr>', { noremap = true })
+vim.keymap.set('n', 'tn', '<cmd>:tabnext<cr>', { noremap = true })
+vim.keymap.set('n', 'tp', '<cmd>:tabprev<cr>', { noremap = true })
+vim.keymap.set('n', 'th', '<cmd>:-tabmove<cr>', { noremap = true })
+vim.keymap.set('n', 'tl', '<cmd>:+tabmove<cr>', { noremap = true })
+
 --telescope
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'Telescope',

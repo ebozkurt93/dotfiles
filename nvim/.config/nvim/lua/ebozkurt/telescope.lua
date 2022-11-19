@@ -1,8 +1,10 @@
+local actions = require "telescope.actions"
 local action_layout = require "telescope.actions.layout"
 
 local shared_keys = {
 	["<C-p>"] = action_layout.toggle_preview,
 	["<C-o>"] = action_layout.toggle_mirror,
+	['<C-d>'] = actions.delete_buffer,
 }
 
 local picker_options = {
