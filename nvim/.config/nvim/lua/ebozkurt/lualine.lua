@@ -3,8 +3,6 @@
 -- Change the background of lualine_c section for normal mode
 --custom_gruvbox.normal.c.bg = '#112233'
 
-vim.api.nvim_exec_autocmds('User', { pattern = 'LuaLineInitialized' })
-
 -- can be used for passing symbols in luasnip
 -- local s = require('lspsaga.symbolwinbar').get_symbol_node
 
@@ -43,7 +41,21 @@ require('lualine').setup {
 		lualine_y = {},
 		lualine_z = {}
 	},
-	tabline = {},
+	tabline = {
+		lualine_a = {},
+		lualine_b = {},
+		lualine_c = {
+			{
+				'tabs',
+				max_length = vim.o.columns, -- Maximum width of tabs component.
+				component_separators = { left = '' },
+				mode = 1 -- 0: Shows tab_nr - 1: Shows tab_name - 2: Shows tab_nr + tab_name
+			},
+		},
+		lualine_x = {},
+		lualine_y = {},
+		lualine_z = {}
+	},
 	winbar = {
 		lualine_a = {},
 		lualine_b = {},
@@ -62,3 +74,5 @@ require('lualine').setup {
 	},
 	extensions = {}
 }
+
+vim.api.nvim_exec_autocmds('User', { pattern = 'LuaLineInitialized' })

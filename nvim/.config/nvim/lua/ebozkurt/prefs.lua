@@ -37,11 +37,26 @@ vim.opt.splitbelow = true
 
 -- statusbar
 vim.opt.laststatus = 2
+--vim.api.nvim_del_augroup_by_name('my_lualine')
+local group = vim.api.nvim_create_augroup('my_lualine', { clear = true })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'LuaLineInitialized',
 	callback = function()
 		vim.opt.showmode = false
-	end
+		-- For some reason lualine overrides showtabline setting globally, this is used to undo those changes
+		vim.api.nvim_create_autocmd('VimEnter', {
+			callback = function()
+				vim.opt.showtabline = 1
+			end,
+		})
+		vim.api.nvim_create_autocmd('User', {
+			pattern = 'ReloadConfig',
+			callback = function()
+				vim.opt.showtabline = 1
+			end,
+		})
+	end,
+	group = group
 })
 
 vim.opt.signcolumn = 'auto'

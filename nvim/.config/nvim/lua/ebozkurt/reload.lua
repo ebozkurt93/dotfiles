@@ -6,6 +6,7 @@ function _G.ReloadConfig()
 	end
 
 	dofile(vim.env.MYVIMRC)
+	vim.api.nvim_exec_autocmds('User', { pattern = 'ReloadConfig' })
 	vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
 end
 
