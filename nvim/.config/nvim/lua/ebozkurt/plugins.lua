@@ -94,6 +94,7 @@ packer.startup(function(use)
 	use { 'kevinhwang91/nvim-bqf' }
 
 	use("nathom/filetype.nvim")
+	use 'dbeniamine/cheat.sh-vim'
 
 	-- themes
 	use 'ellisonleao/gruvbox.nvim'
