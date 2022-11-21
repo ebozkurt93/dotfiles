@@ -1,4 +1,4 @@
-export PATH=$PATH:~/Documents/binaries
+export PATH=$PATH:~/bin
 # Functions
 function mcd
 {

@@ -6,7 +6,7 @@ echo "4a1a3fdcfd575e328785cb4d09f88998fe2c3b1b0f07e77252ca28ca002be687  rclone.z
 
 unzip rclone.zip -d rclone
 
-cp rclone/rclone-$version-$os_conf/rclone ~/Documents/binaries
+cp rclone/rclone-$version-$os_conf/rclone ~/bin
 rm -rf rclone
 rm rclone.zip
 

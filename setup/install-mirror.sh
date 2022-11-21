@@ -4,7 +4,7 @@ echo "3a44b1e65fdbcd15ba93ec1a1af97e205c8d274cb0272a40940add9f62853e2f  mirror.z
 
 unzip mirror.zip -d mirror
 
-cp mirror/mirror ~/Documents/binaries
+cp mirror/mirror ~/bin
 rm -rf mirror
 rm mirror.zip
 
