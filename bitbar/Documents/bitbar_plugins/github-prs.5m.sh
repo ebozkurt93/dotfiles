@@ -42,6 +42,11 @@ fi
 content=$(cat $prs_file | jq -s 'add' | jq -r unique_by\(.id\) | jq -r sort_by\(.updatedAt\))
 length="$(echo $content | jq -r length)"
 
+if [ "$1" = 'count' ]; then
+  echo $length
+  exit
+fi
+
 pr_names=$(echo $content | jq -r '.[] | "\(.headRepository.name)#\(.number)"')
 pr_titles=$(echo $content | jq -r '.[] | "\(.title)"')
 authors=$(echo $content | jq -r '.[] | "\(.author.login)"')
