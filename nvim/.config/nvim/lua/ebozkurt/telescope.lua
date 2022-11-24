@@ -2,9 +2,10 @@ local actions = require "telescope.actions"
 local action_layout = require "telescope.actions.layout"
 
 local shared_keys = {
-	["<C-p>"] = action_layout.toggle_preview,
-	["<C-o>"] = action_layout.toggle_mirror,
+	['<C-p>'] = action_layout.toggle_preview,
+	['<C-o>'] = action_layout.toggle_mirror,
 	['<C-d>'] = actions.delete_buffer,
+	['<C-f>'] = actions.to_fuzzy_refine
 }
 
 local picker_options = {
