@@ -7,6 +7,7 @@ style="size=13"
 
 queries=(
 "org:alvalabs is:open archived:false involves:@me"
+"org:alvalabs is:open archived:false team-review-requested:alvalabs/assessment"
 # "org:alvalabs is:open archived:false author:@me"
 # "org:alvalabs is:open archived:false commenter:@me"
 # "org:alvalabs is:open archived:false review-requested:@me"

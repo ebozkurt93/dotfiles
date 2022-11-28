@@ -45,10 +45,26 @@ export PATH=/Applications/Postgres.app/Contents/Versions/10/bin:$PATH
 
 alias pycharm='open -a /Applications/PyCharm.app'
 # get schema and run frontend
-alias frr='yarn run get-schema-local; yarn run generate-typescript-types; yarn run start'
+function fr {
+	typeset -A repos
+	local repos=(
+		['admin']='yarn run get-schema-local; yarn run generate-typescript-types; yarn run start'
+		['alva-app']='yarn run get-schema-local; yarn run generate-typescript-types; yarn run start'
+		['apollo-federation-gateway']='yarn start:dev'
+		['logic-test-management-gui']='yarn --cwd frontend start'
+		['personality-test-management']='yarn --cwd frontend start'
+)
+	b="$(basename $PWD)"
+	if [[ ! -z $repos[$b] ]]; then
+		eval " $repos[$b]"
+	else
+		yarn run start
+	fi
+}
 # run alva-app using staging as backend
-alias sfrr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
+alias sfr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
 
+alias pr='pipenv run python run.py'
 alias pip-upgrade='pip install --upgrade pip'
 function __reset_alva_pubsub_container {
   docker ps -a | grep eu.gcr.io/alva-backend/pubsub:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f
