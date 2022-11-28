@@ -3,12 +3,6 @@
 source ~/.zprofile
 ~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
 
-echo "repos| dropdown=true size=13"
-echo "---"
-echo "🐘🐳 | bash=\"$0\" param1=start-pg-d terminal=false size=13"
-echo "🔪🐘🐳 | bash=\"$0\" param1=kill-pg-d terminal=false size=13"
-echo "---"
-
 if [ "$1" = 'run' ]; then
   C=$(find $2 -type f -name "*.go"| wc -l)
   if ((C > 0)); then
@@ -65,6 +59,12 @@ if [ "$1" = 'kill-pg-d' ]; then
   pkill postgres
   exit
 fi
+
+echo "repos| dropdown=true size=13"
+echo "---"
+echo "🐘🐳 | bash=\"$0\" param1=start-pg-d terminal=false size=13"
+echo "🔪🐘🐳 | bash=\"$0\" param1=kill-pg-d terminal=false size=13"
+echo "---"
 
 cat ~/Documents/bitbar_plugins/tmp/repos.txt | while read line 
 do
