@@ -10,7 +10,7 @@ if [[ $session_name != "alva" ]]; then
 fi
 tmux new-window -c "$HOME/repositories/setup-scripts"
 p1=$(tmux display-message -p "#{pane_id}")
-tmux split-window -h -c "$HOME/repositories/apollo-federation-gateway"
+tmux split-window -h -p 30 -c "$HOME/repositories/apollo-federation-gateway"
 p2=$(tmux display-message -p "#{pane_id}")
 tmux split-window -v -p 66 -c "$HOME/repositories/alva-app"
 p3=$(tmux display-message -p "#{pane_id}")
