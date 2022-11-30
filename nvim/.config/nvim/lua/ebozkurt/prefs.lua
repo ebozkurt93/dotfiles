@@ -14,6 +14,8 @@ vim.opt.colorcolumn = {80, 120}
 
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 vim.opt.undofile = true
+vim.opt.backup = true
+vim.opt.backupdir = os.getenv("HOME") .. "/.vim/backups"
 
 -- search
 vim.opt.ignorecase = true
