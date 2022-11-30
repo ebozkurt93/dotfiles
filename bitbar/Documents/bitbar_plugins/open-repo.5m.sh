@@ -53,10 +53,12 @@ if [ "$1" = 'start-pg-d' ]; then
 fi
 
 if [ "$1" = 'kill-pg-d' ]; then
-  osascript -e 'quit app "Docker"'
-  osascript -e 'quit app "Postgres"'
-  osascript -e 'quit app "postgresmenuhelper"'
-  pkill postgres
+  { osascript -e 'quit app "Docker"'; } &
+  { 
+	  osascript -e 'quit app "Postgres"';
+	  osascript -e 'quit app "postgresmenuhelper"';
+	  pkill postgres;
+  } &
   exit
 fi
 
