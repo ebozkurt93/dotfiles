@@ -125,6 +125,35 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'gitsigns',
+	callback = function(event)
+		vim.keymap.set('n', '<leader>g', function()
+			local default_branch = vim.fn.trim(vim.fn.system(
+				"git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'"
+			))
+			local current_branch = vim.fn.trim(vim.fn.system(
+				"git rev-parse --abbrev-ref HEAD"
+			))
+			local common_ancestor = vim.fn.trim(vim.fn.system(
+				"git merge-base " .. default_branch .. " " .. current_branch
+			))
+			local value = event.data.value
+			if value == 0 then
+				require('gitsigns').change_base(common_ancestor, true)
+				print('Changed gitsigns base to common ancestor node ' .. common_ancestor)
+			elseif value == 1 then
+				require('gitsigns').change_base(default_branch, true)
+				print('Changed gitsigns base to ' .. default_branch)
+			else
+				require('gitsigns').change_base(nil, true)
+				print('Resetted gitsigns base')
+			end
+			event.data.value = (event.data.value + 1) % 3
+		end, {})
+	end
+})
+
 --harpoon
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'Harpoon',
