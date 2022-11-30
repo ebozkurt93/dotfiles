@@ -18,7 +18,7 @@ tmux split-window -v -p 50 -c "$HOME/repositories/admin"
 p4=$(tmux display-message -p "#{pane_id}")
 
 tmux send-keys -t $p1 './run_services.sh' C-m
-sleep 7
+sleep 10
 tmux send-keys -t $p2 'fr' C-m
 sleep 10
 tmux send-keys -t $p3 'fr' C-m
