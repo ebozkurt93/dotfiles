@@ -13,7 +13,8 @@ require("mason-lspconfig").setup_handlers {
 	-- and will be called for each installed server that doesn't have
 	-- a dedicated handler.
 	function(server_name) -- default handler (optional)
-		if server_name == 'tsserver' or server_name == 'eslint' then
+		local custom_configured_servers = { 'tsserver', 'eslint' }
+		if vim.tbl_contains(custom_configured_servers, server_name) then
 			return
 		end
 		require("lspconfig")[server_name].setup {
