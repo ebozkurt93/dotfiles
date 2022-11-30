@@ -36,6 +36,7 @@ packer.startup(function(use)
 	use 'nvim-lua/completion-nvim'
 	use 'onsails/lspkind.nvim'
 	use 'windwp/nvim-autopairs'
+	use 'windwp/nvim-ts-autotag'
 	use({ "glepnir/lspsaga.nvim", branch = "main" })
 	use({ "https://git.sr.ht/~whynothugo/lsp_lines.nvim" })
 	use { "williamboman/mason.nvim" }
