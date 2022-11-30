@@ -38,6 +38,5 @@ null_ls.setup({
 		null_ls.builtins.formatting.terraform_fmt,
 		-- sh
 		null_ls.builtins.hover.printenv,
-		null_ls.builtins.diagnostics.pylint,
 	}
 })
