@@ -13,6 +13,9 @@ require("mason-lspconfig").setup_handlers {
 	-- and will be called for each installed server that doesn't have
 	-- a dedicated handler.
 	function(server_name) -- default handler (optional)
+		if server_name == 'tsserver' or server_name == 'eslint' then
+			return
+		end
 		require("lspconfig")[server_name].setup {
 			capabilities = capabilities,
 			on_attach = my_on_attach,
@@ -28,7 +31,7 @@ require("mason-lspconfig").setup_handlers {
 require 'lspconfig'.tsserver.setup {
 	capabilities = capabilities,
 	on_attach = my_on_attach,
-	filetypes = { "javascript", "typescript", "typescriptreact", "typescript.tsx" },
+	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "typescript.tsx" },
 	root_dir = function() return vim.loop.cwd() end
 }
 -- go install golang.org/x/tools/gopls@latest
@@ -76,7 +79,7 @@ require 'lspconfig'.sumneko_lua.setup {
 	settings = { Lua = { diagnostics = { globals = { 'vim', 'exepath' } } } }
 }
 
-require 'lspconfig'.eslint.setup {}
+-- require 'lspconfig'.eslint.setup {}
 
 -- Set up nvim-cmp.
 local cmp = require 'cmp'
