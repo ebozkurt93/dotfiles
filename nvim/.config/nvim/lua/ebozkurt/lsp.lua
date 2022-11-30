@@ -1,10 +1,36 @@
+-- Set up mason
+require("mason").setup()
+require("mason-lspconfig").setup()
+
 -- Set up lspconfig.
 local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 --local bufopts = { noremap = true, silent = true, buffer = 0 }
 local my_on_attach = function()
 	vim.api.nvim_exec_autocmds('User', { pattern = 'LspAttached' })
 end
+require("mason-lspconfig").setup_handlers {
+	-- The first entry (without a key) will be the default handler
+	-- and will be called for each installed server that doesn't have
+	-- a dedicated handler.
+	function(server_name) -- default handler (optional)
+		require("lspconfig")[server_name].setup {
+			capabilities = capabilities,
+			on_attach = my_on_attach,
+		}
+	end,
+	-- Next, you can provide a dedicated handler for specific servers.
+	-- For example, a handler override for the `rust_analyzer`:
+	-- ["rust_analyzer"] = function()
+	-- 	require("rust-tools").setup {}
+	-- end
+}
 
+require 'lspconfig'.tsserver.setup {
+	capabilities = capabilities,
+	on_attach = my_on_attach,
+	filetypes = { "javascript", "typescript", "typescriptreact", "typescript.tsx" },
+	root_dir = function() return vim.loop.cwd() end
+}
 -- go install golang.org/x/tools/gopls@latest
 require 'lspconfig'.gopls.setup {
 	capabilities = capabilities,
@@ -14,7 +40,6 @@ require 'lspconfig'.gopls.setup {
 -- local util = require('lspconfig/util')
 -- local path = util.path
 local path = require('lspconfig/util').path
-
 
 -- npm install -g pyright
 require 'lspconfig'.pyright.setup {
@@ -51,6 +76,7 @@ require 'lspconfig'.sumneko_lua.setup {
 	settings = { Lua = { diagnostics = { globals = { 'vim', 'exepath' } } } }
 }
 
+require 'lspconfig'.eslint.setup {}
 
 -- Set up nvim-cmp.
 local cmp = require 'cmp'

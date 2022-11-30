@@ -38,6 +38,9 @@ packer.startup(function(use)
 	use 'windwp/nvim-autopairs'
 	use({ "glepnir/lspsaga.nvim", branch = "main" })
 	use({ "https://git.sr.ht/~whynothugo/lsp_lines.nvim" })
+	use { "williamboman/mason.nvim" }
+	use { "williamboman/mason-lspconfig.nvim" }
+	use { "jose-elias-alvarez/null-ls.nvim", requires = "nvim-lua/plenary.nvim" }
 
 	use { 'numToStr/Comment.nvim', config = function() require('Comment').setup() end }
 	--use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}

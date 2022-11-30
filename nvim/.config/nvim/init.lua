@@ -27,6 +27,7 @@ require("ebozkurt.todo-comments")
 require("ebozkurt.nvim-ts-rainbow")
 require("ebozkurt.filetype")
 require("ebozkurt.cheatsh-vim")
+require("ebozkurt.null-ls")
 require("ebozkurt.themes")
 require("ebozkurt.session")
 
