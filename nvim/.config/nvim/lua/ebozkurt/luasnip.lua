@@ -1,21 +1,21 @@
 local ls = require("luasnip")
 local s = ls.snippet
-local sn = ls.snippet_node
-local isn = ls.indent_snippet_node
+-- local sn = ls.snippet_node
+-- local isn = ls.indent_snippet_node
 local t = ls.text_node
 local i = ls.insert_node
 local f = ls.function_node
-local c = ls.choice_node
-local d = ls.dynamic_node
-local r = ls.restore_node
-local events = require("luasnip.util.events")
-local ai = require("luasnip.nodes.absolute_indexer")
+-- local c = ls.choice_node
+-- local d = ls.dynamic_node
+-- local r = ls.restore_node
+-- local events = require("luasnip.util.events")
+-- local ai = require("luasnip.nodes.absolute_indexer")
 local fmt = require("luasnip.extras.fmt").fmt
-local extras = require("luasnip.extras")
-local m = extras.m
-local l = extras.l
-local rep = extras.rep
-local postfix = require("luasnip.extras.postfix").postfix
+-- local extras = require("luasnip.extras")
+-- local m = extras.m
+-- local l = extras.l
+-- local rep = extras.rep
+-- local postfix = require("luasnip.extras.postfix").postfix
 
 ls.config.set_config {
 	history = true,
@@ -31,7 +31,7 @@ ls.config.set_config {
 	-- },
 }
 
-vim.api.nvim_exec_autocmds('User', {pattern = 'luasnip'})
+vim.api.nvim_exec_autocmds('User', { pattern = 'luasnip' })
 
 ls.add_snippets('all', {
 	s("trig", { i(1), t "text", i(2), t "text again", i(3) }),
@@ -48,6 +48,7 @@ ls.add_snippets('lua', {
 	})),
 })
 local function copy(args) return args[1] end
+
 ls.add_snippets('python', {
 	s("pr", fmt("print({})", { i(1) })),
 	s("pd", fmt("print('Debug - {}:', {})", { f(copy, 1), i(1) })),
