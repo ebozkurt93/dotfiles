@@ -8,15 +8,17 @@ if [[ $session_name != "alva" ]]; then
 	echo Invalid session name $session_name, exiting...
 	exit
 fi
+function get_current_pane_id {
+	echo $(tmux display-message -p "#{pane_id}")
+}
 tmux new-window -c "$HOME/repositories/setup-scripts"
-p1=$(tmux display-message -p "#{pane_id}")
+p1=$(get_current_pane_id)
 tmux split-window -h -p 30 -c "$HOME/repositories/apollo-federation-gateway"
-p2=$(tmux display-message -p "#{pane_id}")
+p2=$(get_current_pane_id)
 tmux split-window -v -p 66 -c "$HOME/repositories/alva-app"
-p3=$(tmux display-message -p "#{pane_id}")
+p3=$(get_current_pane_id)
 tmux split-window -v -p 50 -c "$HOME/repositories/admin"
-p4=$(tmux display-message -p "#{pane_id}")
-
+p4=$(get_current_pane_id)
 tmux send-keys -t $p1 './run_services.sh' C-m
 sleep 10
 tmux send-keys -t $p2 'fr' C-m
