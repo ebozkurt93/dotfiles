@@ -9,6 +9,7 @@ neotest.setup({
 	  args = {'-s'},
     }),
     require("neotest-go")({}),
+	require("neotest-jest")({}),
   },
 })
 

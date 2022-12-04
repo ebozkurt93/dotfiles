@@ -90,6 +90,7 @@ packer.startup(function(use)
 	}
 	use 'nvim-neotest/neotest-python'
 	use 'nvim-neotest/neotest-go'
+	use 'haydenmeade/neotest-jest'
 
 	use 'RRethy/vim-illuminate'
 	use 'p00f/nvim-ts-rainbow'
