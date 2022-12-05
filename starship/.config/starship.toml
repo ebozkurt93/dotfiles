@@ -17,6 +17,11 @@ format = "[$symbol$version $workspace]($style) "
 # when = """test "$HOME" = "$PWD" """
 # format = "[$output]($style)"
 
+[custom.pipenv-version]
+command = """ pipenv run python -V | sed -e 's/Python /| pipenv v/' """
+when = "test -f Pipfile && [[ ! -v PIPENV_ACTIVE ]]"
+format = "[$output](yellow bold) "
+
 [custom.enabled-states]
 command = "~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states"
 # when = """test "$HOME" = "$PWD" """
