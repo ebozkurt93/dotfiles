@@ -118,7 +118,7 @@ function __get_pid_for_port() {
 }
 eval "$(starship init zsh)"
 
-function __change_theme() {
+function __theme_helper() {
   local themes=(
   'gruvbox-dark' 'gruvbox-light' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
   'ayu-dark' 'ayu-light' 'everforest-dark' 'oxocarbon' 'tokyonight-storm'
@@ -129,20 +129,72 @@ function __change_theme() {
   local custom_kitty_themes=(
     [oxocarbon]='carbonfox'
   )
-  local selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
-  test -z $selected_theme && return
-  local kitty_theme=$selected_theme
-  if [[ ! -z $custom_kitty_themes[$selected_theme] ]]; then
-	  kitty_theme=$custom_kitty_themes[$selected_theme]
+  local kitty_conf=~/.config/kitty
+  local nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
+  local current_kitty_theme_contents=$(cat "$kitty_conf/current-theme.conf")
+  local nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
+  if [[ "$1" == "get_themes" ]]; then
+	echo $themes
+	return
   fi
-  echo Selected $selected_theme
-  kitty_conf=~/.config/kitty
-  nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
-  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
-  sed -i '' "1s/.*/local selected_theme = \'$selected_theme\'/" $nvim_themefile
-  nvim_remote_exec "<cmd>lua ReloadTheme()<cr>"
-  # SIGUSR1 reloads kitty config
-  pgrep kitty | xargs kill -SIGUSR1
+  if [[ "$1" == "get_custom_kitty_theme" ]]; then
+	local kitty_theme="$2"
+	if [[ ! -z $custom_kitty_themes[$2] ]]; then
+		kitty_theme=$custom_kitty_themes[$2]
+	fi
+	echo $kitty_theme
+	return
+  fi
+  if [[ "$1" == "current_nvim_theme" ]]; then
+	current_nvim_theme=$(cat $nvim_themefile | head -n 1 | awk '{print $4}' | sed -e 's/^.//' -e 's/.$//')
+	echo $current_nvim_theme
+	return
+  fi
+  if [[ "$1" == "current_kitty_theme_contents" ]]; then
+	echo $current_kitty_theme_contents
+	return
+  fi
+  if [[ "$1" == "find_kitty_theme_name" ]]; then
+	local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
+	local theme_name=$(cat $kitty_conf/themes/$kitty_theme_filename.conf | grep name: | sed -e "s/## name: //")
+	if [[ -z "$theme_name" ]]; then
+	  # for some reason some first letters of some themes are capitalized
+	  if ! kitty +kitten themes --dump-theme "$kitty_theme_filename" > /dev/null 2>&1; then
+		  echo "$kitty_theme_filename" | perl -nE 'say ucfirst'
+		  return
+	  fi
+	  echo "$2"
+	  return
+	fi
+    echo $theme_name
+    return
+  fi
+  if [[ "$1" == "set_kitty_theme" ]]; then
+	local kitty_theme=$(__theme_helper get_custom_kitty_theme $2)
+	cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
+	# SIGUSR1 reloads kitty config
+	pgrep kitty | xargs kill -SIGUSR1
+	return
+  fi
+  if [[ "$1" == "preview_theme" ]]; then
+	local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
+	local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
+	kitty +kitten themes "$kitty_theme"
+	return
+  fi
+  if [[ "$1" == "set_nvim_theme" ]]; then
+	sed -i '' "1s/.*/local selected_theme = \'$2\'/" $nvim_themefile
+	nvim_remote_exec "<cmd>lua ReloadTheme()<cr>"
+	return
+  fi
+}
+
+function __change_theme() {
+  local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | sort | \
+	  fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
+  test -z $selected_theme && return
+  __theme_helper set_kitty_theme $selected_theme
+  __theme_helper set_nvim_theme $selected_theme
   zle reset-prompt
 }
 
