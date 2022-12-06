@@ -150,10 +150,6 @@ function __theme_helper() {
 	echo $current_nvim_theme
 	return
   fi
-  if [[ "$1" == "current_kitty_theme_contents" ]]; then
-	echo $current_kitty_theme_contents
-	return
-  fi
   if [[ "$1" == "find_kitty_theme_name" ]]; then
 	local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
 	local theme_name=$(cat $kitty_conf/themes/$kitty_theme_filename.conf | grep name: | sed -e "s/## name: //")
@@ -180,6 +176,7 @@ function __theme_helper() {
 	local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
 	local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
 	kitty +kitten themes "$kitty_theme"
+	__theme_helper set_nvim_theme $2
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
@@ -190,11 +187,16 @@ function __theme_helper() {
 }
 
 function __change_theme() {
+  current_nvim_theme=$(__theme_helper current_nvim_theme)
   local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | sort | \
 	  fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
-  test -z $selected_theme && return
-  __theme_helper set_kitty_theme $selected_theme
-  __theme_helper set_nvim_theme $selected_theme
+  if [[ -z $selected_theme ]]; then
+	__theme_helper set_kitty_theme $current_nvim_theme
+	__theme_helper set_nvim_theme $current_nvim_theme
+  else
+	__theme_helper set_kitty_theme $selected_theme
+	__theme_helper set_nvim_theme $selected_theme
+  fi
   zle reset-prompt
 }
 
