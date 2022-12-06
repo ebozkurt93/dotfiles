@@ -1,12 +1,16 @@
 #!/bin/bash
 if [[ $TERM_PROGRAM != "tmux" ]]; then
 	echo Tmux is not active, exiting...
-	exit
+	exit 1
 fi
 session_name=$(tmux display-message -p "#S")
 if [[ $session_name != "alva" ]]; then
 	echo Invalid session name $session_name, exiting...
-	exit
+	exit 1
+fi
+if ! docker info > /dev/null 2>&1; then
+	echo Docker is not running, exiting...
+	exit 1
 fi
 function get_current_pane_id {
 	echo $(tmux display-message -p "#{pane_id}")
@@ -20,7 +24,7 @@ p3=$(get_current_pane_id)
 tmux split-window -v -p 50 -c "$HOME/repositories/admin"
 p4=$(get_current_pane_id)
 tmux send-keys -t $p1 './run_services.sh' C-m
-sleep 10
+sleep 15
 tmux send-keys -t $p2 'fr' C-m
 sleep 10
 tmux send-keys -t $p3 'fr' C-m

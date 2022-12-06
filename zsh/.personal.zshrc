@@ -136,6 +136,10 @@ function __change_theme() {
   nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
   cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
   sed -i '' "1s/.*/local selected_theme = \'$selected_theme\'/" $nvim_themefile
+  # remotely execute command on all nvim instances
+  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -I {} nvim --server {} --remote-send "<cmd>lua ReloadTheme()<cr>"
+  # SIGUSR1 reloads kitty config
+  pgrep kitty | xargs kill -SIGUSR1
   zle reset-prompt
 }
 
