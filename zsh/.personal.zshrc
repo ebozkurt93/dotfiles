@@ -173,10 +173,12 @@ function __theme_helper() {
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
-	local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
-	local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
-	kitty +kitten themes "$kitty_theme"
+	# this one is a bit faster, but updates kitty.conf as well. Both options reload kitty config.
+	# local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
+	# local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
+	# kitty +kitten themes "$kitty_theme"
 	__theme_helper set_nvim_theme $2
+	__theme_helper set_kitty_theme $2
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
@@ -188,8 +190,8 @@ function __theme_helper() {
 
 function __change_theme() {
   current_nvim_theme=$(__theme_helper current_nvim_theme)
-  local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | sort | \
-	  fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
+  local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | grep -v $current_nvim_theme | sort | \
+	  { echo $current_nvim_theme ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
   if [[ -z $selected_theme ]]; then
 	__theme_helper set_kitty_theme $current_nvim_theme
 	__theme_helper set_nvim_theme $current_nvim_theme
