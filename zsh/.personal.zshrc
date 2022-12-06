@@ -122,7 +122,8 @@ function __change_theme() {
   local themes=(
   'gruvbox-dark' 'gruvbox-light' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
   'ayu-dark' 'ayu-light' 'everforest-dark' 'oxocarbon' 'tokyonight-storm'
-  'oh-lucy' 'oh-lucy-evening'
+  'oh-lucy' 'oh-lucy-evening' 'nord'
+  'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

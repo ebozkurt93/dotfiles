@@ -62,4 +62,22 @@ elseif selected_theme == 'oh-lucy' then
 elseif selected_theme == 'oh-lucy-evening' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme oh-lucy-evening ]]
+elseif selected_theme == 'nord' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme nord ]]
+elseif selected_theme == 'nightfox' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme nightfox ]]
+elseif selected_theme == 'dawnfox' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme dawnfox ]]
+elseif selected_theme == 'duskfox' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme duskfox ]]
+elseif selected_theme == 'terafox' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme terafox ]]
+elseif selected_theme == 'carbonfox' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme carbonfox ]]
 end

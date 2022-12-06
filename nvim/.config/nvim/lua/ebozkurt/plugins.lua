@@ -113,5 +113,6 @@ packer.startup(function(use)
 	-- use {'shaunsingh/oxocarbon.nvim', branch = 'fennel'}
 	use 'B4mbus/oxocarbon-lua.nvim'
 	use 'Yazeed1s/oh-lucy.nvim'
+	use 'EdenEast/nightfox.nvim'
 end
 )
