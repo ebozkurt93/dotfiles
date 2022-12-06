@@ -84,6 +84,9 @@ alias ldg='ledger -f /data/sample.dat'
 # temporary, refetch apartments 
 alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
 
+function nvim_remote_exec {
+  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -I {} nvim --server {} --remote-send "$1"
+}
 
 # given a file pattern and commands, this function will rerun commands whenever files change
 function res {
@@ -136,8 +139,7 @@ function __change_theme() {
   nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
   cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
   sed -i '' "1s/.*/local selected_theme = \'$selected_theme\'/" $nvim_themefile
-  # remotely execute command on all nvim instances
-  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -I {} nvim --server {} --remote-send "<cmd>lua ReloadTheme()<cr>"
+  nvim_remote_exec "<cmd>lua ReloadTheme()<cr>"
   # SIGUSR1 reloads kitty config
   pgrep kitty | xargs kill -SIGUSR1
   zle reset-prompt

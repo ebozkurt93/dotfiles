@@ -13,6 +13,10 @@ vim.keymap.set('n', '<leader>n', function()
 	vim.opt.relativenumber = not current
 end, { noremap = true })
 vim.keymap.set('n', '<leader>sv', '<cmd>lua ReloadConfig()<cr>', { noremap = true, silent = false })
+vim.keymap.set('n', '<leader>sV', function()
+	vim.fn.system('source ~/.zshrc; nvim_remote_exec "<cmd>lua ReloadConfig()<cr>"')
+end, { noremap = true, silent = false })
+
 vim.keymap.set('n', '<leader>st', '<cmd>lua ReloadTheme()<cr>', { noremap = true, silent = false })
 
 -- center things after jump
