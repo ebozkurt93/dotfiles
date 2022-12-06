@@ -127,7 +127,7 @@ function __change_theme() {
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(
-    [oxocarbon]='mellow'
+    [oxocarbon]='carbonfox'
   )
   local selected_theme=$(echo ${themes[@]} | tr ' ' '\n' | sort | fzf)
   test -z $selected_theme && return
