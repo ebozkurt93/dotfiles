@@ -177,8 +177,8 @@ function __theme_helper() {
 	# local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
 	# local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
 	# kitty +kitten themes "$kitty_theme"
-	__theme_helper set_nvim_theme $2
-	__theme_helper set_kitty_theme $2
+	__theme_helper set_kitty_theme $2 &
+	__theme_helper set_nvim_theme $2 &
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
