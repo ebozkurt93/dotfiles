@@ -44,6 +44,8 @@ packer.startup(function(use)
 	use { "jose-elias-alvarez/null-ls.nvim", requires = "nvim-lua/plenary.nvim" }
 
 	use { 'numToStr/Comment.nvim', config = function() require('Comment').setup() end }
+	use 'JoosepAlviste/nvim-ts-context-commentstring'
+
 	--use { 'nvim-lualine/lualine.nvim', requires = { 'kyazdani42/nvim-web-devicons', opt = true }}
 	use { 'nvim-lualine/lualine.nvim' }
 	use { 'nvim-tree/nvim-tree.lua',

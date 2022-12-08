@@ -65,6 +65,7 @@ function fr {
 alias sfr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && yarn run generate-typescript-types && yarn start'
 
 alias pr='pipenv run python run.py'
+alias pipenv_grpc_install='pipenv run python -m pip install grpcio --ignore-installed'
 alias pip-upgrade='pip install --upgrade pip'
 function __reset_alva_pubsub_container {
   docker ps -a | grep eu.gcr.io/alva-backend/pubsub:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f

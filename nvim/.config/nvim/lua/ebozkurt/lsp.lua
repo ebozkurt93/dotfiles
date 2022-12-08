@@ -31,7 +31,12 @@ require("mason-lspconfig").setup_handlers {
 
 require 'lspconfig'.tsserver.setup {
 	capabilities = capabilities,
-	on_attach = my_on_attach,
+	on_attach = function(client)
+		my_on_attach()
+		-- disable formatter for tsserver, since prettier is already doing it
+		client.server_capabilities.documentFormattingProvider = false
+		client.server_capabilities.documentRangeFormattingProvider = false
+	end,
 	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "typescript.tsx" },
 	root_dir = function() return vim.loop.cwd() end
 }
