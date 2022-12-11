@@ -124,6 +124,7 @@ function __theme_helper() {
   'ayu-dark' 'ayu-light' 'everforest-dark' 'oxocarbon' 'tokyonight-storm'
   'oh-lucy' 'oh-lucy-evening' 'nord'
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
+  'melange-light' 'melange-dark'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

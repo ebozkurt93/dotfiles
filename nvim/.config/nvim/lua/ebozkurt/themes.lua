@@ -80,4 +80,10 @@ elseif selected_theme == 'terafox' then
 elseif selected_theme == 'carbonfox' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme carbonfox ]]
+elseif selected_theme == 'melange-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme melange ]]
+elseif selected_theme == 'melange-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme melange ]]
 end

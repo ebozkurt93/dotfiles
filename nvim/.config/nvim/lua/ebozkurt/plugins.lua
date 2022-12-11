@@ -116,5 +116,6 @@ packer.startup(function(use)
 	use 'B4mbus/oxocarbon-lua.nvim'
 	use 'Yazeed1s/oh-lucy.nvim'
 	use 'EdenEast/nightfox.nvim'
+	use 'savq/melange'
 end
 )
