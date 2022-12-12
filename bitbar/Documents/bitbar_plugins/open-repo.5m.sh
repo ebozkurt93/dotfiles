@@ -40,6 +40,11 @@ if [ "$1" = 'clone-vscode' ]; then
   exit
 fi
 
+if [ "$1" = 'clone-exit' ]; then
+  cd ~/repositories && git clone git@github.com:alvalabs/$2.git
+  exit
+fi
+
 if [ "$1" = 'refetch-repos' ]; then
   # curl -H "Authorization: token $(cat ~/Documents/bitbar_plugins/tmp/github_token.txt)" -s 'https://api.github.com/orgs/alvalabs/repos?per_page=100' | jq -r '.[] | select(.archived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
   gh repo list alvalabs --json name,isArchived -L 100 | jq -r '.[] | select(.isArchived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
@@ -79,7 +84,8 @@ do
     echo "$line | bash=\"$0\" alternate=true param1=terminal param2=$sp terminal=false size=13"
   else
     echo "$line | href=\"https://github.com/alvalabs/$line\" color=#666666 size=13"
-    echo "--Clone & Open In Visual Studio Code | bash=\"$0\" param1=clone-vscode param2=$line param3=$sp alternate=true terminal=false size=13"
+	echo "--Clone | bash=\"$0\" param1=clone-exit param2=$line param3=$sp terminal=false size=13"
+	echo "--Clone & Open In Visual Studio Code | bash=\"$0\" param1=clone-vscode param2=$line param3=$sp terminal=false size=13"
     echo "$line | bash=\"$0\" param1=clone param2=$line param3=$sp alternate=true terminal=false color=#666666 size=13"
   fi
 done
