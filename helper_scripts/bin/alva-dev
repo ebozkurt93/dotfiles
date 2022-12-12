@@ -21,11 +21,14 @@ tmux split-window -h -p 30 -c "$HOME/repositories/apollo-federation-gateway"
 p2=$(get_current_pane_id)
 tmux split-window -v -p 66 -c "$HOME/repositories/alva-app"
 p3=$(get_current_pane_id)
-tmux split-window -v -p 50 -c "$HOME/repositories/admin"
+tmux split-window -v -p 66 -c "$HOME/repositories/alva-app"
 p4=$(get_current_pane_id)
+tmux split-window -v -p 50 -c "$HOME/repositories/admin"
+p5=$(get_current_pane_id)
 tmux send-keys -t $p1 './run_services.sh' C-m
 sleep 15
 tmux send-keys -t $p2 'fr' C-m
-sleep 10
+sleep 12
 tmux send-keys -t $p3 'fr' C-m
-tmux send-keys -t $p4 'fr' C-m
+tmux send-keys -t $p4 'yarn run storybook' C-m
+tmux send-keys -t $p5 'fr' C-m
