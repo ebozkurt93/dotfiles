@@ -16,3 +16,5 @@ function chpwd() {
 }
 
 _load_custom_zsh_on_dir
+
+# source /Users/erdembozkurt/.docker/init-zsh.sh || true # Added by Docker Desktop

@@ -74,8 +74,7 @@ function __reset_alva_pubsub_container {
   # docker run -d --restart always -p 8080:8080 -p 4001:4000 -v firestore-data:/data eu.gcr.io/alva-backend/firestore:latest
 }
 alias drs="__reset_alva_pubsub_container"
-alias ds="~/Documents/bitbar_plugins/open-repo.5m.sh start-pg-d"
-alias dk="~/Documents/bitbar_plugins/open-repo.5m.sh kill-pg-d"
+alias ds='~/Documents/bitbar_plugins/open-repo.5m.sh $(docker info > /dev/null 2>&1 && echo "kill-pg-d" || echo "start-pg-d")'
 
 function __run_plantuml_server {
   docker run -d -p 8180:8080 plantuml/plantuml-server:jetty

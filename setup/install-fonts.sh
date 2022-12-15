@@ -1,11 +1,25 @@
+echo "Installing Fira Code"
 curl -L https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip > fira_code.zip
 echo "0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79  fira_code.zip" | shasum -a 256 -c - \
-|| (echo "Mismatched SHA256 in fira_code.zip, exiting..." && exit)
-
+|| echo "Mismatched SHA256 in fira_code.zip, exiting..." && exit
 unzip fira_code.zip -d fira_code
-
 cp -a fira_code/ttf/ ~/Library/Fonts
 rm -rf fira_code
 rm fira_code.zip
+echo "Installed Fira Code"
 
+echo "Installing Input Mono"
+# they seem to be generating this file on request, therefore SHA256 changes each time...
+curl -L 'https://input.djr.com/build/?fontSelection=whole&a=0&g=0&i=0&l=0&zero=0&asterisk=0&braces=0&preset=default&line-height=1.2&accept=I+do&email=' > input_mono.zip
+input_mono.zip -d input_mono
+cp -a input_mono/Input_Fonts/InputMono/InputMonoNarrow/ ~/Library/Fonts
+rm -rf input_mono
+rm input_mono.zip
+echo "Installed Input Mono"
+
+echo "Installing Droid Sans Mono (for Nerd Font icons)"
+dsm_name="Droid Sans Mono for Powerline Nerd Font Complete.otf"
+curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
+mv "$dsm_name" ~/Library/Fonts
+echo "Installed Droid Sans Mono"
 echo "Installed fonts successfully"

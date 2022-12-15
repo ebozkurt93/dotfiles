@@ -8,14 +8,24 @@ vim.opt.modelines = 0
 vim.opt.belloff = 'all'
 vim.opt.swapfile = false
 vim.opt.modifiable = true
-vim.opt.colorcolumn = {80, 120}
+vim.opt.colorcolumn = { 80, 120 }
 -- vim.opt.title = true
 -- vim.opt.titlestring='%{expand(\"%:p:h\")}'
 
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 vim.opt.undofile = true
 vim.opt.backup = true
-vim.opt.backupdir = os.getenv("HOME") .. "/.vim/backups"
+vim.opt.backupdir = os.getenv("HOME") .. "/.vim/backups//"
+
+vim.api.nvim_create_autocmd('BufWritePre', {
+	pattern = '*',
+	group = vim.api.nvim_create_augroup('timestamp_backupext', { clear = true }),
+	desc = 'Add timestamp to backup extension',
+	callback = function()
+		vim.opt.backupext = '-' .. vim.fn.strftime('%Y%m%d%H%M%S')
+	end,
+})
+
 
 -- search
 vim.opt.ignorecase = true
@@ -30,12 +40,12 @@ vim.opt.shiftwidth = 4
 vim.opt.list = true
 
 --vim.opt.listchars:append({eol = '↵'})
-vim.opt.listchars:append({eol = '¬'})
-vim.opt.listchars:append({tab = '→ '})
-vim.opt.listchars:append({trail = '·'})
-vim.opt.listchars:append({extends = '…'})
-vim.opt.listchars:append({precedes = '…'})
-vim.opt.listchars:append({leadmultispace = '·'})
+vim.opt.listchars:append({ eol = '¬' })
+vim.opt.listchars:append({ tab = '→ ' })
+vim.opt.listchars:append({ trail = '·' })
+vim.opt.listchars:append({ extends = '…' })
+vim.opt.listchars:append({ precedes = '…' })
+vim.opt.listchars:append({ leadmultispace = '·' })
 
 -- windows/splits
 vim.opt.splitright = true
@@ -66,7 +76,7 @@ vim.api.nvim_create_autocmd('User', {
 })
 
 vim.opt.signcolumn = 'auto'
-vim.opt.completeopt = {'menu', 'menuone', 'noselect'}
+vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
 
 --vim.opt.foldlevel = 1
 --vim.opt.foldmethod = "expr"
