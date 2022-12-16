@@ -38,3 +38,4 @@ require('illuminate').configure({
     -- If nil, vim-illuminate will be disabled for large files.
     large_file_overrides = nil,
 })
+vim.api.nvim_exec_autocmds('User', { pattern = 'IlluminateInitialized' })

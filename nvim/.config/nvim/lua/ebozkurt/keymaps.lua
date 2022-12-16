@@ -24,6 +24,27 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
 
 vim.keymap.set('i', 'jk', '<ESC>', { noremap = true })
+-- keep cursor in same position after adding new line
+vim.keymap.set('n', 'J', 'mzJ`z', { noremap = true })
+-- keep copy register content same after paste
+vim.keymap.set('x', '<leader>p', '"_dP', { noremap = true })
+-- more center things after different type of jumps
+vim.keymap.set('n', 'n', 'nzzzv', { noremap = true })
+vim.keymap.set('n', 'N', 'Nzzzv', { noremap = true })
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'IlluminateInitialized',
+	callback = function()
+		local illuminate = require('illuminate')
+		vim.keymap.set('n', '<A-n>', function()
+			illuminate.goto_next_reference()
+			vim.cmd([[ :normal zz ]])
+		end, { noremap = true })
+		vim.keymap.set('n', '<A-p>', function()
+			illuminate.goto_prev_reference()
+			vim.cmd([[ :normal zz ]])
+		end, { noremap = true })
+	end
+})
 
 -- keep selection after indentation
 vim.cmd([[
