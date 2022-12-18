@@ -36,13 +36,19 @@ vim.api.nvim_create_autocmd('User', {
 	callback = function()
 		local illuminate = require('illuminate')
 		vim.keymap.set('n', '<A-n>', function()
-			illuminate.goto_next_reference()
+			illuminate.goto_next_reference(true)
 			vim.cmd([[ :normal zz ]])
 		end, { noremap = true })
 		vim.keymap.set('n', '<A-p>', function()
-			illuminate.goto_prev_reference()
+			illuminate.goto_prev_reference(true)
 			vim.cmd([[ :normal zz ]])
 		end, { noremap = true })
+	end
+})
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'IndentBlanklineInitialized',
+	callback = function()
+		vim.keymap.set('n', '<leader>i', '<cmd>:IndentBlanklineToggle<cr>', { noremap = true })
 	end
 })
 

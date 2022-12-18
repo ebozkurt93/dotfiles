@@ -176,3 +176,7 @@ cmp.setup.cmdline(':', {
 		{ name = 'cmdline' }
 	})
 })
+
+-- Turn on lsp status information
+require('fidget').setup()
+

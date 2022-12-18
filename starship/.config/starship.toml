@@ -23,10 +23,10 @@ when = "test -f Pipfile && [[ ! -v PIPENV_ACTIVE ]]"
 format = "[$output](yellow bold) "
 
 [custom.enabled-states]
-command = "~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states"
+command = "~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-short"
 # when = """test "$HOME" = "$PWD" """
 when = "test ! -z \"$(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states)\""
-format = "✅ [$output]($style) "
+format = "[$output]($style) "
 
 [custom.gcloud]
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """

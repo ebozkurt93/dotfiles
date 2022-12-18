@@ -1,7 +1,15 @@
-#!/bin/bash
+#!/bin/zsh
 
 style="size=13"
 states=("work" "meeting" "holiday" "personal" "bemlo")
+typeset -A icons 
+icons=(
+	['work']='💻'
+	['meeting']='🤝'
+	['holiday']='🌞'
+	['personal']='🧔'
+)
+echo ${icons['work']}
 
 function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
@@ -17,10 +25,23 @@ if [ "$1" = 'enabled-states' ]; then
   exit
 fi
 
+if [ "$1" = 'enabled-states-short' ]; then
+  for state in "${states[@]}"; do
+    file_path=`get_file_path $state`
+	if [[ -f $file_path ]]; then
+		new=$(test -z "$icons[$state]" && echo "$state" || echo "$icons[$state]")
+		selected="$selected $new"
+	fi
+  done
+  echo $selected
+  exit
+fi
+
 if [ "$1" = 'states' ]; then
   echo ${states[@]}
   exit
 fi
+
 
 if [ "$1" = 'toggle' ]; then
   file_path=`get_file_path $2`
@@ -41,9 +62,11 @@ echo "✅"
 echo "---"
 for state in "${states[@]}"; do
   file_path=`get_file_path $state`
-  echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌) |\
+  content=$(test -z "$icons[$state]" && echo "___$state" || echo "$icons[$state] $state")
+
+  echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state terminal=false $style"
-  echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌) |\
+  echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state param3=no-restart alternate=true refresh=true terminal=false $style"
 done
 echo "Refresh | refresh=true $style"
