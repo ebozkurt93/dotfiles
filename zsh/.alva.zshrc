@@ -67,6 +67,7 @@ alias sfr='export VITE_NO_LOCAL_BACKEND=true && yarn run get-schema-staging && y
 alias pr='pipenv run python run.py'
 alias pipenv_grpc_install='pipenv run python -m pip install grpcio --ignore-installed'
 alias pip-upgrade='pip install --upgrade pip'
+alias clock_skew_fix='sudo sntp -sS pool.ntp.org'
 function __reset_alva_pubsub_container {
   docker ps -a | grep eu.gcr.io/alva-backend/pubsub:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker rm -f
   # docker ps -a | grep eu.gcr.io/alva-backend/firestore:latest | awk '{print $1}' | tr '\n' ' ' | xargs docker stop | xargs docker rm -f
