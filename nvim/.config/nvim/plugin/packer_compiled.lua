@@ -150,6 +150,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/everforest",
     url = "https://github.com/sainnhe/everforest"
   },
+  ["fidget.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/fidget.nvim",
+    url = "https://github.com/j-hui/fidget.nvim"
+  },
   ["filetype.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/filetype.nvim",
@@ -169,6 +174,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/harpoon",
     url = "https://github.com/ThePrimeagen/harpoon"
+  },
+  ["indent-blankline.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/indent-blankline.nvim",
+    url = "https://github.com/lukas-reineke/indent-blankline.nvim"
   },
   ["lsp_lines.nvim"] = {
     loaded = true,
@@ -200,6 +210,11 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/mason.nvim",
     url = "https://github.com/williamboman/mason.nvim"
   },
+  melange = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/melange",
+    url = "https://github.com/savq/melange"
+  },
   ["mellow.nvim"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/mellow.nvim",
@@ -220,10 +235,20 @@ _G.packer_plugins = {
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest-go",
     url = "https://github.com/nvim-neotest/neotest-go"
   },
+  ["neotest-jest"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest-jest",
+    url = "https://github.com/haydenmeade/neotest-jest"
+  },
   ["neotest-python"] = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/neotest-python",
     url = "https://github.com/nvim-neotest/neotest-python"
+  },
+  ["nightfox.nvim"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nightfox.nvim",
+    url = "https://github.com/EdenEast/nightfox.nvim"
   },
   ["nord.nvim"] = {
     loaded = true,
@@ -304,6 +329,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-ts-autotag",
     url = "https://github.com/windwp/nvim-ts-autotag"
+  },
+  ["nvim-ts-context-commentstring"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/nvim-ts-context-commentstring",
+    url = "https://github.com/JoosepAlviste/nvim-ts-context-commentstring"
   },
   ["nvim-ts-rainbow"] = {
     loaded = true,
@@ -399,6 +429,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-illuminate",
     url = "https://github.com/RRethy/vim-illuminate"
+  },
+  ["vim-sleuth"] = {
+    loaded = true,
+    path = "/Users/erdembozkurt/.local/share/nvim/site/pack/packer/start/vim-sleuth",
+    url = "https://github.com/tpope/vim-sleuth"
   },
   ["vim-surround"] = {
     loaded = true,
