@@ -21,6 +21,7 @@ cask "authy"
 cask "signal"
 
 # other
+cask "appcleaner"
 cask "rectangle"
 cask "bartender"
 cask "raycast"
@@ -29,6 +30,7 @@ cask "nordvpn"
 cask "calendar-366"
 cask "contexts"
 cask "monitorcontrol"
+cask "utm"
 # cask "teamviewer"
 # do not install wireguard this way unless you want to use it from cli
 # cask "wireguard-tools"

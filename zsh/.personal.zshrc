@@ -51,6 +51,8 @@ alias st="__state_switcher_toggle"
 zle -N __state_switcher_toggle
 bindkey "^[s" __state_switcher_toggle
 
+alias gpristine='git reset --hard && git clean -df'
+
 # docker
 alias d='docker'
 alias dr='docker run --rm -i -t'
