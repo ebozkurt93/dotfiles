@@ -7,6 +7,7 @@ icons=(
 	['meeting']='🤝'
 	['holiday']='🌞'
 	['personal']='🧔'
+	['bemlo']='🚀'
 )
 
 function get_file_path {
