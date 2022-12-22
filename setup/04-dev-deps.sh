@@ -10,5 +10,6 @@ echo "Done with stow"
 echo "Handling asdf"
 ./asdf.sh -I
 echo "Done with asdf"
+# todo: add asdf installs here as well
 
 mkdir -p ~/Documents/bitbar_plugins/tmp

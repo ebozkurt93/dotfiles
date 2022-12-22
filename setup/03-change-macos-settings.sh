@@ -102,7 +102,7 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   "/Applications/Safari.app"
   "/System/Applications/Utilities/Terminal.app"
   "/System/Applications/App Store.app"
-  "/System/Applications/System Preferences.app"
+  "/System/Applications/System Settings.app"
   )
   for val in "${apps[@]}"; do
     defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"
@@ -134,7 +134,7 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   "/Applications/MacPass.app"
   "/Applications/Gladys.app"
   "/System/Applications/App Store.app"
-  "/System/Applications/System Preferences.app"
+  "/System/Applications/System Settings.app"
   )
   for val in "${apps[@]}"; do
     defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"

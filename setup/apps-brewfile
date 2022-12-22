@@ -1,11 +1,10 @@
 # Development
 cask "docker"
-cask "kitty"
 cask "visual-studio-code"
 cask "sublime-merge"
 
 # work apps
-cask "zoom"
+# cask "zoom"
 cask "slack"
 
 # generic apps

@@ -3,6 +3,7 @@ Setup/installation instructions for a new macOS machine.
 
 - Run all scripts with numeric order.
   - Ideally check the scripts before running them, some of these are development related therefore it might not be needed in all machines.
+  - Some scripts may require reopening shell, or may give errors since things are already installed
 
 ## Configure iTerm2 settings
 Select the following path in iTerm2 options "General -> Preferences -> Load preferences from a custom folder or URL"
