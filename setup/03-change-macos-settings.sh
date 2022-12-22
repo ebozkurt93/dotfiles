@@ -109,39 +109,6 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   done
 fi
 
-
-echo ""
-echo "Setup dock with my current setup? (y/n)"
-read -r response
-if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  defaults write com.apple.dock persistent-apps -array
-  defaults write com.apple.dock persistent-others -array
-  apps=(
-  "/System/Applications/Launchpad.app"
-  "/Applications/Safari.app"
-  "/Applications/Google Chrome.app"
-  "/Applications/Spotify.app"
-  "/Applications/Pocket Casts.app"
-  "{'tile-type'='small-spacer-tile';}"
-  "/Applications/Visual Studio Code.app"
-  "/Applications/PyCharm.app"
-  "/Applications/Sublime Merge.app"
-  "/Applications/Slack.app"
-  "/Applications/SQLPro for Postgres.app"
-  "/Applications/kitty.app"
-  "{'tile-type'='small-spacer-tile';}"
-  "/Applications/Obsidian.app"
-  "/Applications/MacPass.app"
-  "/Applications/Gladys.app"
-  "/System/Applications/App Store.app"
-  "/System/Applications/System Settings.app"
-  )
-  for val in "${apps[@]}"; do
-    defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"
-  done
-  # Check link for options -> https://github.com/yannbertrand/macos-defaults/issues/62
-  defaults write com.apple.dock 'persistent-others' -array-add $(printf '<dict><key>tile-data</key><dict><key>arrangement</key><integer>0</integer><key>displayas</key><integer>0</integer><key>file-data</key><dict><key>_CFURLString</key><string>%s</string><key>_CFURLStringType</key><integer>0</integer></dict><key>preferreditemsize</key><integer>-1</integer><key>showas</key><integer>0</integer></dict><key>tile-type</key><string>directory-tile</string></dict>', "$HOME/Downloads")
-fi
 # todo: remove the killall here
 killall Dock
 

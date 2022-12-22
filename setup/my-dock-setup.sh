@@ -25,7 +25,6 @@ defaults write com.apple.dock persistent-apps -array
 defaults write com.apple.dock persistent-others -array
 apps=(
 "/System/Applications/Launchpad.app"
-"/Applications/Safari.app"
 "/Applications/Google Chrome.app"
 "/Applications/Spotify.app"
 "/Applications/Pocket Casts.app"
