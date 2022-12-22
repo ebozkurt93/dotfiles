@@ -1,15 +1,13 @@
 #!/bin/zsh
 
 style="size=13"
-states=("work" "meeting" "holiday" "personal" "bemlo")
+states=("meeting" "holiday" "personal" "bemlo")
 typeset -A icons 
 icons=(
-	['work']='💻'
 	['meeting']='🤝'
 	['holiday']='🌞'
 	['personal']='🧔'
 )
-echo ${icons['work']}
 
 function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1

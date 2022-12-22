@@ -97,14 +97,14 @@ function res {
 }
 
 function __find_repos {
-  local p=(~/repositories)
+  local p=()
   if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
     p+=(~/personal-repositories)
   fi
   if [ -f ~/Documents/bitbar_plugins/tmp/bemlo ]; then
     p+=(~/bemlo)
   fi
-  selected_dir="$(cat <(echo ~/dotfiles) <(find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
+  selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
   test -z $selected_dir && return
   cd $selected_dir
   # if this is missing, prompt shows old directory till another command runs

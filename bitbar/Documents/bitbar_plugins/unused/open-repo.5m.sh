@@ -2,6 +2,8 @@
 
 source ~/.zprofile
 ~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
+# todo: read this from somewhere
+organization=''
 
 if [ "$1" = 'run' ]; then
   C=$(find $2 -type f -name "*.go"| wc -l)
@@ -29,25 +31,24 @@ if [ "$1" = 'terminal' ]; then
 fi
 
 if [ "$1" = 'clone' ]; then
-  cd ~/repositories && git clone git@github.com:alvalabs/$2.git
+  cd ~/repositories && git clone git@github.com:$organization/$2.git
   $0 run $3
   exit
 fi
 
 if [ "$1" = 'clone-vscode' ]; then
-  cd ~/repositories && git clone git@github.com:alvalabs/$2.git
+  cd ~/repositories && git clone git@github.com:$organization/$2.git
   $0 vscode $3
   exit
 fi
 
 if [ "$1" = 'clone-exit' ]; then
-  cd ~/repositories && git clone git@github.com:alvalabs/$2.git
+  cd ~/repositories && git clone git@github.com:$organization/$2.git
   exit
 fi
 
 if [ "$1" = 'refetch-repos' ]; then
-  # curl -H "Authorization: token $(cat ~/Documents/bitbar_plugins/tmp/github_token.txt)" -s 'https://api.github.com/orgs/alvalabs/repos?per_page=100' | jq -r '.[] | select(.archived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
-  gh repo list alvalabs --json name,isArchived -L 100 | jq -r '.[] | select(.isArchived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
+  gh repo list $organization --json name,isArchived -L 100 | jq -r '.[] | select(.isArchived == false) | .name' | sort > ~/Documents/bitbar_plugins/tmp/repos.txt
   exit
 fi
 
@@ -79,11 +80,11 @@ do
   if [ -d ~/repositories/$line ]; then
     # sp=$(echo $line | sed -e 's/\(.*\/\)\(.*\)\(\/\)/\2/g')
     echo "$line | bash=\"$0\" param1=run param2=$sp terminal=false size=13"
-    echo "--GitHub | href=\"https://github.com/alvalabs/$line\" color=#666666 size=13"
+    echo "--GitHub | href=\"https://github.com/$organization/$line\" color=#666666 size=13"
     echo "--Visual Studio Code | bash=\"$0\" param1=vscode param2=$sp terminal=false color=#666666 size=13"
     echo "$line | bash=\"$0\" alternate=true param1=terminal param2=$sp terminal=false size=13"
   else
-    echo "$line | href=\"https://github.com/alvalabs/$line\" color=#666666 size=13"
+    echo "$line | href=\"https://github.com/$organization/$line\" color=#666666 size=13"
 	echo "--Clone | bash=\"$0\" param1=clone-exit param2=$line param3=$sp terminal=false size=13"
 	echo "--Clone & Open In Visual Studio Code | bash=\"$0\" param1=clone-vscode param2=$line param3=$sp terminal=false size=13"
     echo "$line | bash=\"$0\" param1=clone param2=$line param3=$sp alternate=true terminal=false color=#666666 size=13"

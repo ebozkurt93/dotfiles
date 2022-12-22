@@ -5,13 +5,7 @@ source ~/.zprofile
 
 style="size=13"
 
-queries=(
-"org:alvalabs is:open archived:false involves:@me"
-"org:alvalabs is:open archived:false team-review-requested:alvalabs/assessment"
-# "org:alvalabs is:open archived:false author:@me"
-# "org:alvalabs is:open archived:false commenter:@me"
-# "org:alvalabs is:open archived:false review-requested:@me"
-)
+queries=()
 search_json_format="assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url"
 pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
 # pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
