@@ -100,7 +100,7 @@ function res {
 
 function __find_repos {
   p=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-paths))
-  selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
+  selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) | sort | fzf)"
   test -z $selected_dir && return
   cd $selected_dir
   # if this is missing, prompt shows old directory till another command runs
