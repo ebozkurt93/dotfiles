@@ -40,6 +40,7 @@ alias vim='nvim'
 alias viconf='(cd ~/dotfiles/nvim/.config/nvim && vi)'
 alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias sr='exec $SHELL'
+alias ss='echo $__sourced_states'
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
   local selected_state=$($p states | tr ' ' '\n' | sort | fzf)
@@ -97,13 +98,7 @@ function res {
 }
 
 function __find_repos {
-  local p=()
-  if [ -f ~/Documents/bitbar_plugins/tmp/personal ]; then
-    p+=(~/personal-repositories)
-  fi
-  if [ -f ~/Documents/bitbar_plugins/tmp/bemlo ]; then
-    p+=(~/bemlo)
-  fi
+  p=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-paths))
   selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d) | sort | fzf)"
   test -z $selected_dir && return
   cd $selected_dir

@@ -1,10 +1,24 @@
 source $HOME/.personal.zshrc
 
+__sourced_states=()
 function _load_custom_zsh_on_dir () {
-	if [[ -f $HOME/.bemlo.zshrc && ! -v ___is_bemlo_sourced && $PWD/ = $HOME/bemlo/* ]]; then
-		source $HOME/.bemlo.zshrc
-		___is_bemlo_sourced=true
-	fi
+	local states=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states))
+	for state in "${states[@]}"; do
+	  if [[ $state == 'personal' ]]; then
+	    # this one is unique, always sourced it by default
+	    continue
+	  fi
+	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
+	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m.sh state-paths $state))
+	    for __path in ${__paths[@]}; do
+	      if [[ $PWD/ = $__path/* ]]; then
+	        source $HOME/.$state.zshrc
+	        __sourced_states+=($state)
+	        break
+	      fi
+	    done
+	  fi
+	done
 }
 
 function chpwd() {

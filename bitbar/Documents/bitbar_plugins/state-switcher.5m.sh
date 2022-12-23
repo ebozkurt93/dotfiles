@@ -10,6 +10,13 @@ icons=(
 	['bemlo']='🚀'
 )
 
+typeset -A paths 
+# these paths can be multiple per state, separate with spaces
+paths=(
+      ['personal']="$HOME/personal-repositories"
+      ['bemlo']="$HOME/bemlo"
+)
+
 function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
 }
@@ -33,6 +40,23 @@ if [ "$1" = 'enabled-states-short' ]; then
 	fi
   done
   echo $selected
+  exit
+fi
+
+if [ "$1" = 'enabled-states-paths' ]; then
+  for state in "${states[@]}"; do
+    file_path=`get_file_path $state`
+	if [[ -f $file_path ]]; then
+		new=$(test -z "$icons[$state]" && echo "" || echo "$paths[$state]")
+		selected="$selected $new"
+	fi
+  done
+  echo $selected
+  exit
+fi
+
+if [ "$1" = 'state-paths' ]; then
+  echo "$paths[$2]"
   exit
 fi
 
