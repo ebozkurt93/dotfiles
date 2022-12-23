@@ -43,6 +43,11 @@ if [ "$1" = 'enabled-states-short' ]; then
   exit
 fi
 
+if [ "$1" = 'is-state-enabled' ]; then
+  [[ " $($0 enabled-states) " =~ " $2 " ]]
+  exit $?
+fi
+
 if [ "$1" = 'enabled-states-paths' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`

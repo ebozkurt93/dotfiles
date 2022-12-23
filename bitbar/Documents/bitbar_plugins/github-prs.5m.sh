@@ -1,11 +1,24 @@
 #!/bin/bash
 
 source ~/.zprofile
-~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
+# ~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
+~/Documents/bitbar_plugins/state-switcher.5m.sh is-state-enabled bemlo || exit
 
 style="size=13"
 
+OLDIFS="$IFS"
+IFS=$'\n'
 queries=()
+while read line
+do
+  # support for very basic commenting
+  if [[ "$line" == //* ]]; then
+    continue
+  fi
+  queries=("${queries[@]}" "$line")
+done < ~/Documents/bitbar_plugins/tmp/queries.txt
+IFS="$OLDIFS"
+
 search_json_format="assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url"
 pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
 # pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
