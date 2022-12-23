@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source ~/.zprofile
-# ~/Documents/bitbar_plugins/helpers/check_work_hours.sh && true || exit
 ~/Documents/bitbar_plugins/state-switcher.5m.sh is-state-enabled bemlo || exit
 
 style="size=13"
