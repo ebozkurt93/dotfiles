@@ -18,9 +18,20 @@ rm -rf input_mono
 rm input_mono.zip
 echo "Installed Input Mono"
 
+echo "Installing Jetbrains Mono"
+curl -L https://download.jetbrains.com/fonts/JetBrainsMono-2.242.zip > jetbrains_mono.zip
+echo "4e315b4ef176ce7ffc971b14997bdc8f646e3d1e5b913d1ecba3a3b10b4a1a9f  jetbrains_mono.zip" | shasum -a 256 -c - \
+  || (echo "Mismatched SHA256 in fira_code.zip, exiting..." && exit)
+unzip jetbrains_mono.zip -d jetbrains_mono
+cp -a jetbrains_mono/fonts/ttf/ ~/Library/Fonts
+rm -rf jetbrains_mono
+rm jetbrains_mono.zip
+echo "Installed Jetbrains Mono"
+
 echo "Installing Droid Sans Mono (for Nerd Font icons)"
 dsm_name="Droid Sans Mono for Powerline Nerd Font Complete.otf"
 curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
 mv "$dsm_name" ~/Library/Fonts
 echo "Installed Droid Sans Mono"
 echo "Installed fonts successfully"
+

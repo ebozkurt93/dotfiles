@@ -1,3 +1,5 @@
+# vi: ft=ruby
+
 # Development
 cask "docker"
 cask "visual-studio-code"
