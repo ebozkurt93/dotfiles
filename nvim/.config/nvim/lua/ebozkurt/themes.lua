@@ -86,4 +86,7 @@ elseif selected_theme == 'melange-dark' then
 elseif selected_theme == 'melange-light' then
 	vim.opt.background = 'light'
 	vim.cmd [[ colorscheme melange ]]
+elseif selected_theme == 'kanagawa' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme kanagawa ]]
 end

@@ -1,0 +1,3 @@
+# for some reason calling another script which calls shortcuts doesn't work...
+shortcuts run 'Get Current Focus Mode' | cat | xargs echo \
+	| sed -e 's/Do Not Disturb//g' -e 's/Personal//g' -e 's/Work/ /g'

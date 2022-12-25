@@ -70,7 +70,7 @@ packer.startup(function(use)
 
 	use("NvChad/nvim-colorizer.lua")
 	use("xiyaowong/virtcolumn.nvim")
-	use "lukas-reineke/indent-blankline.nvim"
+	use("lukas-reineke/indent-blankline.nvim")
 	use("tpope/vim-sleuth") -- Detect tabstop and shiftwidth automatically
 
 	use({ "jedrzejboczar/possession.nvim", requires = { "nvim-lua/plenary.nvim" } })
@@ -132,4 +132,5 @@ packer.startup(function(use)
 	use("Yazeed1s/oh-lucy.nvim")
 	use("EdenEast/nightfox.nvim")
 	use("savq/melange")
+	use("rebelot/kanagawa.nvim")
 end)
