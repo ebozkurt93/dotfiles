@@ -145,6 +145,9 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.keymap.set('n', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })
+vim.keymap.set('v', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })
+
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'lsplines',
 	callback = function(event)
@@ -159,7 +162,7 @@ vim.api.nvim_create_autocmd('User', {
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'gitsigns',
 	callback = function(event)
-		vim.keymap.set('n', '<leader>g', function()
+		vim.keymap.set('n', '<leader>G', function()
 			local default_branch = vim.fn.trim(vim.fn.system(
 				"git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'"
 			))
