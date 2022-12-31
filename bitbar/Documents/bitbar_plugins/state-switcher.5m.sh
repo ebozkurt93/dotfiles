@@ -1,21 +1,20 @@
 #!/bin/zsh
 
 style="size=13"
-states=("meeting" "holiday" "personal" "bemlo")
-typeset -A icons 
-icons=(
-	['meeting']='🤝'
-	['holiday']='🌞'
-	['personal']='🧔'
-	['bemlo']='🚀'
-)
+config_file="$HOME/dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json"
 
+titles_temp=$(cat "$config_file" | jq -r '.[].title')
+icons_temp=$(cat "$config_file" | jq -r '.[].icon')
+paths_temp=$(cat "$config_file" | jq -r '.[].paths')
+while read -r line; do states+=("$line"); done <<<"$titles_temp"
+while read -r line; do _icons+=("$line"); done <<<"$icons_temp"
+while read -r line; do _paths+=("$line"); done <<<"$paths_temp"
+typeset -A icons 
 typeset -A paths 
-# these paths can be multiple per state, separate with spaces
-paths=(
-      ['personal']="$HOME/personal-repositories"
-      ['bemlo']="$HOME/bemlo"
-)
+for ((idx=1; idx<=${#states[@]}; ++idx)); do
+  icons+=("${states[idx]}" "${_icons[idx]}")
+  paths+=("${states[idx]}" "$(envsubst <<< "${_paths[idx]}")")
+done
 
 function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
