@@ -39,6 +39,7 @@ alias vi='nvim'
 alias vim='nvim'
 alias viconf='(cd ~/dotfiles/nvim/.config/nvim && vi)'
 alias vidotfiles='(cd ~/dotfiles/ && vi)'
+alias dsync='(cd ~/dotfiles/ && git pull)'
 alias sr='exec $SHELL'
 alias ss='echo $__sourced_states'
 local function __state_switcher_toggle() {
