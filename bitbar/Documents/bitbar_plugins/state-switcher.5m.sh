@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+source ~/.zprofile
+
 style="size=13"
 config_file="$HOME/dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json"
 
