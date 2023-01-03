@@ -9,5 +9,5 @@ blueutil --unpair 'a0-78-17-e2-cf-57'
 sleep 2
 blueutil --connect 'a0-78-17-e2-cf-57'
 # keyboard
-blueutil --connect 'dc-2c-26-fc-29-d4'
+# blueutil --connect 'dc-2c-26-fc-29-d4'
 
