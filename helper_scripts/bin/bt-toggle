@@ -1,0 +1,11 @@
+#!/bin/sh
+
+connected=$(blueutil --connected | awk '{print $2}' | tr -d ',')
+
+blueutil --power toggle
+sleep 2
+blueutil --power toggle
+
+for item in $connected; do
+	blueutil --connect $item
+done
