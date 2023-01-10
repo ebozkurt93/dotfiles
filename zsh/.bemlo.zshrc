@@ -15,6 +15,8 @@ alias tsr="nvim_remote_exec \"<cmd>:LspRestart tsserver<cr>\""
 alias lres="nvim_remote_exec \"<cmd>:LspStop<cr>\" && sleep 1 && nvim_remote_exec \"<cmd>:LspStart<cr>\""
 alias pres="__get_pid_for_port 8085 | xargs kill"
 alias fres="__get_pid_for_port 8080 | xargs kill"
+alias ytf="resr '**.spec.ts' 'yarn jest \$0'"
+alias yta="res '**.ts' yarn test"
 
 function dres() {
   pres

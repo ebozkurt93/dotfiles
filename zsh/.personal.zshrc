@@ -99,6 +99,10 @@ function res {
   find . -name "$1" | entr -r ${@:2}
 }
 
+function resr {
+  find . -name "$1" | entr -rs ${@:2}
+}
+
 function __find_repos {
   p=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-paths))
   selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) | sort | fzf)"
