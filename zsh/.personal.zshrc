@@ -188,7 +188,7 @@ function __theme_helper() {
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
 	sed -i '' "1s/.*/local selected_theme = \'$2\'/" $nvim_themefile
-	nvim_remote_exec "<cmd>lua ReloadTheme()<cr>"
+	nvim_remote_exec "<cmd>lua ReloadTheme()<cr>" > /dev/null 2>&1 
 	return
   fi
 }

@@ -30,7 +30,8 @@ require('telescope').setup {
 			'node_modules/',
 			'.git/',
 			'.git-crypt/',
-			'.idea/'
+			'.idea/',
+			'dist/'
 		},
 		sorting_strategy = 'ascending',
 		layout_config = {
