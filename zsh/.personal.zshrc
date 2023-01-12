@@ -215,7 +215,13 @@ bindkey "^k" clear-screen
 
 function __open_pr {
   local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
-  local selected="$(cat <(test ${#p[@]} -ne 0 && echo $p) | fzf)"
+  local content="$(cat <(test ${#p[@]} -ne 0 && echo $p))"
+  if [[ $1 == 'cmd' ]]; then
+    echo "$content"
+    return
+  fi
+  local selected="$(cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --bind \
+    'ctrl-f:reload(source ~/.zshrc; __open_pr cmd),ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep ebozkurt93)')"
   test -z $selected && return
   echo $selected | awk '{print $NF}' | xargs open
   zle reset-prompt
