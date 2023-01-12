@@ -213,3 +213,12 @@ zle -N __change_theme
 bindkey "^[t" __change_theme
 bindkey "^k" clear-screen
 
+function __open_pr {
+  local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
+  local selected="$(cat <(test ${#p[@]} -ne 0 && echo $p) | fzf)"
+  test -z $selected && return
+  echo $selected | awk '{print $NF}' | xargs open
+  zle reset-prompt
+}
+zle -N __open_pr
+bindkey "^[g" __open_pr 

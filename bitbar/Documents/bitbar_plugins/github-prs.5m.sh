@@ -76,6 +76,17 @@ while read -r line; do review_decision+=("$line"); done <<<"$review_decision"
 while read -r line; do mergeable+=("$line"); done <<<"$mergeable"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
+if [ "$1" = 'fzf' ]; then
+  for q in "${!pr_names[@]}"; do
+    if [[ $q = 0 ]]; then
+      continue
+    fi
+    printf "%10s %-50s %-10s %-50s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${urls[$q]}"
+    done
+  exit
+fi
+
+
 echo "PRs: $(echo $content | jq -r length)| dropdown=true $style"
 echo "---"
 if [ $length != 0 ]; then
