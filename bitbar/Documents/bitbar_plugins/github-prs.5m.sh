@@ -81,7 +81,7 @@ if [ "$1" = 'fzf' ]; then
     if [[ $q = 0 ]]; then
       continue
     fi
-    printf "%10s %-50s %-10s %-50s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${urls[$q]}"
+    printf "%-30s %-80s %-20s %-50s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${urls[$q]}"
     done
   exit
 fi
