@@ -129,6 +129,7 @@ function __theme_helper() {
   'oh-lucy' 'oh-lucy-evening' 'nord'
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
   'melange-light' 'melange-dark' 'kanagawa'
+  'catppuccin-latte' 'catppuccin-frappe' 'catppuccin-mocha' 'catppuccin-macchiato'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

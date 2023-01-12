@@ -12,10 +12,6 @@ vim.cmd [[ colorscheme gruvbox ]]
 -- vim.cmd[[colorscheme tokyonight]]
 -- vim.cmd[[colorscheme tokyonight-moon]]
 
--- vim.g.catppuccin_flavour = "macchiato" -- latte, frappe, macchiato, mocha
--- require("catppuccin").setup()
--- vim.api.nvim_command "colorscheme catppuccin"
-
 if selected_theme == 'mellow' then
 	vim.cmd [[colorscheme mellow]]
 elseif selected_theme == 'rose-pine-moon-dark' then
@@ -89,4 +85,12 @@ elseif selected_theme == 'melange-light' then
 elseif selected_theme == 'kanagawa' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme kanagawa ]]
+elseif selected_theme == 'catppuccin-latte' then
+	vim.cmd [[ colorscheme catppuccin-latte ]]
+elseif selected_theme == 'catppuccin-frappe' then
+	vim.cmd [[ colorscheme catppuccin-frappe ]]
+elseif selected_theme == 'catppuccin-mocha' then
+	vim.cmd [[ colorscheme catppuccin-mocha ]]
+elseif selected_theme == 'catppuccin-macchiato' then
+	vim.cmd [[ colorscheme catppuccin-macchiato ]]
 end
