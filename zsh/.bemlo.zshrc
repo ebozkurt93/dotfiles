@@ -23,20 +23,3 @@ function dres() {
   fres
 }
 
-function __yarn_execute_package_json_command() {
-  [[ ! -f  "package.json" ]] && return
-  local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d' | \
-    fzf --bind 'ctrl-p:execute(echo _{})+abort')
-  [[ -z $selection ]] && return
-  if [[ $selection =~ ^_.* ]]; then
-    cmd=$(echo "yarn $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
-    echo $cmd | pbcopy
-    echo "Copied command ($cmd) to clipboard"
-  else
-    yarn $(echo "$selection" | cut -d'"' -f2)
-  fi
-  zle send-break
-}
-
-zle -N __yarn_execute_package_json_command
-bindkey "^p" __yarn_execute_package_json_command
