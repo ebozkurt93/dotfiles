@@ -13,6 +13,7 @@ echo "Installing Input Mono"
 curl -L 'https://input.djr.com/build/?fontSelection=whole&a=0&g=0&i=0&l=0&zero=0&asterisk=0&braces=0&preset=default&line-height=1.2&accept=I+do&email=' > input_mono.zip
 unzip input_mono.zip -d input_mono
 cp -a input_mono/Input_Fonts/InputMono/InputMonoNarrow/ ~/Library/Fonts
+cp -a input_mono/Input_Fonts/InputMono/InputMono/ ~/Library/Fonts
 rm -rf input_mono
 rm input_mono.zip
 echo "Installed Input Mono"
