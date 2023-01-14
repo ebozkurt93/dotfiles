@@ -231,7 +231,11 @@ zle -N __open_pr
 bindkey "^[g" __open_pr 
 
 function __yarn_execute_package_json_command() {
-  [[ ! -f  "package.json" ]] && return
+  if [[ ! -f  "package.json" ]]; then
+    # this is the default behaviour for zsh in ctrl-p, so doing that in default case
+    zle up-history
+    return
+  fi
   local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d' | \
     fzf --bind 'ctrl-p:execute(echo _{})+abort')
   [[ -z $selection ]] && return
