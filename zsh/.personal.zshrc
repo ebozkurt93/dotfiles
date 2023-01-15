@@ -251,3 +251,26 @@ function __yarn_execute_package_json_command() {
 
 zle -N __yarn_execute_package_json_command
 bindkey "^p" __yarn_execute_package_json_command
+
+function __bt_device_toggle() {
+  if [[ "$(blueutil --power)" == "0" ]]; then
+    echo 'bluetooth off'
+    zle send-break
+    return
+  fi
+  local c=$(blueutil --paired --format json | jq -r \
+    '.[] | .name + " " + (.connected|tostring|sub("true"; "✅")|sub("false"; "❌")) + " " + .address')
+  local selection=$(echo "$c" | sort | fzf)
+  [[ -z $selection ]] && return
+  address=$(echo $selection | awk '{print $NF}')
+  echo $address
+  if [[ "$(blueutil --is-connected $address)" == '1' ]]; then
+    blueutil --disconnect $address --wait-disconnect $address
+  else
+    blueutil --connect $address
+  fi
+  zle send-break
+}
+
+zle -N __bt_device_toggle 
+bindkey "^[b" __bt_device_toggle 
