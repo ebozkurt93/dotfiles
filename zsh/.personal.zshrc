@@ -263,7 +263,6 @@ function __bt_device_toggle() {
   local selection=$(echo "$c" | sort | fzf)
   [[ -z $selection ]] && return
   address=$(echo $selection | awk '{print $NF}')
-  echo $address
   if [[ "$(blueutil --is-connected $address)" == '1' ]]; then
     blueutil --disconnect $address --wait-disconnect $address
   else
