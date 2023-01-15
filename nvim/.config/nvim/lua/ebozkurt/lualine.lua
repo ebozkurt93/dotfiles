@@ -6,6 +6,12 @@
 -- can be used for passing symbols in luasnip
 -- local s = require('lspsaga.symbolwinbar').get_symbol_node
 
+local function get_active_lsp_clients()
+	local bf = vim.api.nvim_get_current_buf()
+	local tbl = vim.tbl_map(function(t) return t.name end, vim.lsp.get_active_clients({bufnr = bf}))
+	return vim.trim(table.concat(tbl, ', '))
+end
+
 require('lualine').setup {
 	options = {
 		icons_enabled = true,
@@ -32,7 +38,7 @@ require('lualine').setup {
 	sections = {
 		lualine_a = { 'mode' },
 		lualine_b = { 'branch', 'diff', 'diagnostics' },
-		lualine_c = {},
+		lualine_c = { get_active_lsp_clients },
 		lualine_x = { 'encoding', 'filetype', 'filesize' },
 		lualine_y = { 'progress', 'searchcount' },
 		lualine_z = { 'location' }
