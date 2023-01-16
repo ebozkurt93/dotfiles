@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ~/.zprofile
+source ~/.zshrc > /dev/null 2>&1
 ~/Documents/bitbar_plugins/state-switcher.5m.sh is-state-enabled bemlo || exit
 
 style="size=13"
@@ -94,7 +95,7 @@ if [ $length != 0 ]; then
     if [[ $q = 0 ]]; then
       continue
     fi
-    printf "%-30s %-70s %-20s %-2s %-7s %-52s | href=${urls[$q]} $style $( [[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=blue | ") \n" "${pr_names[$q]}" "${pr_titles[$q]}" \
+    printf "%-30s %-70s %-20s %-2s %-7s %-52s | href=${urls[$q]} $style $( [[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=blue ") \n" "${pr_names[$q]}" "${pr_titles[$q]}" \
     "👤 ${authors[$q]}" "💬 ${comment_counts[$q]}" "📜+${additions[$q]}-${deletions[q]}" "${is_draft[q]} ${review_decision[q]} ${mergeable[q]}"
   done
   echo "---"
