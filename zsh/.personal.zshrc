@@ -175,7 +175,11 @@ function __theme_helper() {
   fi
   if [[ "$1" == "set_kitty_theme" ]]; then
 	local kitty_theme=$(__theme_helper get_custom_kitty_theme $2)
-	cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
+	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
+	  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
+	else
+	  nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate()<cr>" > /dev/null 2>&1
+	fi
 	# SIGUSR1 reloads kitty config
 	pgrep kitty | xargs kill -SIGUSR1
 	return

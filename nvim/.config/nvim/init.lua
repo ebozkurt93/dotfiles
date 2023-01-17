@@ -31,4 +31,5 @@ require("ebozkurt.cheatsh-vim")
 require("ebozkurt.null-ls")
 require("ebozkurt.themes")
 require("ebozkurt.session")
+require("ebozkurt.theme-gen")
 

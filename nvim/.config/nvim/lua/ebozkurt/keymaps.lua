@@ -148,6 +148,10 @@ vim.keymap.set('n', '<leader>ls', function ()
 	vim.lsp.stop_client(vim.lsp.get_active_clients())
 	print('All lsp servers stopped')
 end, { noremap = true })
+vim.keymap.set('n', '<leader>TC', function()
+	-- require('ebozkurt.theme-gen').generate(vim.fn.input('Theme name: ')) end,
+	require('ebozkurt.theme-gen').generate() end,
+{noremap = true})
 
 vim.keymap.set('n', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })
 vim.keymap.set('v', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })
