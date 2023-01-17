@@ -6,7 +6,7 @@ vim.keymap.set('n', '<leader><C-q>', '<cmd>quitall<cr>', { noremap = true })
 -- vim.keymap.set('n', '<leader><CS-q>', '<cmd>qa!<cr>', {noremap = true})
 vim.keymap.set('n', '<leader><space>', function()
 	vim.cmd(':let @/ = ""')
-	print "Cleared search"
+	print " "
 end, { desc = 'Clear search highlights' })
 vim.keymap.set('n', '<leader>n', function()
 	local current = vim.opt.relativenumber:get()
@@ -144,6 +144,10 @@ vim.api.nvim_create_autocmd('User', {
 		end, bufopts)
 	end
 })
+vim.keymap.set('n', '<leader>ls', function ()
+	vim.lsp.stop_client(vim.lsp.get_active_clients())
+	print('All lsp servers stopped')
+end, { noremap = true })
 
 vim.keymap.set('n', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })
 vim.keymap.set('v', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })

@@ -23,3 +23,13 @@ function dres() {
   fres
 }
 
+function __copy_user_email() {
+  local selection=$(cat ~/Documents/bitbar_plugins/tmp/bemlo_local_auth_users.txt | sort | fzf)
+  [[ -z $selection ]] && return
+  echo $selection | pbcopy
+  echo "Copied selection ($selection) to clipboard"
+  zle send-break
+}
+
+zle -N __copy_user_email 
+bindkey "^u" __copy_user_email 

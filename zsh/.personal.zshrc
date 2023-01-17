@@ -55,6 +55,7 @@ zle -N __state_switcher_toggle
 bindkey "^[s" __state_switcher_toggle
 
 alias gpristine='git reset --hard && git clean -df'
+alias remove_node_modules="find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +"
 
 # docker
 alias d='docker'
