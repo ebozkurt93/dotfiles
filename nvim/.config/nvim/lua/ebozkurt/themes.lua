@@ -1,4 +1,4 @@
-local selected_theme = 'rose-pine-moon-dark'
+local selected_theme = 'rose-pine'
 
 -- default is also gruvbox
 -- gruvbox
@@ -14,6 +14,11 @@ vim.cmd [[ colorscheme gruvbox ]]
 
 if selected_theme == 'mellow' then
 	vim.cmd [[colorscheme mellow]]
+elseif selected_theme == 'rose-pine' then
+	require('rose-pine').setup({
+		dark_variant = 'main',
+	})
+	vim.cmd('colorscheme rose-pine')
 elseif selected_theme == 'rose-pine-moon-dark' then
 	require('rose-pine').setup({
 		dark_variant = 'moon',

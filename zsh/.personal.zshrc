@@ -126,8 +126,9 @@ eval "$(starship init zsh)"
 
 function __theme_helper() {
   local themes=(
-  'gruvbox-dark' 'gruvbox-light' 'rose-pine-moon-dark' 'rose-pine-dawn-light' 'mellow'
-  'ayu-dark' 'ayu-light' 'everforest-dark' 'oxocarbon' 'tokyonight-storm'
+  'gruvbox-dark' 'gruvbox-light'
+  'rose-pine' 'rose-pine-moon-dark' 'rose-pine-dawn-light'
+  'mellow' 'ayu-dark' 'ayu-light' 'everforest-dark' 'oxocarbon' 'tokyonight-storm'
   'oh-lucy' 'oh-lucy-evening' 'nord'
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
   'melange-light' 'melange-dark' 'kanagawa'
