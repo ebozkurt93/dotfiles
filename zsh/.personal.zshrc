@@ -133,6 +133,7 @@ function __theme_helper() {
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
   'melange-light' 'melange-dark' 'kanagawa'
   'catppuccin-latte' 'catppuccin-frappe' 'catppuccin-mocha' 'catppuccin-macchiato'
+  'night-owl'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(
@@ -190,8 +191,16 @@ function __theme_helper() {
 	# local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
 	# local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
 	# kitty +kitten themes "$kitty_theme"
-	__theme_helper set_kitty_theme $2 &
-	__theme_helper set_nvim_theme $2 &
+	local kitty_theme=$(__theme_helper get_custom_kitty_theme $2)
+	# if existing kitty_theme we can do things in parallel
+	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
+	  __theme_helper set_nvim_theme $2 &
+	  __theme_helper set_kitty_theme $2 &
+	# we will attempt to generate kitty_theme, so nvim one should be set first
+	else
+	  __theme_helper set_nvim_theme $2
+	  __theme_helper set_kitty_theme $2 &
+	fi
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then

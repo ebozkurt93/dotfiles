@@ -98,4 +98,6 @@ elseif selected_theme == 'catppuccin-mocha' then
 	vim.cmd [[ colorscheme catppuccin-mocha ]]
 elseif selected_theme == 'catppuccin-macchiato' then
 	vim.cmd [[ colorscheme catppuccin-macchiato ]]
+elseif selected_theme == 'night-owl' then
+	vim.cmd [[ colorscheme night-owl ]]
 end
