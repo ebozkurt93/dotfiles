@@ -103,6 +103,7 @@ color15 ${color15}
 	)
 	-- vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/themes/" .. name .. ".conf")
 	vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/current-theme.conf")
+	print('Generated theme')
 	return kitty
 end
 
