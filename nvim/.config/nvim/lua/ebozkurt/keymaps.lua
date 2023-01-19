@@ -149,8 +149,10 @@ vim.keymap.set('n', '<leader>ls', function ()
 	print('All lsp servers stopped')
 end, { noremap = true })
 vim.keymap.set('n', '<leader>TC', function()
-	-- require('ebozkurt.theme-gen').generate(vim.fn.input('Theme name: ')) end,
 	require('ebozkurt.theme-gen').generate() end,
+{noremap = true})
+vim.keymap.set('n', '<leader>TS', function()
+	require('ebozkurt.theme-gen').generate(vim.fn.input('Theme name: ')) end,
 {noremap = true})
 
 vim.keymap.set('n', '<leader>gh', '<cmd>:GHInteractive<cr>', { noremap = true })

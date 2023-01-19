@@ -60,10 +60,12 @@ function M.template(str, table)
 end
 
 function M.generate(name)
+	local blank_name = name == nil or name == ''
 	local kitty = M.template(
 		[[
 # vim:ft=kitty
 ## name: ${_style_name}
+## nvim_auto_generated: true
 
 background ${bg}
 foreground ${fg}
@@ -99,11 +101,15 @@ color13 ${color13}
 color14 ${color14}
 color15 ${color15}
 ]],
-		vim.tbl_extend("force", M.find_colors(), { _style_name = name })
+		vim.tbl_extend("force", M.find_colors(), { _style_name = name or 'Current theme' })
 	)
-	-- vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/themes/" .. name .. ".conf")
 	vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/current-theme.conf")
-	print('Generated theme')
+	if not blank_name then
+		vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/themes/" .. name .. ".conf")
+		print('Generated and stored theme ' .. name)
+	else
+		print('Generated theme')
+	end
 	return kitty
 end
 
