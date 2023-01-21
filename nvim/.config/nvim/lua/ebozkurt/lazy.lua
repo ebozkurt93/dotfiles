@@ -36,6 +36,7 @@ require("lazy").setup({
 	"hrsh7th/cmp-buffer",
 	"hrsh7th/cmp-cmdline",
 	"saadparwaiz1/cmp_luasnip",
+	"rafamadriz/friendly-snippets",
 	--use 'tjdevries/nlua.nvim'
 	"nvim-lua/completion-nvim",
 	"onsails/lspkind.nvim",

@@ -59,3 +59,5 @@ ls.add_snippets('javascript', {
 	s("clgd", fmt("console.log('Debug - {}:', {})", { f(copy, 1), i(1) })),
 	s("todo", fmt("// todo: {}", { i(1) })),
 })
+
+require("luasnip.loaders.from_vscode").lazy_load()
