@@ -1,4 +1,4 @@
-local selected_theme = 'rose-pine'
+local selected_theme = 'nordic'
 
 -- default is also gruvbox
 -- gruvbox
@@ -100,4 +100,6 @@ elseif selected_theme == 'catppuccin-macchiato' then
 	vim.cmd [[ colorscheme catppuccin-macchiato ]]
 elseif selected_theme == 'night-owl' then
 	vim.cmd [[ colorscheme night-owl ]]
+elseif selected_theme == 'nordic' then
+	vim.cmd [[ colorscheme nordic ]]
 end

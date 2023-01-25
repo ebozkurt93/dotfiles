@@ -147,4 +147,5 @@ require("lazy").setup({
 	"savq/melange",
 	"rebelot/kanagawa.nvim",
 	"haishanh/night-owl.vim",
+	"AlexvZyl/nordic.nvim",
 })
