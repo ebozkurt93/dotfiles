@@ -15,7 +15,7 @@ read -r response
 if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   ./install-mirror.sh || (echo "Installing mirror failed, exiting..." && exit)
   ./install-cheatsh.sh || (echo "Installing cheat.sh failed, exiting..." && exit)
-  ./install-wally.sh || (echo "Installing wally failed, exiting..." && exit)
+  # ./install-wally.sh || (echo "Installing wally failed, exiting..." && exit)
   # ./install-rclone.sh || (echo "Installing rclone failed, exiting..." && exit)
 fi
 
