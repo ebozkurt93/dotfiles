@@ -148,4 +148,5 @@ require("lazy").setup({
 	"rebelot/kanagawa.nvim",
 	"haishanh/night-owl.vim",
 	"AlexvZyl/nordic.nvim",
+	"olivercederborg/poimandres.nvim",
 })

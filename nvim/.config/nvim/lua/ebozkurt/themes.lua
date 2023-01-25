@@ -102,4 +102,6 @@ elseif selected_theme == 'night-owl' then
 	vim.cmd [[ colorscheme night-owl ]]
 elseif selected_theme == 'nordic' then
 	vim.cmd [[ colorscheme nordic ]]
+elseif selected_theme == 'poimandres' then
+	vim.cmd [[ colorscheme poimandres ]]
 end
