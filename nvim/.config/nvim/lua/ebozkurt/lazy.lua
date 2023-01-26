@@ -70,7 +70,12 @@ require("lazy").setup({
 	{ "ThePrimeagen/harpoon", dependencies = { { "nvim-lua/plenary.nvim" } } },
 
 	"NvChad/nvim-colorizer.lua",
-	"xiyaowong/virtcolumn.nvim",
+	{"lukas-reineke/virt-column.nvim",
+		config = function()
+			require("virt-column").setup({char= '▕'})
+		end,
+	},
+
 	"lukas-reineke/indent-blankline.nvim",
 	"tpope/vim-sleuth", -- Detect tabstop and shiftwidth automatically
 

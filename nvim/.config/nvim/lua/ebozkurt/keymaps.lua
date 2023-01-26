@@ -10,7 +10,9 @@ vim.keymap.set('n', '<leader><space>', function()
 end, { desc = 'Clear search highlights' })
 vim.keymap.set('n', '<leader>n', function()
 	local current = vim.opt.relativenumber:get()
-	vim.opt.relativenumber = not current
+	for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+		vim.wo[win_nr].relativenumber = not current
+	end
 end, { noremap = true })
 vim.keymap.set('n', '<leader>sv', '<cmd>lua ReloadConfig()<cr>', { noremap = true, silent = false })
 vim.keymap.set('n', '<leader>sV', function()
@@ -168,6 +170,18 @@ vim.api.nvim_create_autocmd('User', {
 		end, {})
 	end
 })
+
+vim.keymap.set('n', '<leader>CC', function()
+	if vim.api.nvim_get_option_value('colorcolumn', {}) == "" then
+		for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+			vim.wo[win_nr].colorcolumn = "80,120"
+		end
+	else
+		for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+			vim.wo[win_nr].colorcolumn = ""
+		end
+	end
+end, {})
 
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'gitsigns',
