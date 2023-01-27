@@ -3,8 +3,15 @@ function set_wallpaper() {
 	osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"${1}\" as POSIX file"
 }
 
+
 if [[ "$1"  == "default" ]]; then
 	set_wallpaper "/System/Library/Desktop Pictures/Chroma Red.heic"
+	exit
+fi
+
+if [[ "$1"  == "find" ]]; then
+	echo "$(find -E $(cd ~/Downloads; pwd -P) -regex '.*\.(jpg|png|heic)')"
+	exit
 fi
 
 file_path=~/Documents/bitbar_plugins/tmp/wallpaper.txt
