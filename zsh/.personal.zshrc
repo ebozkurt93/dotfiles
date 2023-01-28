@@ -288,3 +288,12 @@ function __bt_device_toggle() {
 
 zle -N __bt_device_toggle 
 bindkey "^[b" __bt_device_toggle 
+
+function wp_change() {
+  local wp_file=$(~/bin/helpers/set_wallpaper.sh wp-path)
+  local selection=$(~/bin/helpers/set_wallpaper.sh find | fzf --preview 'viu -b {}')
+  [[ -z $selection ]] && return
+  echo -e "$selection\n$(cat $wp_file)" > $wp_file
+  ~/bin/helpers/set_wallpaper.sh
+}
+
