@@ -11,7 +11,8 @@ if [[ "$1"  == "default" ]]; then
 fi
 
 if [[ "$1"  == "find" ]]; then
-	echo "$(find -E $(cd ~/Downloads; pwd -P) -regex '.*\.(jpg|png|heic)')"
+	# find images and sort by modified at
+	echo "$(find -E $(cd ~/Downloads; pwd -P) -regex '.*\.(jpg|png|heic)' -exec ls -t {} +)"
 	exit
 fi
 
