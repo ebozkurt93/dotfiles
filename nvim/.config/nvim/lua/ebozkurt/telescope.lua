@@ -31,7 +31,8 @@ require('telescope').setup {
 			'.git/',
 			'.git-crypt/',
 			'.idea/',
-			'dist/'
+			'dist/',
+			'target/'
 		},
 		sorting_strategy = 'ascending',
 		layout_config = {
