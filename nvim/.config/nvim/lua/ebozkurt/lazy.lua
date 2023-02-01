@@ -82,6 +82,8 @@ require("lazy").setup({
 
 	{ "gennaro-tedesco/nvim-possession", dependencies = { "ibhagwan/fzf-lua" } },
 	"tpope/vim-surround",
+	{'kevinhwang91/nvim-ufo', dependencies = 'kevinhwang91/promise-async'},
+
 	"lewis6991/gitsigns.nvim",
 	{ "TimUntersberger/neogit", dependencies = "nvim-lua/plenary.nvim" },
 	"tpope/vim-fugitive",

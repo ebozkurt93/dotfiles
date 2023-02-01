@@ -29,7 +29,7 @@ require("ebozkurt.nvim-ts-rainbow")
 require("ebozkurt.filetype")
 require("ebozkurt.cheatsh-vim")
 require("ebozkurt.null-ls")
+require("ebozkurt.ufo")
 require("ebozkurt.themes")
-require("ebozkurt.session")
 require("ebozkurt.theme-gen")
 

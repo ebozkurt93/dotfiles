@@ -77,7 +77,9 @@ vim.api.nvim_create_autocmd('User', {
 vim.opt.signcolumn = 'auto'
 vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
 
---vim.opt.foldlevel = 1
---vim.opt.foldmethod = "expr"
-vim.opt.foldmethod = "expr"
-vim.opt.foldlevel = 3
+vim.o.foldcolumn = '0'
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+vim.o.foldmethod = 'syntax'
+-- vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]

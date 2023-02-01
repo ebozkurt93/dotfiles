@@ -54,6 +54,14 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'UfoInitialized',
+	callback = function()
+		vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
+		vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
+	end
+})
+
 -- keep selection after indentation
 vim.cmd([[
 :vnoremap < <gv
