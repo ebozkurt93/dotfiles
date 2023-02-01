@@ -3,3 +3,4 @@ java adoptopenjdk-11.0.16+101
 nodejs 16.15.1
 yarn 1.22.19
 python 3.11.0
+ruby system

@@ -75,6 +75,7 @@ alias dcd='docker-compose down'
 alias t='tmux'
 
 alias cat='bat --paging=never'
+alias lg='lazygit'
 
 # running some docker containers
 alias torrent-up='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml up -d'
