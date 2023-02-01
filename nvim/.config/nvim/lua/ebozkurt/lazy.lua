@@ -70,16 +70,17 @@ require("lazy").setup({
 	{ "ThePrimeagen/harpoon", dependencies = { { "nvim-lua/plenary.nvim" } } },
 
 	"NvChad/nvim-colorizer.lua",
-	{"lukas-reineke/virt-column.nvim",
+	{
+		"lukas-reineke/virt-column.nvim",
 		config = function()
-			require("virt-column").setup({char= '▕'})
+			require("virt-column").setup({ char = "▕" })
 		end,
 	},
 
 	"lukas-reineke/indent-blankline.nvim",
 	"tpope/vim-sleuth", -- Detect tabstop and shiftwidth automatically
 
-	{ "jedrzejboczar/possession.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
+	{ "gennaro-tedesco/nvim-possession", dependencies = { "ibhagwan/fzf-lua" } },
 	"tpope/vim-surround",
 	"lewis6991/gitsigns.nvim",
 	{ "TimUntersberger/neogit", dependencies = "nvim-lua/plenary.nvim" },

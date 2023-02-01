@@ -1,20 +1,12 @@
-require('possession').setup {
-	autosave = {
-        current = true,
-        tmp = true,
-        tmp_name = 'tmp',
-        on_load = true,
-        on_quit = true,
-    },
-}
-
-vim.api.nvim_create_autocmd('User', {
-	pattern = 'telescope+possession',
-	callback = function()
-		require('telescope').load_extension('possession') -- Load telescope
-		-- Ideally delete_session should be here, however if I do that I cannot
-		-- override the value here therefore function is empty.
-	end
+require("nvim-possession").setup({
+    autosave = false,
+	fzf_winopts = {
+        -- any valid fzf-lua winopts options, for instance
+        width = 0.9,
+        preview = {
+            vertical = "right:60%"
+        }
+    }
 })
 
 vim.api.nvim_exec_autocmds('User', {pattern = 'possession'})

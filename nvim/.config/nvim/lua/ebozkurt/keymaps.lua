@@ -247,15 +247,16 @@ vim.api.nvim_create_autocmd('User', {
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'possession',
 	callback = function()
-		vim.keymap.set('n', '<C-s>', function() require('telescope').extensions.possession.list() end, { noremap = true })
-		vim.keymap.set('n', '<S-s>', function()
-			local date = os.date("%Y-%m-%d-%H-%M-%S")
-			local path = vim.fs.basename(vim.fn.getcwd())
-			local name = path .. '-' .. date
-			require('possession.session').save(name)
-		end, { noremap = true })
-		vim.keymap.set('n', '<A-q>', function() require('ebozkurt.session').delete_session() end, { noremap = true })
-		vim.keymap.set('n', '<S-q>', function() require('ebozkurt.session').copy_session() end, { noremap = true })
+		local possession = require("nvim-possession")
+        vim.keymap.set("n", "<leader>sl", function()
+            possession.list()
+        end)
+        vim.keymap.set("n", "<leader>sn", function()
+            possession.new()
+        end)
+        vim.keymap.set("n", "<leader>su", function()
+            possession.update()
+        end)
 	end
 })
 

@@ -39,7 +39,7 @@ require('lualine').setup {
 		lualine_a = { 'mode' },
 		lualine_b = { 'branch', 'diff', 'diagnostics' },
 		lualine_c = { get_active_lsp_clients },
-		lualine_x = { 'encoding', 'filetype', 'filesize' },
+		lualine_x = { { "require'nvim-possession'.status()" }, 'encoding', 'filetype', 'filesize' },
 		lualine_y = { 'progress', 'searchcount' },
 		lualine_z = { 'location' }
 	},

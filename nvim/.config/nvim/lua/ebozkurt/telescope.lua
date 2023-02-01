@@ -82,4 +82,3 @@ require('telescope').load_extension('fzf')
 require('telescope').load_extension('file_browser')
 
 vim.api.nvim_exec_autocmds('User', { pattern = 'Telescope' })
-vim.api.nvim_exec_autocmds('User', { pattern = 'telescope+possession' })
