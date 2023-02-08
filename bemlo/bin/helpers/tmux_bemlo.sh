@@ -14,6 +14,11 @@ if [[ -z $(lsof -i:5432 -t) ]]; then
 	pg=false
 fi
 
+fb=true
+if [[ -z $(lsof -i:4000 -t) ]]; then
+	fb=false
+fi
+
 gh=$(~/Documents/bitbar_plugins/github-prs.5m.sh count)
 
-echo ":$(p $docker) :$(p $pg)  :$gh"
+echo ":$(p $docker) :$(p $pg) :$(p $fb)  :$gh"
