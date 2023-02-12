@@ -80,7 +80,7 @@ require 'lspconfig'.pyright.setup {
 -- }
 
 -- brew install lua-language-server
-require 'lspconfig'.sumneko_lua.setup {
+require 'lspconfig'.lua_ls.setup {
 	cmd = { "lua-language-server" },
 	capabilities = capabilities,
 	on_attach = my_on_attach,
