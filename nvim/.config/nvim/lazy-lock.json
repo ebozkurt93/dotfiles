@@ -32,6 +32,7 @@
   "mason.nvim": { "branch": "main", "commit": "f557094c77c4fa91c3613cfbd22cbcdbe0569793" },
   "melange": { "branch": "master", "commit": "2c8250c435279638b5a244acfaf9fcdb702a45cc" },
   "mellow.nvim": { "branch": "main", "commit": "3d359aa0ab478a127cb28cbe6802f1af879348a5" },
+  "moonbow.nvim": { "branch": "master", "commit": "9b2efcbefaf42c7fd7f066eb4457b08c15dd4656" },
   "neogit": { "branch": "master", "commit": "089d388876a535032ac6a3f80e19420f09e4ddda" },
   "neotest": { "branch": "master", "commit": "568feb5e9c7c5b7386886ecd4520389153aa7c7d" },
   "neotest-go": { "branch": "main", "commit": "981406c12bd3c77eb434211a1b85b964ab5bbdd5" },

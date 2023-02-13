@@ -134,7 +134,7 @@ function __theme_helper() {
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
   'melange-light' 'melange-dark' 'kanagawa'
   'catppuccin-latte' 'catppuccin-frappe' 'catppuccin-mocha' 'catppuccin-macchiato'
-  'night-owl' 'nordic' 'poimandres'
+  'night-owl' 'nordic' 'poimandres' 'moonbow'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

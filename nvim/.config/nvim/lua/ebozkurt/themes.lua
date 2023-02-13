@@ -104,4 +104,6 @@ elseif selected_theme == 'nordic' then
 	vim.cmd [[ colorscheme nordic ]]
 elseif selected_theme == 'poimandres' then
 	vim.cmd [[ colorscheme poimandres ]]
+elseif selected_theme == 'moonbow' then
+	vim.cmd [[ colorscheme moonbow ]]
 end
