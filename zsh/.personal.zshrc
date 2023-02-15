@@ -238,7 +238,7 @@ function __open_pr {
     return
   fi
   local selected="$(cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --bind \
-    'ctrl-f:reload(source ~/.zshrc; __open_pr cmd),ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep $GH_USERNAME)')"
+    'ctrl-f:reload(source ~/.zshrc; __open_pr cmd),ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep $GH_USERNAME || true)')"
   test -z $selected && return
   echo $selected | awk '{print $NF}' | xargs open
   zle reset-prompt

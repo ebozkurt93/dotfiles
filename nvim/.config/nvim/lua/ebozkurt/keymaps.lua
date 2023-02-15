@@ -26,6 +26,7 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
 
 vim.keymap.set('i', 'jk', '<ESC>', { noremap = true })
+vim.keymap.set('v', 'jk', '<ESC>', { noremap = true })
 -- keep cursor in same position after adding new line
 vim.keymap.set('n', 'J', 'mzJ`z', { noremap = true })
 -- keep copy register content same after paste

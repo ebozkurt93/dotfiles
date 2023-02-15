@@ -5,7 +5,9 @@ local shared_keys = {
 	['<C-p>'] = action_layout.toggle_preview,
 	['<C-o>'] = action_layout.toggle_mirror,
 	['<C-d>'] = actions.delete_buffer,
-	['<C-f>'] = actions.to_fuzzy_refine
+	['<C-f>'] = actions.to_fuzzy_refine,
+	-- by default this keybind closes telescope but only in insert mode
+	['<C-c>'] = actions.close
 }
 
 local picker_options = {
@@ -31,6 +33,7 @@ require('telescope').setup {
 			'.git/',
 			'.git-crypt/',
 			'.idea/',
+			'.cache/',
 			'dist/',
 			'target/'
 		},
