@@ -24,19 +24,19 @@ dock_item() {
 defaults write com.apple.dock persistent-apps -array
 defaults write com.apple.dock persistent-others -array
 apps=(
-"/System/Applications/Launchpad.app"
+# "/System/Applications/Launchpad.app"
 "/Applications/Google Chrome.app"
 "/Applications/Spotify.app"
-"/Applications/Pocket Casts.app"
-"{'tile-type'='small-spacer-tile';}"
+# "/Applications/Pocket Casts.app"
+# "{'tile-type'='small-spacer-tile';}"
 "/Applications/kitty.app"
 "/Applications/Slack.app"
-"/Applications/Sublime Merge.app"
-"{'tile-type'='small-spacer-tile';}"
+# "/Applications/Sublime Merge.app"
+# "{'tile-type'='small-spacer-tile';}"
 "/Applications/Obsidian.app"
-"/Applications/MacPass.app"
-"/System/Applications/App Store.app"
-"/System/Applications/System Settings.app"
+# "/Applications/MacPass.app"
+# "/System/Applications/App Store.app"
+# "/System/Applications/System Settings.app"
 )
 for val in "${apps[@]}"; do
   defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"
