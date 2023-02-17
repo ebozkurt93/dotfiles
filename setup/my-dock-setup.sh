@@ -21,6 +21,8 @@ dock_item() {
   fi
 }
 
+echo ""
+echo "Add apps to Dock"
 defaults write com.apple.dock persistent-apps -array
 defaults write com.apple.dock persistent-others -array
 apps=(
@@ -39,7 +41,12 @@ apps=(
 # "/System/Applications/System Settings.app"
 )
 for val in "${apps[@]}"; do
-  defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"
+  if [[ "$val" =~ .app$ ]] && [[ ! -d "$val" ]]; then
+    echo "Skipping $val since not found"
+    continue
+  else
+    defaults write com.apple.dock persistent-apps -array-add "$(dock_item "$val")"
+  fi
 done
 # Check link for options -> https://github.com/yannbertrand/macos-defaults/issues/62
 defaults write com.apple.dock 'persistent-others' -array-add $(printf '<dict><key>tile-data</key><dict><key>arrangement</key><integer>0</integer><key>displayas</key><integer>0</integer><key>file-data</key><dict><key>_CFURLString</key><string>%s</string><key>_CFURLStringType</key><integer>0</integer></dict><key>preferreditemsize</key><integer>-1</integer><key>showas</key><integer>0</integer></dict><key>tile-type</key><string>directory-tile</string></dict>', "$HOME/Downloads")
