@@ -30,6 +30,7 @@ require("ebozkurt.filetype")
 require("ebozkurt.cheatsh-vim")
 require("ebozkurt.null-ls")
 require("ebozkurt.ufo")
+require("ebozkurt.obsidian")
 require("ebozkurt.themes")
 require("ebozkurt.theme-gen")
 
