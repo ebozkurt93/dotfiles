@@ -12,6 +12,10 @@ local function get_active_lsp_clients()
 	return vim.trim(table.concat(tbl, ', '))
 end
 
+local function window_nr()
+	return vim.api.nvim_win_get_number(0)
+end
+
 require('lualine').setup {
 	options = {
 		icons_enabled = true,
@@ -46,7 +50,7 @@ require('lualine').setup {
 	inactive_sections = {
 		lualine_a = {},
 		lualine_b = {},
-		lualine_c = { 'filename', 'diff' },
+		lualine_c = { window_nr, 'filename', 'diff' },
 		lualine_x = { 'location' },
 		lualine_y = {},
 		lualine_z = {}

@@ -96,6 +96,13 @@ vim.keymap.set('n', '<SA-k>', '<cmd>:resize -1<cr>', { noremap = true })
 
 vim.keymap.set('n', '<leader><C-w>', '<cmd>WinShift<cr>', { noremap = true })
 
+-- jump to window
+for j = 1, 8 do
+	local lhs = '<c-w>' .. j
+	local rhs = j .. '<c-w>w'
+	vim.keymap.set('n', lhs, rhs, { noremap = true })
+end
+
 -- tabs
 vim.keymap.set('n', 'tc', '<cmd>:tabnew<cr>', { noremap = true })
 vim.keymap.set('n', 'ts', '<cmd>:tab split<cr>', { noremap = true })
