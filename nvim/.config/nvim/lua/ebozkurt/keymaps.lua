@@ -237,6 +237,12 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+-- obsidian
+vim.keymap.set('n', '<leader>os', '<cmd>ObsidianSearch<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>of', '<cmd>ObsidianQuickSwitch<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>oo', '<cmd>ObsidianOpen<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>og', '<cmd>ObsidianFollowLink<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>ot', '<cmd>ObsidianToday<cr>', { noremap = true })
 -- quickfix
 vim.keymap.set('n', '<leader>ck', '<cmd>cnext<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>cj', '<cmd>cprev<cr>', { noremap = true })
