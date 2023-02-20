@@ -28,6 +28,14 @@ rm -rf jetbrains_mono
 rm jetbrains_mono.zip
 echo "Installed Jetbrains Mono"
 
+echo "Installing Noto Sans Mono"
+curl -L 'https://fonts.google.com/download?family=Noto%20Sans%20Mono' > noto_sans_mono.zip
+unzip noto_sans_mono.zip -d noto_sans_mono
+cp -a noto_sans_mono/static/NotoSansMono/ ~/Library/Fonts
+rm -rf noto_sans_mono
+rm noto_sans_mono.zip
+echo "Installed Noto Sans Mono"
+
 echo "Installing Droid Sans Mono (for Nerd Font icons)"
 dsm_name="Droid Sans Mono for Powerline Nerd Font Complete.otf"
 curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
