@@ -36,10 +36,10 @@ rm -rf noto_sans_mono
 rm noto_sans_mono.zip
 echo "Installed Noto Sans Mono"
 
-echo "Installing Droid Sans Mono (for Nerd Font icons)"
-dsm_name="Droid Sans Mono for Powerline Nerd Font Complete.otf"
-curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.2.2/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
+echo "Installing Nerd Fonts Symbols"
+dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
+curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.2.2/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf
 mv "$dsm_name" ~/Library/Fonts
-echo "Installed Droid Sans Mono"
+echo "Installed Nerd Fonts Symbols"
 echo "Installed fonts successfully"
 
