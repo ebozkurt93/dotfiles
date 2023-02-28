@@ -8,14 +8,22 @@ config_file="$HOME/dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json"
 titles_temp=$(cat "$config_file" | jq -r '.[].title')
 icons_temp=$(cat "$config_file" | jq -r '.[].icon')
 paths_temp=$(cat "$config_file" | jq -r '.[].paths')
+on_enabled_temp=$(cat "$config_file" | jq -r '.[] | if has("on_enabled") then .on_enabled else "" end')
+on_disabled_temp=$(cat "$config_file" | jq -r '.[] | if has("on_disabled") then .on_disabled else "" end')
 while read -r line; do states+=("$line"); done <<<"$titles_temp"
 while read -r line; do _icons+=("$line"); done <<<"$icons_temp"
 while read -r line; do _paths+=("$line"); done <<<"$paths_temp"
-typeset -A icons 
-typeset -A paths 
+while read -r line; do _on_enabled+=("$line"); done <<<"$on_enabled_temp"
+while read -r line; do _on_disabled+=("$line"); done <<<"$on_disabled_temp"
+typeset -A icons
+typeset -A paths
+typeset -A on_enabled_commands
+typeset -A on_disabled_commands
 for ((idx=1; idx<=${#states[@]}; ++idx)); do
   icons+=("${states[idx]}" "${_icons[idx]}")
   paths+=("${states[idx]}" "$(envsubst <<< "${_paths[idx]}")")
+  on_enabled_commands+=("${states[idx]}" "${_on_enabled[idx]}")
+  on_disabled_commands+=("${states[idx]}" "${_on_disabled[idx]}")
 done
 
 function get_file_path {
@@ -26,7 +34,7 @@ if [ "$1" = 'enabled-states' ]; then
   selected=''
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
-	test ! -f $file_path || selected="$selected $state"
+    test ! -f $file_path || selected="$selected $state"
   done
   echo $selected
   exit
@@ -35,10 +43,10 @@ fi
 if [ "$1" = 'enabled-states-short' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
-	if [[ -f $file_path ]]; then
-		new=$(test -z "$icons[$state]" && echo "$state" || echo "$icons[$state]")
-		selected="$selected $new"
-	fi
+    if [[ -f $file_path ]]; then
+      new=$(test -z "$icons[$state]" && echo "$state" || echo "$icons[$state]")
+      selected="$selected $new"
+    fi
   done
   echo $selected
   exit
@@ -52,10 +60,10 @@ fi
 if [ "$1" = 'enabled-states-paths' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
-	if [[ -f $file_path ]]; then
-		new=$(test -z "$icons[$state]" && echo "" || echo "$paths[$state]")
-		selected="$selected $new"
-	fi
+    if [[ -f $file_path ]]; then
+      new=$(test -z "$icons[$state]" && echo "" || echo "$paths[$state]")
+      selected="$selected $new"
+    fi
   done
   echo $selected
   exit
@@ -74,9 +82,17 @@ fi
 
 if [ "$1" = 'toggle' ]; then
   file_path=`get_file_path $2`
-  echo $file_path
   if printf '%s\0' "${states[@]}" | grep -Fxqz -- "$2"; then
-      test -f $file_path && rm $file_path || touch $file_path
+    if [[ -f $file_path ]]; then
+      rm $file_path
+      command="$on_disabled_commands[$2]"
+    else
+      touch $file_path
+      command="$on_enabled_commands[$2]"
+    fi
+    if [[ ! -z "$command" ]]; then
+      { zsh -c "source ~/.zshrc; eval \" $command\" " } &
+    fi
     if [ "$3" != 'no-restart' ]; then
       # kill BitBar
       ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
