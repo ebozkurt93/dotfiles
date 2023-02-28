@@ -44,14 +44,14 @@ require('lualine').setup {
 		lualine_b = { 'branch', 'diff', 'diagnostics' },
 		lualine_c = { get_active_lsp_clients },
 		lualine_x = { { "require'nvim-possession'.status()" }, 'encoding', 'filetype', 'filesize' },
-		lualine_y = { 'progress', 'searchcount' },
+		lualine_y = { 'searchcount', 'progress' },
 		lualine_z = { 'location' }
 	},
 	inactive_sections = {
 		lualine_a = {},
 		lualine_b = {},
-		lualine_c = { window_nr, 'filename', 'diff' },
-		lualine_x = { 'location' },
+		lualine_c = { window_nr, 'filename', 'diff', 'diagnostics' },
+		lualine_x = { 'searchcount', 'progress', 'location' },
 		lualine_y = {},
 		lualine_z = {}
 	},
@@ -72,8 +72,8 @@ require('lualine').setup {
 	},
 	winbar = {
 		lualine_a = {},
-		lualine_b = {},
-		lualine_c = { { 'filename', path = 1 }, },
+		lualine_b = { { 'filename', path = 1 }, },
+		lualine_c = {},
 		lualine_x = {},
 		lualine_y = {},
 		lualine_z = {}
