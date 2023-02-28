@@ -42,7 +42,7 @@ require("lazy").setup({
 	"onsails/lspkind.nvim",
 	"windwp/nvim-autopairs",
 	"windwp/nvim-ts-autotag",
-	"glepnir/lspsaga.nvim",
+	{ "glepnir/lspsaga.nvim", event = "BufRead", dependencies = "nvim-treesitter/nvim-treesitter" },
 	{ url = "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },
 	{ "williamboman/mason.nvim" },
 	{ "williamboman/mason-lspconfig.nvim" },
