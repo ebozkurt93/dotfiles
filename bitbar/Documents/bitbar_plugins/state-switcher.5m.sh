@@ -91,7 +91,7 @@ if [ "$1" = 'toggle' ]; then
       command="$on_enabled_commands[$2]"
     fi
     if [[ ! -z "$command" ]]; then
-      { zsh -c "source ~/.zshrc; eval \" $command\" " } &
+      { zsh -c "__custom_state=\"$2\"; source ~/.zshrc; eval \" $command\" > /dev/null 2>&1;" } &
     fi
     if [ "$3" != 'no-restart' ]; then
       # kill BitBar
