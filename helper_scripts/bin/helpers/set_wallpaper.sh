@@ -32,5 +32,5 @@ if [[ ! "$content" =~ .(png|jpg|heic) ]]; then
 	exit
 fi
 
-set_wallpaper $content
+set_wallpaper "$content"
 
