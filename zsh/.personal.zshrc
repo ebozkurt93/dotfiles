@@ -300,3 +300,5 @@ function wp_change() {
   ~/bin/helpers/set_wallpaper.sh
 }
 
+bindkey "^[r" reset-prompt
+
