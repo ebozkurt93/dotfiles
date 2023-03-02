@@ -201,6 +201,9 @@ end, {})
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'gitsigns',
 	callback = function(event)
+		local gs = require('gitsigns')
+		vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end, {})
+		vim.keymap.set('n', '<leader>gd', function () gs.diffthis() end, {})
 		vim.keymap.set('n', '<leader>G', function()
 			local default_branch = vim.fn.trim(vim.fn.system(
 				"git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'"
@@ -213,13 +216,13 @@ vim.api.nvim_create_autocmd('User', {
 			))
 			local value = event.data.value
 			if value == 0 then
-				require('gitsigns').change_base(common_ancestor, true)
+				gs.change_base(common_ancestor, true)
 				print('Changed gitsigns base to common ancestor node ' .. common_ancestor)
 			elseif value == 1 then
-				require('gitsigns').change_base(default_branch, true)
+				gs.change_base(default_branch, true)
 				print('Changed gitsigns base to ' .. default_branch)
 			else
-				require('gitsigns').change_base(nil, true)
+				gs.change_base(nil, true)
 				print('Resetted gitsigns base')
 			end
 			event.data.value = (event.data.value + 1) % 3
