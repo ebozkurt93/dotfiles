@@ -45,9 +45,14 @@ alias sr='exec $SHELL'
 alias ss='echo $__sourced_states'
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
-  local selected_state=$($p states | tr ' ' '\n' | sort | fzf)
+  local selected_state=$($p states | tr ' ' '\n' | sort | fzf \
+    --bind 'ctrl-space:execute(echo _{})+abort' )
   test -z $selected_state && return
-  $p toggle $selected_state
+  if [[ $selected_state =~ ^_.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c2-)"
+    local suffix="ignore-event"
+  fi
+  $p toggle $selected_state $suffix
   zle reset-prompt
 }
 alias st="__state_switcher_toggle"

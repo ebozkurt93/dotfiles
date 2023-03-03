@@ -90,16 +90,14 @@ if [ "$1" = 'toggle' ]; then
       touch $file_path
       command="$on_enabled_commands[$2]"
     fi
-    if [[ ! -z "$command" ]]; then
+    if [[ ! -z "$command" && "$3" != 'ignore-event' ]]; then
       { zsh -c "__custom_state=\"$2\"; source ~/.zshrc; eval \" $command\" > /dev/null 2>&1;" } &
     fi
-    if [ "$3" != 'no-restart' ]; then
-      # kill BitBar
-      ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
-      # restart BitBar
-      open -a /Applications/BitBar.app
-	  exit
-    fi
+    # kill BitBar
+    ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
+    # restart BitBar
+    open -a /Applications/BitBar.app
+    exit
   fi
 fi
 
@@ -112,7 +110,7 @@ for state in "${states[@]}"; do
   echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state terminal=false $style"
   echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
-   bash=\"$0\" param1=toggle param2=$state param3=no-restart alternate=true refresh=true terminal=false $style"
+   bash=\"$0\" param1=toggle param2=$state param3=ignore-event alternate=true refresh=true terminal=false $style"
 done
 echo "Refresh | refresh=true $style"
 
