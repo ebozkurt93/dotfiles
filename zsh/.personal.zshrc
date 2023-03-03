@@ -115,7 +115,11 @@ function resr {
 
 function __find_repos {
   p=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-paths) ~/bin)
-  selected_dir="$(cat <(echo ~/dotfiles) <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) | sort | uniq | fzf)"
+  selected_dir="$(cat <(echo ~/dotfiles) \
+    <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) \
+    | sort | uniq | fzf --preview 'cd {}; tree -L 3 --filelimit 100 --dirsfirst \
+      -C --noreport' --preview-window right --bind \
+      'ctrl-p:change-preview-window(up|hidden|right)')"
   test -z $selected_dir && return
   cd $selected_dir
   # if this is missing, prompt shows old directory till another command runs
