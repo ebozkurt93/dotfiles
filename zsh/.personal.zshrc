@@ -311,3 +311,11 @@ function wp_change() {
 
 bindkey "^[r" reset-prompt
 
+function __ch() {
+  ch
+  zle reset-prompt
+}
+
+zle -N __ch
+bindkey "^[h" __ch
+
