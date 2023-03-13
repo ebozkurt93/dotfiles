@@ -44,7 +44,8 @@ if [ "$1" = 'enabled-states-short' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
     if [[ -f $file_path ]]; then
-      new=$(test -z "$icons[$state]" && echo "$state" || echo "$icons[$state]")
+      # new=$(test -z "$icons[$state]" && echo "$state" || echo "$icons[$state]")
+      new="$icons[$state]"
       selected="$selected $new"
     fi
   done

@@ -17,6 +17,7 @@ alias pres="__get_pid_for_port 8085 | xargs kill"
 alias fres="__get_pid_for_port 8080 | xargs kill"
 alias ytf="resr '**.spec.ts' 'yarn jest \$0'"
 alias yta="res '**.ts' yarn test"
+alias __t_stop="tmux list-panes -a | grep bemlo:1 | perl -pe 's/.*(%\d+).*/\1/g' | xargs -n 1 -I {} tmux send-keys -t {} C-c"
 
 function dres() {
   pres
