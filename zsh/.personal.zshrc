@@ -319,3 +319,10 @@ function __ch() {
 zle -N __ch
 bindkey "^[h" __ch
 
+function __open_folder() {
+  open .
+}
+
+zle -N __open_folder
+bindkey "^[o" __open_folder
+
