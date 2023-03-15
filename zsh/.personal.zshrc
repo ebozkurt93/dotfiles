@@ -287,10 +287,13 @@ function __bt_device_toggle() {
   fi
   local c=$(blueutil --paired --format json | jq -r \
     '.[] | .name + " " + (.connected|tostring|sub("true"; "✅")|sub("false"; "❌")) + " " + .address')
-  local selection=$(echo "$c" | sort | fzf)
+  local selection=$(echo "$c" | sort | fzf --bind 'ctrl-p:execute(echo _{})+abort')
   [[ -z $selection ]] && return
   address=$(echo $selection | awk '{print $NF}')
-  if [[ "$(blueutil --is-connected $address)" == '1' ]]; then
+  if [[ $selection =~ ^_.* ]]; then
+    blueutil --disconnect $address --wait-disconnect $address
+    blueutil --connect $address
+  elif [[ "$(blueutil --is-connected $address)" == '1' ]]; then
     blueutil --disconnect $address --wait-disconnect $address
   else
     blueutil --connect $address
