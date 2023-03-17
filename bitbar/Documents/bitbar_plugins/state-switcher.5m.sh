@@ -83,8 +83,7 @@ fi
 if [ "$1" = 'states-with-marks' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
-    # content=$(test -z "$icons[$state]" && echo "___$state" || echo "$icons[$state] $state")
-    echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌)"
+    printf "%-20s %-10s\n" "$state" "$(test -f $file_path && echo ✅ || echo ❌)"
     done
   exit
 fi
