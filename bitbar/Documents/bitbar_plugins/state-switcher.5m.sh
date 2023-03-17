@@ -62,7 +62,7 @@ if [ "$1" = 'enabled-states-paths' ]; then
   for state in "${states[@]}"; do
     file_path=`get_file_path $state`
     if [[ -f $file_path ]]; then
-      new=$(test -z "$icons[$state]" && echo "" || echo "$paths[$state]")
+      new=$(test -z "$paths[$state]" && echo "" || echo "$paths[$state]")
       selected="$selected $new"
     fi
   done
@@ -80,6 +80,14 @@ if [ "$1" = 'states' ]; then
   exit
 fi
 
+if [ "$1" = 'states-with-marks' ]; then
+  for state in "${states[@]}"; do
+    file_path=`get_file_path $state`
+    # content=$(test -z "$icons[$state]" && echo "___$state" || echo "$icons[$state] $state")
+    echo -e "$state\\t$(test -f $file_path && echo ✅ || echo ❌)"
+    done
+  exit
+fi
 
 if [ "$1" = 'toggle' ]; then
   file_path=`get_file_path $2`
