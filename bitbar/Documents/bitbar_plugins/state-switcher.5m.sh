@@ -110,7 +110,7 @@ if [ "$1" = 'toggle' ]; then
   fi
 fi
 
-echo "✅"
+echo " | font='Symbols Nerd Font' size=18"
 echo "---"
 for state in "${states[@]}"; do
   file_path=`get_file_path $state`
