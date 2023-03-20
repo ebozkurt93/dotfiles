@@ -331,3 +331,13 @@ function __open_folder() {
 zle -N __open_folder
 bindkey "^[o" __open_folder
 
+function __cd_fzf {
+  local selection=$(find . \( -name ".git" -o -name "node_modules" -o -path "*/.*" \) \
+    -prune -o -type d -print -maxdepth 4 > /dev/null 2>&1| fzf)
+  [[ -z $selection ]] && return
+  cd $selection
+  zle reset-prompt
+}
+
+zle -N __cd_fzf
+bindkey "^[f" __cd_fzf
