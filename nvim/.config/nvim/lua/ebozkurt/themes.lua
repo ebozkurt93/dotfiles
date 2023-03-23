@@ -51,6 +51,10 @@ elseif selected_theme == 'everforest-dark' then
 	vim.opt.background = 'dark'
 	vim.g.everforest_background = 'hard'
 	vim.cmd [[ colorscheme everforest ]]
+elseif selected_theme == 'everforest-light' then
+	vim.opt.background = 'light'
+	vim.g.everforest_background = 'medium'
+	vim.cmd [[ colorscheme everforest ]]
 elseif selected_theme == 'oxocarbon' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme oxocarbon-lua ]]
