@@ -7,6 +7,7 @@ require("todo-comments").setup {
 			alt = { "fixme", "bug", "fixit", "issue" }, -- a set of other keywords that all map to this FIX keywords
 			-- signs = false, -- configure signs for some keywords individually
 		},
+		fixnow = { icon = "", color = "warning" },
 		todo = { icon = " ", color = "info" },
 		hack = { icon = " ", color = "warning" },
 		warn = { icon = " ", color = "warning", alt = { "warning", "xxx" } },

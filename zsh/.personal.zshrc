@@ -46,10 +46,23 @@ alias ss='echo $__sourced_states'
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
   local selected_state=$($p states-with-marks | sort | fzf \
-    --bind 'ctrl-space:execute(echo _{})+abort' )
+    --bind 'ctrl-space:execute(echo _{})+abort,alt-j:execute(echo __{})+abort,alt-k:execute(echo ___{})+abort'
+  )
   selected_state=$(echo $selected_state | awk '{print $1}')
 
   test -z $selected_state && return
+  if [[ $selected_state =~ ^___.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c4-)"
+    $p run_hook on_enabled $selected_state
+    zle reset-prompt
+    return
+  elif [[ $selected_state =~ ^__.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c3-)"
+    $p run_hook on_disabled $selected_state
+    zle reset-prompt
+    return
+  fi
+
   if [[ $selected_state =~ ^_.* ]]; then
     selected_state="$(echo "$selected_state" | cut -c2-)"
     local suffix="ignore-event"

@@ -30,6 +30,10 @@ function get_file_path {
   echo ~/Documents/bitbar_plugins/tmp/$1
 }
 
+function run_on_command_hook {
+  { zsh -c "__custom_state=\"$1\"; source ~/.zshrc; eval \" $2\" > /dev/null 2>&1;" } &
+}
+
 if [ "$1" = 'enabled-states' ]; then
   selected=''
   for state in "${states[@]}"; do
@@ -99,7 +103,7 @@ if [ "$1" = 'toggle' ]; then
       command="$on_enabled_commands[$2]"
     fi
     if [[ ! -z "$command" && "$3" != 'ignore-event' ]]; then
-      { zsh -c "__custom_state=\"$2\"; source ~/.zshrc; eval \" $command\" > /dev/null 2>&1;" } &
+      run_on_command_hook "$2" "$command"
     fi
     # kill BitBar
     ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
@@ -107,6 +111,22 @@ if [ "$1" = 'toggle' ]; then
     open -a /Applications/BitBar.app
     exit
   fi
+fi
+
+
+if [ "$1" = 'run_hook' ]; then
+  file_path=`get_file_path $3`
+  if printf '%s\0' "${states[@]}" | grep -Fxqz -- "$3"; then
+    if [[ "$2" == "on_enabled" ]]; then
+      command="$on_enabled_commands[$3]"
+      run_on_command_hook "$3" "$command"
+    fi
+    if [[ "$2" == "on_disabled" ]]; then
+      command="$on_disabled_commands[$3]"
+      run_on_command_hook "$3" "$command"
+    fi
+  fi
+  exit
 fi
 
 echo " | font='Symbols Nerd Font' size=18"
@@ -117,6 +137,8 @@ for state in "${states[@]}"; do
 
   echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state terminal=false $style"
+  echo -e "--Run on_enabled | bash=\"$0\" param1=run_hook param2=on_enabled param3=$state refresh=false terminal=false $style"
+  echo -e "--Run on_disabled | bash=\"$0\" param1=run_hook param2=on_disabled param3=$state refresh=false terminal=false $style"
   echo -e "$content\\t$(test -f $file_path && echo ✅ || echo ❌) |\
    bash=\"$0\" param1=toggle param2=$state param3=ignore-event alternate=true refresh=true terminal=false $style"
 done

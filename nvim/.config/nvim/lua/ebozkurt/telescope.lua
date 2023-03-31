@@ -4,7 +4,11 @@ local action_layout = require "telescope.actions.layout"
 local shared_keys = {
 	['<C-p>'] = action_layout.toggle_preview,
 	['<C-o>'] = action_layout.toggle_mirror,
-	['<C-d>'] = actions.delete_buffer,
+	['<C-d>'] = actions.results_scrolling_down,
+	['<C-u>'] = actions.results_scrolling_up,
+	['<M-d>'] = actions.preview_scrolling_down,
+	['<M-u>'] = actions.preview_scrolling_up,
+	['<C-x>'] = actions.delete_buffer,
 	['<C-f>'] = actions.to_fuzzy_refine,
 	-- by default this keybind closes telescope but only in insert mode
 	['<C-c>'] = actions.close
