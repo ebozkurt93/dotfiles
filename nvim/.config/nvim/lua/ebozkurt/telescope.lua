@@ -8,6 +8,8 @@ local shared_keys = {
 	['<C-u>'] = actions.results_scrolling_up,
 	['<M-d>'] = actions.preview_scrolling_down,
 	['<M-u>'] = actions.preview_scrolling_up,
+	['<C-j>'] = actions.move_selection_next,
+	['<C-k>'] = actions.move_selection_previous,
 	['<C-x>'] = actions.delete_buffer,
 	['<C-f>'] = actions.to_fuzzy_refine,
 	-- by default this keybind closes telescope but only in insert mode
