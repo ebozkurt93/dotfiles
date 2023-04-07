@@ -38,7 +38,7 @@ echo "Installed Noto Sans Mono"
 
 echo "Installing Nerd Fonts Symbols"
 dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
-curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.2.2/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf
+curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.3.3/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf
 mv "$dsm_name" ~/Library/Fonts
 echo "Installed Nerd Fonts Symbols"
 echo "Installed fonts successfully"
