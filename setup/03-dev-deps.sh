@@ -4,6 +4,7 @@
 rm ~/.zprofile
 
 # Doing the directory changes so that some of the scripts behave as expected
+src_pwd="$(echo $PWD)"
 cd ../scripts
 
 echo "Handling stow"
@@ -18,3 +19,6 @@ echo "Installing default versions of asdf plugins"
 echo "Installed plugin versions"
 
 mkdir -p ~/Documents/bitbar_plugins/tmp
+
+cd $src_pwd
+./install-neovim.sh
