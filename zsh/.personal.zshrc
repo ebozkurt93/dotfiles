@@ -357,3 +357,25 @@ function __cd_fzf {
 
 zle -N __cd_fzf
 bindkey "^[f" __cd_fzf
+
+function __find_and_run_executable {
+  local selection=$(find . -maxdepth 4 -perm -111 -type f | fzf --bind 'ctrl-p:execute(echo _{})+abort')
+  [[ -z $selection ]] && return
+  if [[ $selection =~ ^_.* ]]; then
+    selection="$(echo "$selection" | cut -c2-)"
+    dname=$(dirname $selection)
+    filename=$(basename $selection)
+    cd $dname
+    echo "./$filename" | pbcopy
+    echo "Copied command (./$filename) to clipboard"
+  else
+    dname=$(dirname $selection)
+    filename=$(basename $selection)
+    cd $dname
+    ./$filename
+  fi
+  zle send-break
+}
+
+zle -N __find_and_run_executable
+bindkey "^[r" __find_and_run_executable

@@ -16,6 +16,7 @@ require("nvim-treesitter.configs").setup({
 		"hcl",
 		"yaml",
 		"vim",
+		"vimdoc",
 	},
 
 	-- Install parsers synchronously (only applied to `ensure_installed`)
