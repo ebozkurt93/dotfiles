@@ -170,7 +170,6 @@ function __theme_helper() {
     [oxocarbon]='carbonfox'
   )
   local kitty_conf=~/.config/kitty
-  local nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
   local current_kitty_theme_contents=$(cat "$kitty_conf/current-theme.conf")
   local nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
   if [[ "$1" == "get_themes" ]]; then
