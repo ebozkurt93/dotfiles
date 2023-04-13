@@ -1,7 +1,7 @@
 echo "Installing Fira Code"
 curl -L https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip > fira_code.zip
 echo "0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79  fira_code.zip" | shasum -a 256 -c - \
-  || (echo "Mismatched SHA256 in fira_code.zip, exiting..." && exit)
+  || { echo "Mismatched SHA256 in fira_code.zip, exiting..."; exit; }
 unzip fira_code.zip -d fira_code
 cp -a fira_code/ttf/ ~/Library/Fonts
 rm -rf fira_code
@@ -21,7 +21,7 @@ echo "Installed Input Mono"
 echo "Installing Jetbrains Mono"
 curl -L https://download.jetbrains.com/fonts/JetBrainsMono-2.242.zip > jetbrains_mono.zip
 echo "4e315b4ef176ce7ffc971b14997bdc8f646e3d1e5b913d1ecba3a3b10b4a1a9f  jetbrains_mono.zip" | shasum -a 256 -c - \
-  || (echo "Mismatched SHA256 in fira_code.zip, exiting..." && exit)
+  || { echo "Mismatched SHA256 in fira_code.zip, exiting..."; exit; }
 unzip jetbrains_mono.zip -d jetbrains_mono
 cp -a jetbrains_mono/fonts/ttf/ ~/Library/Fonts
 rm -rf jetbrains_mono
@@ -35,6 +35,15 @@ cp -a noto_sans_mono/static/NotoSansMono/ ~/Library/Fonts
 rm -rf noto_sans_mono
 rm noto_sans_mono.zip
 echo "Installed Noto Sans Mono"
+
+curl -L https://rubjo.github.io/victor-mono/VictorMonoAll.zip > victor_mono.zip
+echo "1d0d51443846800c88536ab5a0e5cfb3557ad7d3fa6d355193953dd6c98c40b6  victor_mono.zip" | shasum -a 256 -c - \
+  || { echo "Mismatched SHA256 in victor_mono.zip, exiting..."; exit; }
+unzip victor_mono.zip -d victor_mono
+cp -a victor_mono/ttf/ ~/Library/Fonts
+rm -rf victor_mono
+rm victor_mono.zip
+echo "Installed Victor Mono"
 
 echo "Installing Nerd Fonts Symbols"
 dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
