@@ -9,4 +9,4 @@
 	name = Erdem Bozkurt
 
 [includeIf "gitdir:~/bemlo/"]
-	path = ~/dotfiles/git/bemlo-git.conf
+	path = ~/dotfiles/bemlo/git/.gitconfig
