@@ -1,6 +1,0 @@
-#!/bin/sh
-
-cd ~/bemlo/bemlo
-yarn firebase --project=demo-bemlo emulators:export ./demo
-echo "$(cat demo/auth_export/accounts.json | jq -r '.users[].email' | sort)" > ~/Documents/bitbar_plugins/tmp/bemlo_local_auth_users.txt
-rm -rf ./demo
