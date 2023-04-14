@@ -2,9 +2,10 @@
 # vi: ft=sh
 
 options=$(cat <<-END
-left
-right
-reset
+flash_left
+flash_right
+remove_downloads
+download_latest_firmware
 END
 )
 
@@ -14,9 +15,15 @@ if [[ "$selected" == "left" ]]; then
 	cp ~/Downloads/firmware/corne_left\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/left.uf2
 elif [[ "$selected" == "right" ]]; then
 	cp ~/Downloads/firmware/corne_right\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/right.uf2
-elif [[ "$selected" == "reset" ]]; then
+elif [[ "$selected" == "remove_downloads" ]]; then
 	rm -rf ~/Downloads/firmware
 	rm ~/Downloads/firmware.zip
+elif [[ "$selected" == "download_latest_firmware" ]]; then
+	rm -rf ~/Downloads/firmware
+	rm ~/Downloads/firmware.zip
+	cd ~/Downloads
+	databaseId=$(gh run list --repo 'ebozkurt93/chocofi-zmk-config' --limit 1 --json 'databaseId' | jq -r '.[0] | .databaseId')
+	gh run download --repo 'ebozkurt93/chocofi-zmk-config' $databaseId
 else
 	echo "invalid, exiting"
 	exit
