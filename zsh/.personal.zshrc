@@ -343,6 +343,15 @@ function __open_folder() {
   open .
 }
 
+function __cd_to_git_repo_root {
+  local d=$(git rev-parse --show-toplevel 2>/dev/null)
+  [[ ! -z "$d" ]] && cd "$d"
+  zle accept-line
+}
+
+zle -N__cd_to_git_repo_root 
+bindkey "^h"__cd_to_git_repo_root 
+
 zle -N __open_folder
 bindkey "^[o" __open_folder
 
