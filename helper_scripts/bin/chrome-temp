@@ -1,0 +1,30 @@
+#!/bin/sh
+
+chrome_path="/Applications/Google Chrome.app"
+# where the temp profiles and other chrome settings will be stored
+base_chrome_data_dir="$HOME/.chrome_temp_data_dir"
+# the location of the profile which will be used as base, if it is empty new profile will be an empty one
+base_profile_dir=""
+
+if [[ "$1" == "-r" ]]; then
+  echo "Removing temporary chrome data directory"
+  if [[ -d "$base_chrome_data_dir" ]]; then
+    rm -rf $base_chrome_data_dir
+  fi
+  exit
+fi
+
+ts=$(date +%Y%m%d%H%M%S)
+temp_profile_name="${ts}_$(echo $RANDOM | md5sum | head -c 20; echo;)"
+
+mkdir -p "$base_chrome_data_dir"
+echo "Creating a temporary profile with name $temp_profile_name"
+temp_profile_path="$base_chrome_data_dir/$temp_profile_name"
+if [[ ! -z "$base_profile_dir" ]]; then
+  cp -r "$base_profile_dir" "$temp_profile_path"
+  # rename profile
+  preferences_file_path="$temp_profile_path/Preferences"
+  cat <<< $(jq ".profile.name = \"$temp_profile_name\"" "$preferences_file_path") > "$preferences_file_path"
+fi
+
+open "$chrome_path" -n --args --user-data-dir="$base_chrome_data_dir" --profile-directory="$temp_profile_name"
