@@ -329,8 +329,6 @@ function wp_change() {
   ~/bin/helpers/set_wallpaper.sh
 }
 
-bindkey "^[r" reset-prompt
-
 function __ch() {
   ch
   zle reset-prompt
@@ -386,4 +384,4 @@ function __find_and_run_executable {
 }
 
 zle -N __find_and_run_executable
-bindkey "^[r" __find_and_run_executable
+bindkey "^r" __find_and_run_executable
