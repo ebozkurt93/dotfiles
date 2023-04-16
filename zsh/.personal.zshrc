@@ -6,6 +6,9 @@ function mcd
   command mkdir -p $1 && cd $1
 }
 
+# enables vi mode for zsh
+bindkey -v
+
 if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
   # Change iterm2 profile. Usage it2prof ProfileName (case sensitive)
   it2prof() { echo -e "\033]50;SetProfile=$1\a" }
@@ -153,6 +156,8 @@ function __get_pid_for_port() {
 	echo "$(lsof -i:$1 -t)"
 }
 eval "$(starship init zsh)"
+eval "$(atuin init zsh)"
+# `atuin import auto` also needs to be ran after initial install
 
 function __theme_helper() {
   local themes=(
@@ -384,4 +389,4 @@ function __find_and_run_executable {
 }
 
 zle -N __find_and_run_executable
-bindkey "^r" __find_and_run_executable
+bindkey "^[r" __find_and_run_executable

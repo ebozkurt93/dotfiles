@@ -10,6 +10,7 @@ cd ../scripts
 echo "Handling stow"
 ./stow.sh
 echo "Done with stow"
+echo 'Go through personal.zshrc and run any subsequent comments initial install commands listed there'
 
 echo "Creating asdf plugins"
 ./asdf.sh -I
