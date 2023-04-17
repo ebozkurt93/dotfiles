@@ -138,7 +138,7 @@ require("lazy").setup({
 
 	{ "kevinhwang91/nvim-bqf" },
 
-	"nathom/filetype.nvim",
+	"hashivim/vim-terraform",
 	"dbeniamine/cheat.sh-vim",
 
 	-- themes
