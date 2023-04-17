@@ -25,6 +25,10 @@ vim.api.nvim_create_autocmd('BufWritePre', {
 	end,
 })
 
+vim.cmd [[
+	autocmd BufNewFile,BufRead *.zshrc set filetype=zsh
+	autocmd BufNewFile,BufRead *.tfvars set filetype=hcl
+]]
 
 -- search
 vim.opt.ignorecase = true
