@@ -122,7 +122,8 @@ alias ldg='ledger -f /data/sample.dat'
 alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
 
 function nvim_remote_exec {
-  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -I {} nvim --server {} --remote-send "$1"
+  local pc="$(nproc)"
+  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -P $pc -I {} nvim --server {} --remote-send "$1"
 }
 
 # given a file pattern and commands, this function will rerun commands whenever files change
