@@ -280,27 +280,35 @@ function __open_pr {
 zle -N __open_pr
 bindkey "^[g" __open_pr 
 
-function __yarn_execute_package_json_command() {
+function __execute_package_json_command() {
   if [[ ! -f  "package.json" ]]; then
     # this is the default behaviour for zsh in ctrl-p, so doing that in default case
     zle up-history
     return
   fi
+
+  local op="yarn"
+  if [[ -f "package-lock.json" ]]; then
+    local op="npm run"
+  elif [[ -f "pnpm-lock.yaml" ]]; then
+    local op="pnpm"
+  fi
+
   local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d' | \
     fzf --bind 'ctrl-p:execute(echo _{})+abort')
   [[ -z $selection ]] && return
   if [[ $selection =~ ^_.* ]]; then
-    cmd=$(echo "yarn $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
+    cmd=$(echo "$op $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-    yarn $(echo "$selection" | cut -d'"' -f2)
+    $op $(echo "$selection" | cut -d'"' -f2)
   fi
   zle send-break
 }
 
-zle -N __yarn_execute_package_json_command
-bindkey "^p" __yarn_execute_package_json_command
+zle -N __execute_package_json_command
+bindkey "^p" __execute_package_json_command
 
 function __bt_device_toggle() {
   if [[ "$(blueutil --power)" == "0" ]]; then
