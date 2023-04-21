@@ -281,24 +281,49 @@ zle -N __open_pr
 bindkey "^[g" __open_pr 
 
 function __execute_package_json_command() {
+  local install_deps_command="install_deps"
   if [[ ! -f  "package.json" ]]; then
     # this is the default behaviour for zsh in ctrl-p, so doing that in default case
     zle up-history
     return
   fi
 
-  local op="yarn"
-  if [[ -f "package-lock.json" ]]; then
-    local op="npm run"
-  elif [[ -f "pnpm-lock.yaml" ]]; then
-    local op="pnpm"
-  fi
+  typeset -A info
+  local info=(
+    [yarn-run_cmd]="yarn"
+    [yarn-install_cmd]="yarn install"
+    [yarn-lockfile]="yarn.lock"
+    [npm-run_cmd]="npm run"
+    [npm-install_cmd]="npm install"
+    [npm-lockfile]="package-lock.json"
+    [pnpm-run_cmd]="pnpm"
+    [pnpm-install_cmd]="pnpm install"
+    [pnpm-lockfile]="pnpm-lock.yaml"
+)
+  local cmd_alternatives=$(echo "${(k)info}" | tr " " "\n" | cut -d'-' -f1 | sort | uniq | tr "\n" " " | xargs)
+  local op='yarn'
+  # split by space as separator
+  for c in ${(s: :)cmd_alternatives}
+  do
+    if [[ -f "$info[$c-lockfile]" ]]; then
+      op="$c"
+    fi
+  done
 
-  local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d' | \
-    fzf --bind 'ctrl-p:execute(echo _{})+abort')
+  local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d')
+  selection="$selection\n$install_deps_command"
+
+  local selection=$(echo $selection | fzf --bind 'ctrl-p:execute(echo _{})+abort')
   [[ -z $selection ]] && return
-  if [[ $selection =~ ^_.* ]]; then
-    cmd=$(echo "$op $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
+  if [[ $selection == "$install_deps_command" ]]; then
+    cmd="$info[$op-install_cmd]"
+    $cmd
+  elif [[ $selection == "_$install_deps_command" ]]; then
+    cmd="$info[$op-install_cmd]"
+    echo $cmd | pbcopy
+    echo "Copied install dependencies command ($cmd) to clipboard"
+  elif [[ $selection =~ ^_.* ]]; then
+    cmd=$(echo "$info[$op-run_cmd] $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
