@@ -9,6 +9,11 @@ function mcd
 # enables vi mode for zsh
 bindkey -v
 
+bracketed-paste() {
+  zle .$WIDGET && LBUFFER=${LBUFFER%$'\n'}
+}
+zle -N bracketed-paste
+
 if [ "$(uname 2> /dev/null)" = "Darwin" ]; then
   # Change iterm2 profile. Usage it2prof ProfileName (case sensitive)
   it2prof() { echo -e "\033]50;SetProfile=$1\a" }
@@ -317,7 +322,8 @@ function __execute_package_json_command() {
   [[ -z $selection ]] && return
   if [[ $selection == "$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
-    $cmd
+    echo $cmd
+    eval $cmd
   elif [[ $selection == "_$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
     echo $cmd | pbcopy
