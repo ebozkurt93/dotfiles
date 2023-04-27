@@ -20,6 +20,7 @@ require("nvim-tree").setup({
 	on_attach = my_on_attach,
 	view = {
 		adaptive_size = true,
+		preserve_window_proportions = true,
 		-- mappings = {
 		-- 	list = {
 		-- 		{ key = "u", action = "dir_up" },
