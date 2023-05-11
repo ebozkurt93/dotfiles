@@ -159,7 +159,10 @@ alias dev-rust='res "*.rs" cargo run'
 alias dev-go='res "*.go" go run .'
 
 function __get_pid_for_port() {
-	echo "$(lsof -i:$1 -t)"
+  echo "$(lsof -i:$1 -t)"
+}
+function pk() {
+  __get_pid_for_port $1 | xargs kill
 }
 eval "$(starship init zsh)"
 eval "$(atuin init zsh)"
