@@ -37,13 +37,22 @@ rm noto_sans_mono.zip
 echo "Installed Noto Sans Mono"
 
 curl -L https://rubjo.github.io/victor-mono/VictorMonoAll.zip > victor_mono.zip
-echo "1d0d51443846800c88536ab5a0e5cfb3557ad7d3fa6d355193953dd6c98c40b6  victor_mono.zip" | shasum -a 256 -c - \
+echo "34288e16ca4834efc721aaf0c6f4ef3d86a85a5a791769787b50853ec21afd3b  victor_mono.zip" | shasum -a 256 -c - \
   || { echo "Mismatched SHA256 in victor_mono.zip, exiting..."; exit; }
 unzip victor_mono.zip -d victor_mono
 cp -a victor_mono/ttf/ ~/Library/Fonts
 rm -rf victor_mono
 rm victor_mono.zip
 echo "Installed Victor Mono"
+
+curl -L https://github.com/IBM/plex/releases/download/v6.3.0/TrueType.zip > ibm_plex.zip
+echo "eeb8fdd14234b263a73051bd312ca224eb548eb76a288c28164b67d87e779034  ibm_plex.zip" | shasum -a 256 -c - \
+  || { echo "Mismatched SHA256 in ibm_plex.zip, exiting..."; exit; }
+unzip ibm_plex.zip -d ibm_plex
+cp -a ibm_plex/TrueType/IBM-Plex-Mono ~/Library/Fonts
+rm -rf ibm_plex
+rm ibm_plex.zip
+echo "Installed IBM Plex"
 
 echo "Installing Nerd Fonts Symbols"
 dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
