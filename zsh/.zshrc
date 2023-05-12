@@ -14,6 +14,11 @@ function _load_custom_zsh_on_dir () {
 	  fi
 	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
 	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m.sh state-paths $state))
+	    if $(~/Documents/bitbar_plugins/state-switcher.5m.sh always-sourced-if-enabled $state); then
+	        source $HOME/.$state.zshrc
+	        __sourced_states+=($state)
+	        continue
+	    fi
 	    for __path in ${__paths[@]}; do
 	      if [[ $PWD/ = $__path/* ]]; then
 	        source $HOME/.$state.zshrc

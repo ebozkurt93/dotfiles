@@ -10,20 +10,24 @@ icons_temp=$(cat "$config_file" | jq -r '.[].icon')
 paths_temp=$(cat "$config_file" | jq -r '.[].paths')
 on_enabled_temp=$(cat "$config_file" | jq -r '.[] | if has("on_enabled") then .on_enabled else "" end')
 on_disabled_temp=$(cat "$config_file" | jq -r '.[] | if has("on_disabled") then .on_disabled else "" end')
+always_sourced_if_enabled_temp=$(cat "$config_file" | jq -r '.[] | if has("always_sourced_if_enabled") then .always_sourced_if_enabled else false end')
 while read -r line; do states+=("$line"); done <<<"$titles_temp"
 while read -r line; do _icons+=("$line"); done <<<"$icons_temp"
 while read -r line; do _paths+=("$line"); done <<<"$paths_temp"
 while read -r line; do _on_enabled+=("$line"); done <<<"$on_enabled_temp"
 while read -r line; do _on_disabled+=("$line"); done <<<"$on_disabled_temp"
+while read -r line; do _always_sourced_if_enabled+=("$line"); done <<<"$always_sourced_if_enabled_temp"
 typeset -A icons
 typeset -A paths
 typeset -A on_enabled_commands
 typeset -A on_disabled_commands
+typeset -A always_sourced_if_enabled
 for ((idx=1; idx<=${#states[@]}; ++idx)); do
   icons+=("${states[idx]}" "${_icons[idx]}")
   paths+=("${states[idx]}" "$(envsubst <<< "${_paths[idx]}")")
   on_enabled_commands+=("${states[idx]}" "${_on_enabled[idx]}")
   on_disabled_commands+=("${states[idx]}" "${_on_disabled[idx]}")
+  always_sourced_if_enabled+=("${states[idx]}" "${_always_sourced_if_enabled[idx]}")
 done
 
 function get_file_path {
@@ -59,6 +63,11 @@ fi
 
 if [ "$1" = 'is-state-enabled' ]; then
   [[ " $($0 enabled-states) " =~ " $2 " ]]
+  exit $?
+fi
+
+if [ "$1" = 'always-sourced-if-enabled' ]; then
+  [[ " $($0 enabled-states) " =~ " $2 " ]] && [[ "$always_sourced_if_enabled[$2]" == "true" ]]
   exit $?
 fi
 
