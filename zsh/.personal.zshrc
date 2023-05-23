@@ -357,11 +357,11 @@ function __bt_device_toggle() {
   address=$(echo $selection | awk '{print $NF}')
   if [[ $selection =~ ^_.* ]]; then
     blueutil --disconnect $address --wait-disconnect $address
-    blueutil --connect $address
+    blueutil --connect $address --wait-connect $address
   elif [[ "$(blueutil --is-connected $address)" == '1' ]]; then
     blueutil --disconnect $address --wait-disconnect $address
   else
-    blueutil --connect $address
+    blueutil --connect $address --wait-connect $address
   fi
   zle send-break
 }
