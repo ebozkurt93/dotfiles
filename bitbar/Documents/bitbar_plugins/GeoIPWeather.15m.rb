@@ -39,6 +39,8 @@ def location
 
   zip = nil
   country = nil
+  lat = nil
+  lng = nil
 
   if location_json['postal']
     zip = location_json['postal']
@@ -52,10 +54,17 @@ def location
     no_data
   end
 
-  [zip, country]
+  if location_json['loc']
+    loc = location_json['loc'].split(',')
+    lat = loc.first
+    lng = loc.last
+  else
+    no_data
+  end
+  [zip, country, lat, lng]
 end
 
-def weather(zip_code, country)
+def weather(zip_code, country, lat, lng)
   temperature_unit =
     case UNITS.upcase
     when 'F'
@@ -78,7 +87,7 @@ def weather(zip_code, country)
 
   weather_uri =
     URI('http://api.openweathermap.org/data/2.5/weather' \
-        "?zip=#{zip_code},#{country}" \
+        "?lat=#{lat}&lon=#{lng}" \
         "&appid=#{API_KEY}" \
         "#{temperature_unit}")
 
