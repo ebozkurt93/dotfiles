@@ -97,9 +97,9 @@ alias dps='docker ps -a'
 alias db='docker build -t'
 # remove all stopped docker containers
 alias drm="d ps -a | grep Exited | awk '{print $1}' | tr '\n' ' ' | xargs docker rm"
-alias d-restart="osascript -e 'quit app \"Docker\"'; sleep 1; open --background -a Docker && while ! docker system info > /dev/null 2>&1; do sleep 1; done"
-alias d-start="open /Applications/Docker.app"
-alias d-stop="docker system info > /dev/null 2>&1 && ( {osascript -e 'quit app \"Docker\"'} &)"
+alias d-stop="docker system info > /dev/null 2>&1 && ( { killall Docker } &)"
+alias d-start="open -a /Applications/Docker.app"
+alias d-restart="d-stop; sleep 1; d-start && while ! docker system info > /dev/null 2>&1; do sleep 1; done"
 alias ds="d-stop || d-start"
 
 # docker-compose
