@@ -1,0 +1,18 @@
+mountType: 9p
+mounts:
+  - location: "/Users/erdembozkurt"
+    writable: true
+    9p:
+      securityModel: mapped-xattr
+      cache: mmap
+  - location: "~"
+    writable: true
+    9p:
+      securityModel: mapped-xattr
+      cache: mmap
+  - location: /tmp/colima
+    writable: true
+    9p:
+      securityModel: mapped-xattr
+      cache: mmap
+
