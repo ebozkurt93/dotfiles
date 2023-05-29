@@ -50,6 +50,25 @@ require("lazy").setup({
 	{ "j-hui/fidget.nvim" },
 
 	{
+		"zbirenbaum/copilot.lua",
+		enabled = function()
+			local wp = os.getenv("BEMLO_WORK_PATH")
+			return wp ~= nil and wp ~= "" and string.match(vim.fn.getcwd(), wp)
+		end,
+		config = function()
+			require("copilot").setup({
+				suggestion = { enabled = false },
+				panel = { enabled = false },
+			})
+		end,
+	},
+	{
+		"zbirenbaum/copilot-cmp",
+		config = function()
+			require("copilot_cmp").setup()
+		end,
+	},
+	{
 		"numToStr/Comment.nvim",
 		config = function()
 			require("Comment").setup()
