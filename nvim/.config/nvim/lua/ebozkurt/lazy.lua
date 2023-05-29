@@ -52,8 +52,9 @@ require("lazy").setup({
 	{
 		"zbirenbaum/copilot.lua",
 		enabled = function()
-			local wp = os.getenv("BEMLO_WORK_PATH")
-			return wp ~= nil and wp ~= "" and string.match(vim.fn.getcwd(), wp)
+			local isCopilotEnabled = os.getenv("COPILOT_ENABLED") == "true"
+			local path = os.getenv("COPILOT_ENABLED_PATH")
+			return isCopilotEnabled and path ~= nil and path ~= "" and string.match(vim.fn.getcwd(), path)
 		end,
 		config = function()
 			require("copilot").setup({

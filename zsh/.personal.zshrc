@@ -1,5 +1,7 @@
 export PATH=$PATH:~/bin
 export GH_USERNAME=ebozkurt93
+export COPILOT_ENABLED=false
+export COPILOT_ENABLED_PATH=""
 # Functions
 function mcd
 {
