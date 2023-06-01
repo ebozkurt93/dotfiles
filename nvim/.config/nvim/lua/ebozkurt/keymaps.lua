@@ -59,6 +59,14 @@ vim.api.nvim_create_autocmd('User', {
 	callback = function()
 		vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
 		vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
+		vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds)
+		vim.keymap.set('n', 'zm', require('ufo').closeFoldsWith)
+		vim.keymap.set('n', 'K', function()
+			local winid = require('ufo').peekFoldedLinesUnderCursor()
+			if not winid then
+				vim.lsp.buf.hover()
+			end
+		end)
 	end
 })
 
@@ -140,7 +148,7 @@ vim.api.nvim_create_autocmd('User', {
 	desc = 'LSP actions',
 	callback = function()
 		local bufopts = { noremap = true, silent = true, buffer = 0 }
-		vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
+		-- vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
 		vim.keymap.set('n', 'gp', '<cmd>Lspsaga peek_definition<cr>', bufopts)
 		vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
