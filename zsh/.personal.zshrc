@@ -435,3 +435,32 @@ function __find_and_run_executable {
 
 zle -N __find_and_run_executable
 bindkey "^[r" __find_and_run_executable
+
+function __kitty_change_font() {
+  sed -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf; pgrep kitty | xargs kill -SIGUSR1
+}
+
+function __kitty_font_changer() {
+  local current_font=$(sed -n '3p' ~/dotfiles/kitty/.config/kitty/toggled-settings.conf | tr ' ' '\n' | tail -n 1)
+  echo $current_font
+  local fonts=(
+    'FiraCode-Retina'
+    'VictorMono-Regular'
+    'JetBrainsMono-Regular'
+    'IBMPlexMono'
+    'InputMonoNarrow-Regular'
+    'NotoSansMono-Regular'
+    'Iosevka'
+  )
+  local selected_font=$(echo $fonts | tr ' ' '\n' | sort | grep -v $current_font | \
+    { echo $current_font ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __kitty_change_font {}')
+  if [[ ! -z $selected_font ]]; then
+    __kitty_change_font "$selected_font"
+  else
+    __kitty_change_font "$current_font"
+  fi
+  zle reset-prompt
+}
+
+zle -N __kitty_font_changer
+bindkey "^g" __kitty_font_changer
