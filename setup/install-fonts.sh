@@ -54,6 +54,15 @@ rm -rf ibm_plex
 rm ibm_plex.zip
 echo "Installed IBM Plex"
 
+curl -L https://github.com/be5invis/Iosevka/releases/download/v24.1.0/ttf-iosevka-24.1.0.zip > iosevka.zip
+echo "4f23c4d3f262beae6aa3d2121cbd17e5d089d844f024b52deb85f1e99a957b89  iosevka.zip" | shasum -a 256 -c - \
+  || { echo "Mismatched SHA256 in iosevka.zip, exiting..."; exit; }
+unzip iosevka.zip -d iosevka
+cp -a iosevka/ ~/Library/Fonts
+rm -rf iosevka
+rm iosevka.zip
+echo "Installed Iosevka"
+
 echo "Installing Nerd Fonts Symbols"
 dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
 curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.3.3/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf
