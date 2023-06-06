@@ -11,9 +11,9 @@ END
 
 selected=$(echo $options | tr ' ' '\n' | fzf)
 echo "$selected"
-if [[ "$selected" == "left" ]]; then
+if [[ "$selected" == "flash_left" ]]; then
 	cp ~/Downloads/firmware/corne_left\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/left.uf2
-elif [[ "$selected" == "right" ]]; then
+elif [[ "$selected" == "flash_right" ]]; then
 	cp ~/Downloads/firmware/corne_right\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/right.uf2
 elif [[ "$selected" == "remove_downloads" ]]; then
 	rm -rf ~/Downloads/firmware
