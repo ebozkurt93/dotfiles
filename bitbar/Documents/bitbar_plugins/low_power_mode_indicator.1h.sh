@@ -8,7 +8,7 @@ if [[ $value = '0' ]]; then
 	exit
 fi
 
-echo "🪫"
+echo "󱈐  | font='Symbols Nerd Font' size=18"
 echo "---"
 echo "Refresh | refresh=true $style"
 
