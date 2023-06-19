@@ -110,4 +110,8 @@ elseif selected_theme == 'poimandres' then
 	vim.cmd [[ colorscheme poimandres ]]
 elseif selected_theme == 'moonbow' then
 	vim.cmd [[ colorscheme moonbow ]]
+elseif selected_theme == 'github-light' then
+	vim.cmd [[ colorscheme github_light ]]
+elseif selected_theme == 'github-dark' then
+	vim.cmd [[ colorscheme github_dark ]]
 end

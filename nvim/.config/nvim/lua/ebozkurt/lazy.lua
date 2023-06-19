@@ -183,4 +183,10 @@ require("lazy").setup({
 	"AlexvZyl/nordic.nvim",
 	"olivercederborg/poimandres.nvim",
 	"arturgoms/moonbow.nvim",
+	{
+		"projekt0n/github-nvim-theme",
+		config = function()
+			require("github-theme").setup({})
+		end,
+	},
 })
