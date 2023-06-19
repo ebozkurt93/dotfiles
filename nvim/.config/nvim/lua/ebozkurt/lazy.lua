@@ -13,7 +13,7 @@ vim.opt.runtimepath:prepend(lazypath)
 
 --- startup and add configure plugins
 require("lazy").setup({
-	{ "nvim-telescope/telescope.nvim", version = "0.1.0", dependencies = { { "nvim-lua/plenary.nvim" } } },
+	{ "nvim-telescope/telescope.nvim", dependencies = { { "nvim-lua/plenary.nvim" } } },
 	{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
 	{ "nvim-telescope/telescope-file-browser.nvim" },
 	"L3MON4D3/LuaSnip",
@@ -42,12 +42,16 @@ require("lazy").setup({
 	"onsails/lspkind.nvim",
 	"windwp/nvim-autopairs",
 	"windwp/nvim-ts-autotag",
-	{ "glepnir/lspsaga.nvim", event = "BufRead", dependencies = "nvim-treesitter/nvim-treesitter" },
+	{
+		"glepnir/lspsaga.nvim",
+		event = "BufRead",
+		dependencies = "nvim-treesitter/nvim-treesitter",
+	},
 	{ url = "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },
 	{ "williamboman/mason.nvim" },
 	{ "williamboman/mason-lspconfig.nvim" },
 	{ "jose-elias-alvarez/null-ls.nvim", dependencies = "nvim-lua/plenary.nvim" },
-	{ "j-hui/fidget.nvim" },
+	{ "j-hui/fidget.nvim", branch = "legacy" },
 
 	{
 		"zbirenbaum/copilot.lua",
