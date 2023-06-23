@@ -330,7 +330,7 @@ function __execute_package_json_command() {
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-     $info[$op-run_cmd] $(echo "$selection" | cut -d'"' -f2)
+     eval $info[$op-run_cmd] $(echo "$selection" | cut -d'"' -f2)
   fi
   zle send-break
 }
