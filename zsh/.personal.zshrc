@@ -101,6 +101,7 @@ alias d-stop="docker system info > /dev/null 2>&1 && ( { killall Docker } &)"
 alias d-start="open -a /Applications/Docker.app"
 alias d-restart="d-stop; sleep 1; d-start && while ! docker system info > /dev/null 2>&1; do sleep 1; done"
 alias ds="d-stop || d-start"
+alias cs="colima status > /dev/null 2>&1 && colima stop || colima start"
 
 # docker-compose
 alias dcu='docker-compose up'
@@ -113,20 +114,10 @@ alias cat='bat --paging=never'
 alias lg='lazygit'
 
 # running some docker containers
-alias torrent-up='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml up -d'
-alias torrent-down='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml down'
-alias jellyfin-up='docker-compose -f ~/personal-repositories/docker-compose\ files/jellyfin/docker-compose.yml up -d'
-alias jellyfin-down='docker-compose -f ~/personal-repositories/docker-compose\ files/jellyfin/docker-compose.yml down'
+# alias torrent-up='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml up -d'
+# alias torrent-down='docker-compose -f ~/personal-repositories/docker-compose\ files/qbittorrent/docker-compose.yml down'
 alias yt='docker run --rm -u $(id -u):$(id -g) -v $PWD:/data vimagick/youtube-dl'
 alias ffmpeg='docker run --rm -i -t -v $PWD:/tmp/workdir jrottenberg/ffmpeg'
-
-# alias ledger='docker run --rm -v "$PWD":/data dcycle/ledger:1'
-alias ledger='docker run --rm -v "/Users/erdembozkurt/personal-repositories/junk/ledger-data":/data dcycle/ledger:1'
-alias ldg='ledger -f /data/sample.dat'
-
-
-# temporary, refetch apartments 
-alias apt-refetch='cd ~/personal-repositories/place-scraper-v2 && go run . -s && curl https://apt-api.erdem-bozkurt.com/refetch'
 
 function nvim_remote_exec {
   local pc="$(nproc)"
