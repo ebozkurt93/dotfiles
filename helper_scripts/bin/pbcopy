@@ -1,0 +1,8 @@
+#!/bin/bash
+if is_macos; then
+  cat | /usr/bin/pbcopy
+else
+  # copy to selection buffer AND clipboard
+  cat | xclip -i -sel c -f | xclip -i -sel p
+fi
+

@@ -1,0 +1,6 @@
+#!/bin/bash
+if is_macos; then
+  /usr/bin/pbpaste
+else
+  xclip -selection clipboard -o
+fi
