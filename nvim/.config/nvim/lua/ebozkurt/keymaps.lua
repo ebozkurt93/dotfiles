@@ -163,6 +163,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>dj', '<cmd>Lspsaga diagnostic_jump_prev<cr>', bufopts)
 		vim.keymap.set('n', '<leader>dk', '<cmd>Lspsaga diagnostic_jump_next<cr>', bufopts)
 		vim.keymap.set('n', '<leader>dl', '<cmd>Telescope diagnostics<cr>', bufopts)
+		vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float, bufopts)
 		vim.keymap.set('n', '<leader>r', '<cmd>Lspsaga rename<cr>', bufopts)
 		vim.keymap.set('n', '<leader>fs', function()
 			vim.lsp.buf.format({ timeout_ms = 5000 })
