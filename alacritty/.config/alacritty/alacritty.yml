@@ -1,0 +1,21 @@
+font:
+  normal:
+    family: FiraCode Nerd Font
+    style: Regular
+  size: 13
+  # builtin_box_drawing: false
+  # offset:
+  #   x: 0
+  #   y: 0
+  # glyph_offset:
+  #  x: 0
+  #  y: 0
+
+window:
+  option_as_alt: Both
+
+save_to_clipboard: true
+
+env:
+  # TERM: alacritty-256color
+  TERM: xterm-256color
