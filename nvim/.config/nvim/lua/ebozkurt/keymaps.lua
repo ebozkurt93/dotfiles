@@ -238,6 +238,8 @@ vim.api.nvim_create_autocmd('User', {
 		end, {})
 	end
 })
+-- todo: move this to appropriate location
+vim.keymap.set('n', '<leader>gB', '<cmd>:G blame<cr>', {})
 
 --harpoon
 vim.api.nvim_create_autocmd('User', {
