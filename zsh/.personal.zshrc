@@ -42,6 +42,7 @@ alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias vibackups='(cd ~/.vim/backups && vi)'
 alias dsync='echo "$(cd ~/dotfiles/ && git pull && cd ~/dotfiles/scripts && ./stow.sh -R)"'
 alias sr='exec $SHELL'
+alias nn='cd ~/Documents; cd `ls | grep Notes`; nvim'
 
 alias gpristine='git reset --hard && git clean -df'
 alias remove_node_modules="find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +"
