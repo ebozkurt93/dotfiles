@@ -43,8 +43,8 @@ require("lazy").setup({
 	"windwp/nvim-autopairs",
 	"windwp/nvim-ts-autotag",
 	{
-		"glepnir/lspsaga.nvim",
-		event = "BufRead",
+		"nvimdev/lspsaga.nvim",
+		event = "LspAttach",
 		dependencies = "nvim-treesitter/nvim-treesitter",
 	},
 	{ url = "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },

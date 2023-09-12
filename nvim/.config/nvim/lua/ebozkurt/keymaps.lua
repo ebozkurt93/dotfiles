@@ -152,7 +152,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
 		vim.keymap.set('n', 'gp', '<cmd>Lspsaga peek_definition<cr>', bufopts)
 		vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, bufopts)
-		vim.keymap.set('n', 'gh', '<cmd>Lspsaga lsp_finder<cr>', bufopts)
+		vim.keymap.set('n', 'gh', '<cmd>Lspsaga finder<cr>', bufopts)
 		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
 		vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, bufopts)
 		vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
