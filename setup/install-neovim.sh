@@ -1,5 +1,5 @@
 # version='v0.8.3'
-version='v0.9.1'
+version='v0.9.2'
 # version='nightly'
 
 function remove_neovim {
@@ -17,3 +17,4 @@ curl -LO https://github.com/neovim/neovim/releases/download/${version}/nvim-maco
 tar xzf nvim-macos.tar.gz -C ~/bin/helpers
 rm nvim-macos.tar.gz
 ln -s ~/bin/helpers/nvim-macos/bin/nvim ~/bin/nvim
+rm -rf ~/bin/helpers/nvim-macos/lib/nvim/parser
