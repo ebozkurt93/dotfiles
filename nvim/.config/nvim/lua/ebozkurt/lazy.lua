@@ -158,6 +158,7 @@ require("lazy").setup({
 
 	"RRethy/vim-illuminate",
 	"p00f/nvim-ts-rainbow",
+	{ url = "https://gitlab.com/HiPhish/rainbow-delimiters.nvim" },
 	"mbbill/undotree",
 
 	{ "kevinhwang91/nvim-bqf" },
