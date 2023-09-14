@@ -170,10 +170,7 @@ vim.api.nvim_create_autocmd('User', {
 		end, bufopts)
 	end
 })
-vim.keymap.set('n', '<leader>ls', function ()
-	vim.lsp.stop_client(vim.lsp.get_active_clients())
-	print('All lsp servers stopped')
-end, { noremap = true })
+vim.keymap.set('n', '<leader>ls', '<cmd>:LspRestart all<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>TC', function()
 	require('ebozkurt.theme-gen').generate() end,
 {noremap = true})
