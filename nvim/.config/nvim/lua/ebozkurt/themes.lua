@@ -114,4 +114,10 @@ elseif selected_theme == 'github-light' then
 	vim.cmd [[ colorscheme github_light ]]
 elseif selected_theme == 'github-dark' then
 	vim.cmd [[ colorscheme github_dark ]]
+elseif selected_theme == 'caret-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme caret ]]
+elseif selected_theme == 'caret-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme caret ]]
 end

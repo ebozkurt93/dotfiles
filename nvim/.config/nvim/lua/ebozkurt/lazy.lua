@@ -190,4 +190,5 @@ require("lazy").setup({
 			require("github-theme").setup({})
 		end,
 	},
+	"projekt0n/caret.nvim",
 })
