@@ -145,7 +145,7 @@ function __theme_helper() {
     [oxocarbon]='carbonfox'
   )
   local kitty_conf=~/.config/kitty
-  local current_kitty_theme_contents=$(cat "$kitty_conf/current-theme.conf")
+  local current_kitty_theme_path="$kitty_conf/current-theme.conf"
   local nvim_themefile=~/.config/nvim/lua/ebozkurt/themes.lua
   if [[ "$1" == "get_themes" ]]; then
 	echo $themes
@@ -157,6 +157,10 @@ function __theme_helper() {
 		kitty_theme=$custom_kitty_themes[$2]
 	fi
 	echo $kitty_theme
+	return
+  fi
+  if [[ "$1" == "get_current_kitty_theme_path" ]]; then
+	echo $current_kitty_theme_path
 	return
   fi
   if [[ "$1" == "current_nvim_theme" ]]; then
@@ -187,6 +191,7 @@ function __theme_helper() {
 	  nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate()<cr>" > /dev/null 2>&1
 	fi
 	# SIGUSR1 reloads kitty config
+	~/bin/helpers/tmux_status_color.sh
 	pgrep kitty | xargs kill -SIGUSR1
 	return
   fi
