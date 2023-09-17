@@ -118,6 +118,13 @@ vim.keymap.set('n', 'tp', '<cmd>:tabprev<cr>', { noremap = true })
 vim.keymap.set('n', 'th', '<cmd>:-tabmove<cr>', { noremap = true })
 vim.keymap.set('n', 'tl', '<cmd>:+tabmove<cr>', { noremap = true })
 
+-- jump to tab
+for j = 1, 8 do
+	local lhs = '<leader>t' .. j
+	local rhs = '<cmd>:tabn ' .. j .. '<cr>'
+	vim.keymap.set('n', lhs, rhs, { noremap = true })
+end
+
 vim.keymap.set('n', '<leader>m', '<cmd>:TSContextToggle<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>u', '<cmd>:UndotreeShow<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>N', '<cmd>:Neogit<cr>', { noremap = true })
