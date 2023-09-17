@@ -56,16 +56,22 @@ require('lualine').setup {
 		lualine_z = {}
 	},
 	tabline = {
-		lualine_a = {},
-		lualine_b = {},
-		lualine_c = {
+		lualine_a = {
 			{
 				'tabs',
 				max_length = vim.o.columns, -- Maximum width of tabs component.
-				component_separators = { left = '' },
-				mode = 1 -- 0: Shows tab_nr - 1: Shows tab_name - 2: Shows tab_nr + tab_name
+				mode = 2, -- 0: Shows tab_nr - 1: Shows tab_name - 2: Shows tab_nr + tab_name
+				tabs_color = {
+					active = 'lualine_b_normal',
+					inactive = 'lualine_c_normal',
+				},
+				-- fmt = function(s, c)
+				-- 	return (c.tabnr ~= vim.fn.tabpagenr() and c.tabnr .. ' ' or '') .. s
+				-- end
 			},
 		},
+		lualine_b = {},
+		lualine_c = {},
 		lualine_x = {},
 		lualine_y = {},
 		lualine_z = {}
