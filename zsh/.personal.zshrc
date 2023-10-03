@@ -1,4 +1,5 @@
 export PATH=$PATH:~/bin
+export EDITOR=nvim
 export GH_USERNAME=ebozkurt93
 export COPILOT_ENABLED=false
 export COPILOT_ENABLED_PATH=""
