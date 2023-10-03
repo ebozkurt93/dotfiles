@@ -11,8 +11,8 @@ local function my_on_attach(bufnr)
 
 	api.config.mappings.default_on_attach(bufnr)
 
-	vim.keymap.set('n', '<C-u>', api.tree.change_root_to_parent, opts('Change root to parent'))
-	vim.keymap.set('n', '<C-r>', api.tree.change_root_to_node, opts('Change root to note'))
+	vim.keymap.set('n', '<leader><C-u>', api.tree.change_root_to_parent, opts('Change root to parent'))
+	vim.keymap.set('n', '<leader><C-r>', api.tree.change_root_to_node, opts('Change root to node'))
 end
 
 require("nvim-tree").setup({
