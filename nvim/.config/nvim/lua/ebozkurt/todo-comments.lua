@@ -8,7 +8,7 @@ require("todo-comments").setup {
 			-- signs = false, -- configure signs for some keywords individually
 		},
 		fixnow = { icon = "", color = "warning" },
-		todo = { icon = " ", color = "info" },
+		todo = { icon = " ", color = "info", alt = { "todos" } },
 		hack = { icon = " ", color = "warning" },
 		warn = { icon = " ", color = "warning", alt = { "warning", "xxx" } },
 		perf = { icon = " ", alt = { "optim", "performance", "optimize" } },
