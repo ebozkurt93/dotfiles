@@ -184,5 +184,19 @@ cmp.setup.cmdline(":", {
 	}),
 })
 
+local dadbod_autocomplete_group = vim.api.nvim_create_augroup("dadbod_autocomplete", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "sql", "mysql", "plsql" },
+	callback = function()
+		cmp.setup.buffer({
+			sources = {
+				{ name = "vim-dadbod-completion" },
+				{ name = "buffer" },
+			},
+		})
+	end,
+	group = dadbod_autocomplete_group,
+})
+
 -- Turn on lsp status information
 require("fidget").setup()

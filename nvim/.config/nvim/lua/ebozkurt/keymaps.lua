@@ -130,6 +130,7 @@ end
 vim.keymap.set('n', '<leader>m', '<cmd>:TSContextToggle<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>u', '<cmd>:UndotreeShow<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>N', '<cmd>:Neogit<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>db', '<cmd>:DBUIToggle<cr>', { noremap = true })
 
 --telescope
 vim.api.nvim_create_autocmd('User', {
