@@ -188,6 +188,10 @@ require("lazy").setup({
 			vim.g.db_ui_win_position = "right"
 		end,
 	},
+	{
+		'stevearc/oil.nvim',
+		opts = {},
+	},
 
 	-- themes
 	"ellisonleao/gruvbox.nvim",
