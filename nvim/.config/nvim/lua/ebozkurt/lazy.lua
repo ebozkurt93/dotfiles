@@ -58,7 +58,13 @@ require("lazy").setup({
 		enabled = function()
 			local isCopilotEnabled = os.getenv("COPILOT_ENABLED") == "true"
 			local path = os.getenv("COPILOT_ENABLED_PATH")
-			return isCopilotEnabled and path ~= nil and path ~= "" and string.match(vim.fn.getcwd(), path)
+
+			-- dash(-) is a pattern variable for lua, therefore it needs to be escaped
+			local function escape_magic(s)
+				return (s:gsub('[%^%$%(%)%%%.%[%]%*%+%-%?]', '%%%1'))
+			end
+
+			return isCopilotEnabled and path ~= nil and path ~= "" and string.match(vim.fn.getcwd(), escape_magic(path))
 		end,
 		config = function()
 			require("copilot").setup({
