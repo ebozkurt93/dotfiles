@@ -50,7 +50,7 @@ vim.api.nvim_create_autocmd('User', {
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'IndentBlanklineInitialized',
 	callback = function()
-		vim.keymap.set('n', '<leader>i', '<cmd>:IndentBlanklineToggle<cr>', { noremap = true })
+		vim.keymap.set('n', '<leader>i', '<cmd>:IBLToggle<cr>', { noremap = true })
 	end
 })
 

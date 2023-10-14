@@ -107,7 +107,7 @@ require("lazy").setup({
 		end,
 	},
 
-	"lukas-reineke/indent-blankline.nvim",
+	{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 	"tpope/vim-sleuth", -- Detect tabstop and shiftwidth automatically
 
 	{ "gennaro-tedesco/nvim-possession", dependencies = { "ibhagwan/fzf-lua" } },

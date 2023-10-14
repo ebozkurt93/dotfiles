@@ -1,11 +1,27 @@
-require("indent_blankline").setup({
-	char = "┊",
-	space_char_blankline = " ",
-	show_current_context = true,
-	show_end_of_line = false,
-	show_trailing_blankline_indent = false,
-	indent_blankline_show_first_indent_level = false,
-	show_current_context_start = false,
-	indent_blankline_strict_tabs = true,
+-- these are coming from 'rainbow-delimiters.nvim'
+local highlight = {
+	"RainbowDelimiterRed",
+	"RainbowDelimiterYellow",
+	"RainbowDelimiterBlue",
+	"RainbowDelimiterOrange",
+	"RainbowDelimiterGreen",
+	"RainbowDelimiterViolet",
+	"RainbowDelimiterCyan",
+}
+
+-- local c = "▕"
+local c = "┊"
+require("ibl").setup({
+	indent = {
+		char = c,
+		tab_char = c,
+		smart_indent_cap = false,
+		highlight = highlight,
+	},
+	scope = { enabled = true, highlight = highlight },
 })
+
+local hooks = require "ibl.hooks"
+hooks.register(hooks.type.SCOPE_HIGHLIGHT, hooks.builtin.scope_highlight_from_extmark)
+
 vim.api.nvim_exec_autocmds('User', { pattern = 'IndentBlanklineInitialized' })
