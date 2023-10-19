@@ -101,7 +101,7 @@ function __execute_package_json_command() {
   # split by space as separator
   for c in ${(s: :)cmd_alternatives}
   do
-    if [[ -f "$info[$c-lockfile]" ]]; then
+    if [[ -f "$info[$c-lockfile]" || -f "$(git rev-parse --show-toplevel 2>/dev/null)/$info[$c-lockfile]" ]]; then
       op="$c"
     fi
   done
