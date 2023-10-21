@@ -147,6 +147,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>f.', helpers.find_files_nvim_config, {})
 		vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
 		vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
+		vim.keymap.set('n', '<leader>fm', '<cmd>Telescope marks<cr>', {})
 		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
 		vim.keymap.set('n', '<leader>fc', builtin.commands, {})
 	end

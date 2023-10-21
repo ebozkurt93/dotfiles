@@ -78,7 +78,7 @@ vim.api.nvim_create_autocmd('User', {
 	group = group
 })
 
-vim.opt.signcolumn = 'auto'
+vim.opt.signcolumn = 'auto:5'
 vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
 
 vim.o.foldcolumn = '0'

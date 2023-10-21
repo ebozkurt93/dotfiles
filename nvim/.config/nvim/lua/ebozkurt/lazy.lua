@@ -98,6 +98,7 @@ require("lazy").setup({
 		-- },
 	},
 	{ "ThePrimeagen/harpoon", dependencies = { { "nvim-lua/plenary.nvim" } } },
+	"chentoast/marks.nvim",
 
 	"NvChad/nvim-colorizer.lua",
 	{
