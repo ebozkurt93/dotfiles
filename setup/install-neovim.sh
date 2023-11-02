@@ -1,5 +1,5 @@
 # version='v0.8.3'
-version='v0.9.2'
+version='v0.9.4'
 # version='nightly'
 
 function remove_neovim {
