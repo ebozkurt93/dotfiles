@@ -1,1 +1,3 @@
-require("marks").setup({})
+require("marks").setup({
+	force_write_shada = true
+})
