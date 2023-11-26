@@ -64,6 +64,7 @@ alias dcd='docker-compose down'
 
 # tmux
 alias t='tmux'
+alias ta='t a'
 
 alias yt='docker run --rm -i -e PGID=$(id -g) -e PUID=$(id -u) -v "$(pwd)":/workdir:rw mikenye/youtube-dl'
 alias ffmpeg='docker run --rm -i -t -v $PWD:/tmp/workdir jrottenberg/ffmpeg'
