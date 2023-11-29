@@ -37,8 +37,7 @@ require('Comment').setup({
 		extra = true,
 	},
 	---Function to call before (un)comment
-	-- pre_hook = nil,
-	pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
+	pre_hook = nil,
 
 	---Function to call after (un)comment
 	post_hook = nil,
