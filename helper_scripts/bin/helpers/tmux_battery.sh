@@ -1,6 +1,6 @@
-charging=$(pmset -g batt | tail -n 1 | awk -F ' ' 'gsub(";", "", $0) {print "BAT:", $3, $4}')
+charging=$(pmset -g batt | awk -F ' ' 'gsub(";", "", $0) {print "BAT:", $3, $4}')
 charging=$(echo $charging | sed -e 's/discharging//g' -e 's/charging//g' -e 's/charged/-/g' -e 's/finishing/-/g')
-pwr_source=$(pmset -g batt | head -n 1 | cut -c 17- | sed "s/'//g" | xargs)
+pwr_source=$(pmset -g batt | cut -c 17- | sed "s/'//g" | xargs)
 
 if [[ "$pwr_source" == 'AC Power' ]]; then
 	pwr_source='󱐥'
