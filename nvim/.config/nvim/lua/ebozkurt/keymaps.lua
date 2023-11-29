@@ -131,6 +131,33 @@ vim.keymap.set('n', '<leader>m', '<cmd>:TSContextToggle<cr>', { noremap = true }
 vim.keymap.set('n', '<leader>u', '<cmd>:UndotreeShow<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>N', '<cmd>:Neogit<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>db', '<cmd>:DBUIToggle<cr>', { noremap = true })
+vim.keymap.set("n", "<leader>DM", function()
+	vim.ui.input({ prompt = "Confirm for deleting marks: " }, function(input)
+		P(input)
+		if input == "y" or input == "Y" then
+			vim.cmd([[ :delmarks A-Z ]])
+			-- unloading doesn't help for some reason
+			-- also cannot use lazy unload for this atm since it causes other errors
+			-- package.loaded["marks.nvim"] = nil
+			vim.cmd([[ :Lazy load marks.nvim ]])
+			P('Deleted A-Z marks')
+		else
+			P('Invalid input, keeping marks')
+		end
+	end)
+	-- vim.ui.select({ 'y', 'n' }, {
+	-- 	prompt = 'Confirm for deleting marks:',
+	-- 	format_item = function(item)
+	-- 		return item
+	-- 	end,
+	-- }, function(choice)
+	-- 		if choice == 'y' then
+	-- 			vim.cmd([[ :delmarks A-Z ]])
+	-- 			package.loaded['marks.nvim'] = nil
+	-- 			vim.cmd([[ :Lazy load marks.nvim ]])
+	-- 		end
+	-- 	end)
+end, { noremap = true })
 
 --telescope
 vim.api.nvim_create_autocmd('User', {
