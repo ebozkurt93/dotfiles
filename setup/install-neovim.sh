@@ -1,6 +1,4 @@
-# version='v0.8.3'
-version='v0.9.4'
-# version='nightly'
+version='v0.9.5'
 
 function remove_neovim {
   echo "Removing neovim"
