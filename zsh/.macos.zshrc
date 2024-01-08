@@ -50,7 +50,7 @@ export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 bindkey '^ ' autosuggest-accept
 
-alias d-stop="docker system info > /dev/null 2>&1 && ( { killall Docker } &)"
+alias d-stop="docker system info > /dev/null 2>&1 && ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print \$1}'|xargs kill"
 alias d-start="open -a /Applications/Docker.app"
 alias d-restart="d-stop; sleep 1; d-start && while ! docker system info > /dev/null 2>&1; do sleep 1; done"
 alias ds="d-stop || d-start"
