@@ -23,7 +23,7 @@ cask "signal"
 
 # other
 cask "appcleaner"
-cask "rectangle"
+cask "hammerspoon"
 cask "bartender"
 cask "raycast"
 cask "maccy"
