@@ -1,5 +1,6 @@
 local globals = require("globals")
 
+-- hs.loadSpoon("EmmyLua") -- enable when want to regenerate lua annotations for lsp
 hs.hotkey.bind(globals.hyper, "d", hs.toggleConsole)
 
 require("reload")

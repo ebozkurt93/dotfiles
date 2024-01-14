@@ -86,7 +86,12 @@ require("lspconfig").lua_ls.setup({
 	cmd = { "lua-language-server" },
 	capabilities = capabilities,
 	on_attach = my_on_attach,
-	settings = { Lua = { diagnostics = { globals = { "vim", "exepath" } } } },
+	settings = { Lua = {
+		diagnostics = { globals = { "vim", "exepath", "hs" } },
+		workspace = { library = {
+			string.format('%s/.hammerspoon/Spoons/EmmyLua.spoon/annotations', os.getenv 'HOME'),
+		} }
+	} },
 })
 
 -- require 'lspconfig'.eslint.setup {}
