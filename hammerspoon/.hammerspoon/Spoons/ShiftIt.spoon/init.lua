@@ -175,11 +175,33 @@ function obj:center()
  end
 
 function obj:nextScreen()
-  self.hs.window.focusedWindow():moveToScreen(self.hs.window.focusedWindow():screen():next(), false, true, 0)
+  local window = self.hs.window.focusedWindow()
+  local screen = window:screen()
+  local isFullScreen = window:isFullScreen()
+  if isFullScreen then
+    window:toggleFullScreen()
+  end
+  hs.timer.doAfter(isFullScreen and 0.7 or 0, function()
+    window:moveToScreen(screen:next(), false, true, 0)
+  if isFullScreen then
+    window:toggleFullScreen()
+  end
+  end)
 end
 
 function obj:prevScreen()
-  self.hs.window.focusedWindow():moveToScreen(self.hs.window.focusedWindow():screen():previous(), false, true, 0)
+  local window = self.hs.window.focusedWindow()
+  local screen = window:screen()
+  local isFullScreen = window:isFullScreen()
+  if isFullScreen then
+    window:toggleFullScreen()
+  end
+  hs.timer.doAfter(isFullScreen and 0.7 or 0, function()
+    window:moveToScreen(screen:previous(), false, true, 0)
+  if isFullScreen then
+    window:toggleFullScreen()
+  end
+  end)
 end
 
 function obj:resizeOut() self:resizeWindowInSteps(true) end
@@ -228,10 +250,10 @@ function obj:bindHotkeys(mapping)
   -- end)
   -- self.hs.hotkey.bind(self.mapping.toggleZoom[1], self.mapping.toggleZoom[2], function() self:toggleZoom() end)
   self.hs.hotkey.bind(self.mapping.center[1], self.mapping.center[2], function() self:center() end)
-  self.hs.hotkey.bind(self.mapping.nextScreen[1], self.mapping.nextScreen[2], function() self:nextScreen() end)
-  self.hs.hotkey.bind(self.mapping.previousScreen[1], self.mapping.previousScreen[2], function() self:prevScreen() end)
-  self.hs.hotkey.bind(self.mapping.resizeOut[1], self.mapping.resizeOut[2], function() self:resizeOut() end)
-  self.hs.hotkey.bind(self.mapping.resizeIn[1], self.mapping.resizeIn[2], function() self:resizeIn() end)
+  self.hs.hotkey.bind(self.mapping.nextScreen[1], self.mapping.nextScreen[2], function() self:nextScreen() end, nil, function() self:nextScreen() end)
+  self.hs.hotkey.bind(self.mapping.previousScreen[1], self.mapping.previousScreen[2], function() self:prevScreen() end, nil, function() self:prevScreen() end)
+  self.hs.hotkey.bind(self.mapping.resizeOut[1], self.mapping.resizeOut[2], function() self:resizeOut() end, nil, function() self:resizeOut() end)
+  self.hs.hotkey.bind(self.mapping.resizeIn[1], self.mapping.resizeIn[2], function() self:resizeIn() end, nil, function() self:resizeIn() end)
 
   return self
 end
