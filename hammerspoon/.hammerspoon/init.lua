@@ -7,6 +7,7 @@ require("reload")
 require("window_manager")
 require("fuzzy_window_switcher")
 -- temporarily disabled
+-- require("text_expander")
 -- require("google_meet_mic_toggle")
 
 hs.alert.show("Config loaded")

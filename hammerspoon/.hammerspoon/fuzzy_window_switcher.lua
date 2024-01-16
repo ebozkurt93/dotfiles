@@ -39,8 +39,10 @@ local function _fuzzyFilterChoices(query)
 		return
 	end
 	local pickedChoices = {}
-	for i,j in pairs(_fuzzyChoices) do
-		local fullText = (j["text"] .. " " .. j["subText"]):lower()
+	for i, j in pairs(_fuzzyChoices) do
+		-- this is to support queries where app name is given at start or end while query contains partial window title
+		local fullText = (j["subText"] ..  " " .. j["text"] .. " " .. j["subText"]):lower()
+		-- local fullText = (j["text"] .. " " .. j["subText"]):lower()
 		local score = fuzzyQuery(fullText, query:lower())
 		if score > 0 then
 			j["fzf_score"] = score
@@ -57,6 +59,7 @@ local function _fuzzyPickWindow(item)
 	local index = item["index"]
     local window = windows[index]
 	window:focus()
+	_fuzzyChooser = nil
 end
 
 local function windowFuzzySearch()
@@ -81,6 +84,11 @@ local function windowFuzzySearch()
 	_fuzzyChooser:show()
 end
 
-hs.hotkey.bind({"alt"}, "space", function()
-	windowFuzzySearch()
+hs.hotkey.bind({ "alt" }, "space", function()
+	if _fuzzyChooser then
+		_fuzzyChooser:cancel()
+		_fuzzyChooser = nil
+	else
+		windowFuzzySearch()
+	end
 end)
