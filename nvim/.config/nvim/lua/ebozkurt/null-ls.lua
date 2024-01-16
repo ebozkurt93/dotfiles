@@ -6,7 +6,10 @@ null_ls.setup({
 		-- null_ls.builtins.code_actions.eslint,
 		-- null_ls.builtins.completion.spell,
 		null_ls.builtins.hover.dictionary,
-		null_ls.builtins.formatting.stylua,
+		-- null_ls.builtins.formatting.stylua,
+		null_ls.builtins.formatting.stylua.with({
+			extra_args = { "--config-path", vim.fn.expand("~/dotfiles/nvim/.config/nvim/stylua.toml") },
+		}),
 		-- js
 		-- null_ls.builtins.diagnostics.eslint_d,
 		-- null_ls.builtins.code_actions.eslint_d,
