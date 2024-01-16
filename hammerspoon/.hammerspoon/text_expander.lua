@@ -1,10 +1,14 @@
 -- Modified version of https://github.com/Hammerspoon/hammerspoon/issues/1042
+local helpers = require("helpers")
+local personalKeywords = {}
+if helpers.isModuleAvailable("personal") then
+  personalKeywords = require("personal").expansions
+end
 
-keywords = {
-  ["..t"] = "test",
-  ["lorem1"] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lobortis fermentum molestie. Vestibulum congue auctor nisi, eu ultrices lectus facilisis eu. Nulla molestie ornare massa, sed malesuada urna consequat sed. Curabitur a nibh blandit felis imperdiet interdum. Vivamus eu malesuada purus. Suspendisse in lacus non quam sagittis porttitor. In hac habitasse platea dictumst. Nullam suscipit nulla non tellus interdum faucibus. Ut eget mauris mi. Nam rhoncus quis massa sit amet placerat. Donec sollicitudin enim nec ex rutrum, in ornare arcu venenatis. Praesent consequat enim ante, et ornare eros pellentesque ut.",
+local keywords = {
+  ["@@lorem"] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lobortis fermentum molestie. Vestibulum congue auctor nisi, eu ultrices lectus facilisis eu. Nulla molestie ornare massa, sed malesuada urna consequat sed. Curabitur a nibh blandit felis imperdiet interdum. Vivamus eu malesuada purus. Suspendisse in lacus non quam sagittis porttitor. In hac habitasse platea dictumst. Nullam suscipit nulla non tellus interdum faucibus. Ut eget mauris mi. Nam rhoncus quis massa sit amet placerat. Donec sollicitudin enim nec ex rutrum, in ornare arcu venenatis. Praesent consequat enim ante, et ornare eros pellentesque ut.",
   ["@@ip"] = function()
-    status, body, headers = hs.http.get("https://icanhazip.com", nil)
+    local status, body, headers = hs.http.get("https://icanhazip.com", nil)
     return string.gsub(body, "^%s*(.-)%s*$", "%1")
     --return body
   end,
@@ -12,6 +16,8 @@ keywords = {
     return tostring(os.time())
   end,
 }
+
+keywords = helpers.merge(keywords, personalKeywords)
 
 local function getLastXCharacters(str, x)
   if #str <= x then
@@ -59,9 +65,9 @@ expander = (function()
       for i = length, 1, -1 do
         local substring = string.sub(word, i, length)
         if keywords[substring] then
-            word = substring
-            found = true
-            break
+          word = substring
+          found = true
+          break
         end
       end
 
