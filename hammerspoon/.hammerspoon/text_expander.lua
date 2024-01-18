@@ -15,6 +15,9 @@ local keywords = {
   ["@unixtime"] = function()
     return tostring(os.time())
   end,
+  ["@@time"] = function()
+    return tostring(os.date("%H:%M"))
+  end,
 }
 
 keywords = helpers.merge(keywords, personalKeywords)
