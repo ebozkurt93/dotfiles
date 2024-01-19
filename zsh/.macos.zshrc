@@ -4,15 +4,15 @@ function _load_custom_zsh_on_dir () {
 	  source $HOME/.$__custom_state.zshrc
 	  __sourced_states+=($__custom_state)
 	fi
-	local states=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states))
+	local states=($(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states))
 	for state in "${states[@]}"; do
 	  if [[ $state == 'personal' ]]; then
 	    # this one is unique, always sourced it by default
 	    continue
 	  fi
 	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
-	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m.sh state-paths $state))
-	    if $(~/Documents/bitbar_plugins/state-switcher.5m.sh always-sourced-if-enabled $state); then
+	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m.py state-paths $state))
+	    if $(~/Documents/bitbar_plugins/state-switcher.5m.py always-sourced-if-enabled $state); then
 	        source $HOME/.$state.zshrc
 	        __sourced_states+=($state)
 	        continue
@@ -74,7 +74,7 @@ alias dev-rust='res "*.rs" cargo run'
 alias dev-go='res "*.go" go run .'
 
 local function __state_switcher_toggle() {
-  local p=~/Documents/bitbar_plugins/state-switcher.5m.sh
+  local p=~/Documents/bitbar_plugins/state-switcher.5m.py
   local selected_state=$($p states-with-marks | sort | fzf \
     --bind 'ctrl-space:execute(echo _{})+abort,alt-j:execute(echo __{})+abort,alt-k:execute(echo ___{})+abort'
   )
@@ -109,7 +109,7 @@ alias cat='bat --paging=never'
 alias lg='lazygit'
 
 function __find_repos {
-  p=($(~/Documents/bitbar_plugins/state-switcher.5m.sh enabled-states-paths) ~/bin)
+  p=($(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-paths) ~/bin)
   selected_dir="$(cat <(echo ~/dotfiles) \
     <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) \
     | sort | uniq | fzf --preview 'cd {}; tree -L 3 --filelimit 100 --dirsfirst \
@@ -239,7 +239,7 @@ bindkey "^[t" __change_theme
 bindkey "^k" clear-screen
 
 function __open_pr {
-  local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
+  local p="$(~/Documents/bitbar_plugins/github-prs.5m.py fzf)"
   local content="$(cat <(test ${#p[@]} -ne 0 && echo $p))"
   if [[ $1 == 'cmd' ]]; then
     echo "$content"
