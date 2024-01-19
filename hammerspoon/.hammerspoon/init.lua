@@ -140,9 +140,9 @@ end)
 require("reload")
 require("window_manager")
 require("fuzzy_window_switcher")
--- temporarily disabled
 require("text_expander")
+local _ = require("mouse_snap_window")
+-- temporarily disabled
 -- require("google_meet_mic_toggle")
 
--- require("mouse_snap_window")
 hs.alert.show("Config loaded")
