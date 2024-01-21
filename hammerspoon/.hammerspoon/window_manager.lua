@@ -37,3 +37,47 @@ hs.hotkey.bind(globals.ctrl_alt, "c", function()
     f.y = max.y + (max.h - f.h) / 2
     win:setFrame(f, 0)
 end)
+
+-- screen related operations
+local function getTargetScreen(currentScreen, direction)
+  local allScreens = hs.screen.allScreens()
+  local screenCount = #allScreens
+  local currentIndex
+
+  for i, screen in ipairs(allScreens) do
+    if screen == currentScreen then
+      currentIndex = i
+      break
+    end
+  end
+
+  if direction == "next" then
+    return allScreens[(currentIndex % screenCount) + 1]
+  elseif direction == "previous" then
+    return allScreens[(currentIndex - 2) % screenCount + 1]
+  end
+end
+
+local function moveToScreen(direction)
+  local currentScreen = hs.mouse.getCurrentScreen()
+  local targetScreen = getTargetScreen(currentScreen, direction)
+  if targetScreen then
+    local targetScreenFrame = targetScreen:fullFrame()
+    local centerPoint =
+      hs.geometry.point(targetScreenFrame.x + targetScreenFrame.w / 2, targetScreenFrame.y + targetScreenFrame.h / 2)
+    hs.mouse.setAbsolutePosition(centerPoint)
+  end
+end
+
+hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "m", function()
+  moveToScreen("next")
+end)
+hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "n", function()
+  moveToScreen("previous")
+end)
+
+
+-- hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "i", function()
+--   hs.spaces.addSpaceToScreen()
+-- end)
+
