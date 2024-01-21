@@ -79,8 +79,8 @@ helpers.hotkeyScopedToApp({ "ctrl" }, "m", "Google Chrome", function(app)
     .new({
       title = "Chrome Mute Toggle",
       informativeText = "Muting -" .. title,
-      autoWithdraw = true, -- Automatically dismiss the notification after a few seconds
-      withdrawAfter = 5, -- Duration in seconds before auto-dismissing
+      autoWithdraw = true,
+      withdrawAfter = 5,
     })
     :send()
 end)
