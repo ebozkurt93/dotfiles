@@ -1,3 +1,4 @@
+local globals = require("globals")
 local helpers = require("helpers")
 
 helpers.hotkeyScopedToApp({ "cmd" }, "r", "Spotify", function()
@@ -122,4 +123,69 @@ document.getElementById('USER_DROPDOWN_ID').click();
 
   helpers.runJsOnCurrentBrowserTab(jsCommand)
   hs.eventtap.keyStroke({}, "escape", 0)
+end)
+
+helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
+  app:selectMenuItem({ "Edit", "Copy" })
+  local cmd = [[
+pbpaste | sed -E -e 's/^[ ]?[0-9]* //g' | sed -E -e 's/“[ ]?[0-9]?[ ]?//g' | sed -E -e 's/”$//g'  | sed -E -e 's/^(Excerpt From).*//g' | pbcopy
+]]
+  hs.execute(cmd, true)
+end)
+
+hs.hotkey.bind({ "alt" }, "c", function()
+  hs.eventtap.event.newSystemKeyEvent("NEXT", true):post()
+  hs.eventtap.event.newSystemKeyEvent("NEXT", false):post()
+end)
+
+hs.hotkey.bind({ "alt" }, "x", function()
+  hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
+  hs.eventtap.event.newSystemKeyEvent("PLAY", false):post()
+end)
+
+hs.hotkey.bind({ "alt" }, "z", function()
+  hs.eventtap.event.newSystemKeyEvent("PREVIOUS", true):post()
+  hs.eventtap.event.newSystemKeyEvent("PREVIOUS", false):post()
+end)
+
+local function switchKeyboardLayout()
+  local layouts = { "U.S.", "Swedish", "Turkish Q" }
+  local currentLayout = hs.keycodes.currentLayout()
+  local currentIndex = nil
+
+  -- Find the index of the current layout
+  for i, layout in ipairs(layouts) do
+    if layout == currentLayout then
+      currentIndex = i
+      break
+    end
+  end
+
+  -- If the current layout is in the list, switch to the next one; otherwise, switch to the first one
+  if currentIndex then
+    local nextIndex = (currentIndex % #layouts) + 1
+    hs.keycodes.setLayout(layouts[nextIndex])
+  end
+end
+
+hs.hotkey.bind({ "cmd", "ctrl" }, "9", switchKeyboardLayout)
+
+hs.hotkey.bind(globals.hyper, "b", function()
+  hs.application.launchOrFocus("Google Chrome")
+end)
+
+hs.hotkey.bind({ "alt", "shift", "cmd" }, "c", function()
+  hs.application.launchOrFocus("Calendar")
+end)
+
+hs.hotkey.bind(globals.hyper, "c", function()
+  hs.application.launchOrFocus("ChatGPT")
+end)
+
+hs.hotkey.bind(globals.hyper, "o", function()
+  hs.application.launchOrFocus("Obsidian")
+end)
+
+hs.hotkey.bind(globals.hyper, "k", function()
+  hs.application.launchOrFocus("Kitty")
 end)
