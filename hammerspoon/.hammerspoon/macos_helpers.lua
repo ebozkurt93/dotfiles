@@ -374,17 +374,12 @@ shortcuts run 'Toggle grayscale'
 end
 
 function M.restartBitBar()
-  hs.execute(
-    [[
-
-# kill BitBar
-ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
-# restart BitBar
-open -a /Applications/BitBar.app
-
-  ]],
-    true
-  )
+  hs.execute([[
+ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null;
+  ]])
+  hs.timer.doAfter(2, function()
+    hs.application.open("BitBar")
+  end)
 end
 
 return M

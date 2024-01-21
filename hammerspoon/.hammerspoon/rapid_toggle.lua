@@ -82,14 +82,10 @@ table.insert(
       hs.execute(
         [[
 ~/bin/helpers/low-power-mode-toggle.sh
-
-# kill BitBar
-ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null
-# restart BitBar
-open -a /Applications/BitBar.app
 ]],
         true
       )
+      macos_helpers.restartBitBar()
     end)
   )
 )
