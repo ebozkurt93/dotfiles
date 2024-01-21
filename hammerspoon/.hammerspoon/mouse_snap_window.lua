@@ -1,4 +1,4 @@
-local cornerThreshold = 25
+local cornerThreshold = 20
 local cornerHighlight = nil
 local lastDetectedCorner = nil -- Variable to store the last detected corner
 
@@ -44,7 +44,7 @@ local function createHighlight(screen, corner)
   end
 
   cornerHighlight = hs.drawing.rectangle(rect)
-  cornerHighlight:setFillColor({ red = 1, green = 1, blue = 1, alpha = 0.1 })
+  cornerHighlight:setFillColor({ red = 1, green = 1, blue = 1, alpha = 0.3 })
   cornerHighlight:setRoundedRectRadii(3, 3)
   cornerHighlight:setStroke(false)
   cornerHighlight:show()
@@ -82,7 +82,7 @@ local function isNearCorner(point, screen)
 end
 
 local function windowDragging(event)
-  local mousePoint = hs.mouse.getAbsolutePosition()
+  local mousePoint = hs.mouse.absolutePosition()
   local screen = hs.mouse.getCurrentScreen()
 
   if event:getType() == hs.eventtap.event.types.leftMouseDragged then
