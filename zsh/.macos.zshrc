@@ -108,6 +108,8 @@ alias cs="colima status > /dev/null 2>&1 && colima stop || colima start"
 alias cat='bat --paging=never'
 alias lg='lazygit'
 
+alias hsr='pgrep Hammerspoon | xargs kill; open -a /Applications/Hammerspoon.app'
+
 function __find_repos {
   p=($(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-paths) ~/bin)
   selected_dir="$(cat <(echo ~/dotfiles) \
