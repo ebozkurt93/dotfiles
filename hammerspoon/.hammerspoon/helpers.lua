@@ -25,10 +25,14 @@ function M.isModuleAvailable(name)
 end
 
 function M.loadModuleIfAvailable(name)
-  if M.isModuleAvailable(name) then
-    return require(name)
+  local function requiref(m)
+    require(m)
   end
-  return {}
+
+  local res = pcall(requiref, name)
+  if not res then
+    return {}
+  end
 end
 
 -- merges two or more tables
@@ -63,6 +67,59 @@ function M.hotkeyScopedToApp(mods, key, appName, func)
     :subscribe(hs.window.filter.windowUnfocused, function()
       yourHotkey:disable()
     end)
+end
+
+function M.isCurrentTabUrlStartingWith(startsWith)
+  local _, currentUrl =
+    hs.osascript.applescript('tell application "Google Chrome" to return URL of active tab of front window')
+
+  return currentUrl:sub(1, #startsWith) == startsWith
+end
+
+function M.runJsOnCurrentBrowserTab(jsScript)
+  local script = [[
+var chrome = Application("Google Chrome");
+
+var command = `
+    (function() {
+%s
+})()
+`
+
+chrome.windows[0].activeTab.execute({javascript:command})
+]]
+
+  hs.osascript.javascript(script:format(jsScript))
+end
+
+function M.runJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
+  local script = [[
+
+var chrome = Application('Google Chrome');
+var windows = chrome.windows();
+
+var pattern = new RegExp('%s');
+var foundTabs = [];
+
+var command = `
+    (function() {
+%s
+    })();
+
+`
+
+windows.forEach(function(window) {
+    window.tabs().forEach(function(tab) {
+        if (pattern.test(tab.url())) {
+            foundTabs.push(tab);
+        }
+    });
+});
+foundTabs[0].execute({javascript:command})
+
+]]
+
+  hs.osascript.javascript(script:format(urlPattern, jsScript))
 end
 
 function M.keystrokesScopedToApp(target, app, func)
