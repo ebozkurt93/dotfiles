@@ -18,6 +18,12 @@ local keywords = {
   ["@@time"] = function()
     return tostring(os.date("%H:%M"))
   end,
+  ["@@hlepoch"] = function()
+    return tostring(os.date("%y%m%d%H%M%S"))
+  end,
+  ["@@hldepoch"] = function()
+    return tostring(os.date("%y-%m-%d-%H:%M:%S"))
+  end,
 }
 
 keywords = helpers.merge(keywords, personalKeywords)
