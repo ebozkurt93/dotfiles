@@ -11,7 +11,8 @@ require("text_expander")
 local _ = require("mouse_snap_window")
 local _ = require("scoped_hotkeys")
 local _ = require("spotify")
-helpers.loadModuleIfAvailable('personal')
+local _ = require("rapid_toggle")
+local _ = helpers.loadModuleIfAvailable("personal")
 
 -- temporarily disabled
 -- require("google_meet_mic_toggle")
