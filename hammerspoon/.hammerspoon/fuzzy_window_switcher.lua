@@ -55,7 +55,10 @@ local function _fuzzyPickWindow(item)
   end
   local index = item["index"]
   local window = windows[index]
-  window:focus()
+  -- not exactly this, but fixes issue somehow https://github.com/Hammerspoon/hammerspoon/issues/370#issuecomment-615535897
+  hs.timer.doAfter(0.001, function()
+    window:focus()
+  end)
   _fuzzyChooser = nil
 end
 
