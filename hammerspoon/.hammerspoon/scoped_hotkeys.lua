@@ -42,7 +42,7 @@ end)
 
 -- todo: move this to work part
 helpers.hotkeyScopedToApp({ "cmd", "shift" }, "9", "Google Chrome", function(app)
-  app:selectMenuItem({ "Profiles", "Bemlo" })
+  app:selectMenuItem({ "Profiles", "Erdem (Bemlo)" })
 end)
 
 helpers.hotkeyScopedToApp({ "cmd", "shift" }, "8", "Google Chrome", function(app)
