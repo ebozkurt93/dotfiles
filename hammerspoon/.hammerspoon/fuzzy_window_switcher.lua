@@ -53,9 +53,11 @@ local function _fuzzyPickWindow(item)
   if item == nil then
     return
   end
-  local index = item["index"]
-  local window = windows[index]
+  local window = item["window"]
+  local app = item["app"]
   -- not exactly this, but fixes issue somehow https://github.com/Hammerspoon/hammerspoon/issues/370#issuecomment-615535897
+  app = hs.application.get(app)
+  app:activate()
   hs.timer.doAfter(0.001, function()
     window:focus()
   end)
@@ -86,6 +88,8 @@ local function windowFuzzySearch()
       ["subText"] = app,
       ["image"] = icon,
       ["windowID"] = w:id(),
+      ["window"] = w,
+      ["app"] = app,
       index = i,
     }
     table.insert(_fuzzyChoices, item)
