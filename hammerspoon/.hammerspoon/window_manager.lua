@@ -65,7 +65,7 @@ local function moveToScreen(direction)
     local targetScreenFrame = targetScreen:fullFrame()
     local centerPoint =
       hs.geometry.point(targetScreenFrame.x + targetScreenFrame.w / 2, targetScreenFrame.y + targetScreenFrame.h / 2)
-    hs.mouse.setAbsolutePosition(centerPoint)
+    hs.mouse.absolutePosition(centerPoint)
   end
 end
 
