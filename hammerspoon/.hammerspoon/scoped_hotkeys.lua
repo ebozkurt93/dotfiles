@@ -105,7 +105,7 @@ helpers.hotkeyExcludingApp({ "alt", "shift" }, "d", "Google Chrome", function()
   hs.execute("open ~/Desktop")
 end)
 
-local _ = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
+local reddit = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
   local urlStartsWith = "https://www.reddit.com/"
 
   if not helpers.isCurrentTabUrlStartingWith(urlStartsWith) then
@@ -189,3 +189,5 @@ end)
 hs.hotkey.bind(globals.hyper, "k", function()
   hs.application.launchOrFocus("Kitty")
 end)
+
+return { reddit }
