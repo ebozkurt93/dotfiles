@@ -1,4 +1,5 @@
 local cornerThreshold = 20
+local sideThreshold = 5
 local cornerHighlight = nil
 local lastDetectedCorner = nil -- Variable to store the last detected corner
 
@@ -38,9 +39,9 @@ local function createHighlight(screen, corner)
   elseif corner == "bottomRight" then
     rect = hs.geometry.rect(max.x + max.w - size, max.y + max.h - size, size, size)
   elseif corner == "left" then
-    rect = hs.geometry.rect(max.x, max.y, cornerThreshold, max.h)
+    rect = hs.geometry.rect(max.x, max.y, sideThreshold, max.h)
   elseif corner == "right" then
-    rect = hs.geometry.rect(max.x + max.w - cornerThreshold, max.y, cornerThreshold, max.h)
+    rect = hs.geometry.rect(max.x + max.w - sideThreshold, max.y, sideThreshold, max.h)
   end
 
   cornerHighlight = hs.drawing.rectangle(rect)
@@ -72,9 +73,9 @@ local function isNearCorner(point, screen)
     and math.abs(point.y - (max.y + max.h)) <= cornerThreshold
   then
     nearCorner = "bottomRight"
-  elseif math.abs(point.x - max.x) <= cornerThreshold then
+  elseif math.abs(point.x - max.x) <= sideThreshold then
     nearCorner = "left"
-  elseif math.abs(point.x - (max.x + max.w)) <= cornerThreshold then
+  elseif math.abs(point.x - (max.x + max.w)) <= sideThreshold then
     nearCorner = "right"
   end
 
