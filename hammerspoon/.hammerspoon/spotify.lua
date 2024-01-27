@@ -32,4 +32,4 @@ spotifyStatus:setMenu({
   },
 })
 
-return timer
+return { timer, spotifyStatus }
