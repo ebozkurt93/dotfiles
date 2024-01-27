@@ -2,11 +2,16 @@ local globals = require("globals")
 local helpers = require("helpers")
 local macos_helpers = require("macos_helpers")
 
--- hs.loadSpoon("EmmyLua") -- enable when want to regenerate lua annotations for lsp
+hs.timer.doAfter(0, function()
+  -- regenerates lua annotations for lsp
+  hs.loadSpoon("EmmyLua")
+end)
+
 hs.hotkey.bind(globals.hyper, "d", hs.toggleConsole)
 
 require("reload")
 require("window_manager")
+require("menubar_colors")
 local _ = require("fuzzy_window_switcher")
 local _ = require("text_expander")
 local _ = require("mouse_snap_window")
