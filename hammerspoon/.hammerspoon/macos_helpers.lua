@@ -365,12 +365,13 @@ killall Dock
 end
 
 function M.toggleGrayscale()
-  hs.execute(
-    [[
+  local shell = "/bin/bash"
+  local commandString = [[
 shortcuts run 'Toggle grayscale'
-  ]],
-    false
-  )
+  ]]
+  local arguments = { "-c", commandString }
+  local task = hs.task.new(shell, nil, arguments)
+  task:start()
 end
 
 function M.toggleBrightness()
