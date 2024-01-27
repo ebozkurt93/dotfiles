@@ -1,9 +1,33 @@
+-- menubar enable/disable
+local enabled = false
+local commandString = "~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled meeting"
+
+local shell = "/bin/bash"
+local arguments = {"-c", commandString}
+
+local function taskCallback(exitCode, stdOut, stdErr)
+  enabled = (exitCode ~= 0)
+end
+
+local function runTask()
+  local task = hs.task.new(shell, taskCallback, arguments)
+  task:start()
+end
+
+runTask()
+
+local interval = 10
+local taskTimer = hs.timer.doEvery(interval, runTask)
+
+taskTimer:start()
+
+-- menubar contents
 local spotifyStatus = hs.menubar.new()
 
 local function updateSpotifyStatus()
   local spotifyApp = hs.application.get("Spotify")
 
-  if spotifyApp and spotifyApp:isRunning() then
+  if enabled and spotifyApp and spotifyApp:isRunning() then
     local currentTrack = hs.spotify.getCurrentTrack()
     local currentArtist = hs.spotify.getCurrentArtist()
 
@@ -32,4 +56,4 @@ spotifyStatus:setMenu({
   },
 })
 
-return { timer, spotifyStatus }
+return { timer, spotifyStatus, enabled, taskTimer }
