@@ -18,6 +18,10 @@ local function resizeAndMoveWindow(win, screen, corner)
     win:setFrame(hs.geometry.rect(max.x, max.y, max.w / 2, max.h))
   elseif corner == "right" then
     win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y, max.w / 2, max.h))
+  elseif corner == "top" then
+    win:setFrame(hs.geometry.rect(max.x, max.y, max.w, max.h / 2))
+  elseif corner == "bottom" then
+    win:setFrame(hs.geometry.rect(max.x, max.y + (max.h / 2), max.w, max.h / 2))
   end
 end
 
@@ -42,6 +46,10 @@ local function createHighlight(screen, corner)
     rect = hs.geometry.rect(max.x, max.y, sideThreshold, max.h)
   elseif corner == "right" then
     rect = hs.geometry.rect(max.x + max.w - sideThreshold, max.y, sideThreshold, max.h)
+  elseif corner == "top" then
+    rect = hs.geometry.rect(max.x, max.y, max.w, sideThreshold)
+  elseif corner == "bottom" then
+    rect = hs.geometry.rect(max.x, max.y + max.h - sideThreshold, max.w, sideThreshold)
   end
 
   cornerHighlight = hs.drawing.rectangle(rect)
@@ -77,6 +85,10 @@ local function isNearCorner(point, screen)
     nearCorner = "left"
   elseif math.abs(point.x - (max.x + max.w)) <= sideThreshold then
     nearCorner = "right"
+  elseif math.abs(point.y - max.y) <= sideThreshold then
+    nearCorner = "top"
+  elseif math.abs(point.y - (max.y + max.h)) <= sideThreshold then
+    nearCorner = "bottom"
   end
 
   return nearCorner
