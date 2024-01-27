@@ -17,14 +17,10 @@ format = "[$symbol$version $workspace]($style) "
 # when = """test "$HOME" = "$PWD" """
 # format = "[$output]($style)"
 
-[custom.pipenv-version]
-command = """ pipenv run python -V | sed -e 's/Python /| pipenv v/' """
-when = "test -f Pipfile && [[ ! -v PIPENV_ACTIVE ]]"
-format = "[$output](yellow bold) "
-
 [custom.enabled-states]
 command = "~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-short"
 # when = """test "$HOME" = "$PWD" """
+shell = "zsh -f"
 when = "test ! -z \"$(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states)\""
 format = "[$output]($style) "
 
@@ -32,6 +28,7 @@ format = "[$output]($style) "
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """
 # this works and it is the method that starship is using, but it is slow and inaccurate at times
 # command = """ cat ~/.config/gcloud/configurations/config_$(cat ~/.config/gcloud/active_config) | grep 'account =' | sed -e 's/account = //' """
+shell = "zsh -f"
 when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"
 format = "☁️ [$output]($style) "
 
