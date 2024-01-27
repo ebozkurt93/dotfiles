@@ -50,6 +50,29 @@ function M.merge(...)
   return result
 end
 
+function M.removeKeyFromTableArray(tableArray, keyToRemove)
+  local newArray = {}
+  for _, item in ipairs(tableArray) do
+    local newItem = {}
+    for key, value in pairs(item) do
+      if key ~= keyToRemove then
+        newItem[key] = value
+      end
+    end
+    table.insert(newArray, newItem)
+  end
+  return newArray
+end
+
+function M.findTableArrayItemByField(tableArray, key, value)
+  for _, item in ipairs(tableArray) do
+    if item[key] == value then
+      return item
+    end
+  end
+  return nil
+end
+
 function M.hotkeyScopedToApp(mods, key, appName, func)
   local yourHotkey = hs.hotkey.new(mods, key, function()
     local app = hs.application.frontmostApplication()
