@@ -107,12 +107,7 @@ table.insert(
     {},
     "s",
     disableAfter(function()
-      hs.execute(
-        [[
-~/bin/helpers/toggle-brightness.sh
-]],
-        true
-      )
+      macos_helpers.toggleBrightness()
     end)
   )
 )

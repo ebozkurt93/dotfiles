@@ -1,5 +1,6 @@
 local globals = require("globals")
 local helpers = require("helpers")
+local macos_helpers = require("macos_helpers")
 
 -- hs.loadSpoon("EmmyLua") -- enable when want to regenerate lua annotations for lsp
 hs.hotkey.bind(globals.hyper, "d", hs.toggleConsole)
@@ -47,6 +48,7 @@ local originalMenuItems = {
     ["text"] = "Toggle Display Mirroring",
     ["action"] = function()
       hs.execute("~/bin/mirror")
+      macos_helpers.toggleBrightness()
     end,
   },
   {

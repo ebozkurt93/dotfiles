@@ -373,6 +373,10 @@ shortcuts run 'Toggle grayscale'
   )
 end
 
+function M.toggleBrightness()
+  hs.execute("~/bin/helpers/toggle-brightness.sh", true)
+end
+
 function M.restartBitBar()
   hs.execute([[
 ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null;
