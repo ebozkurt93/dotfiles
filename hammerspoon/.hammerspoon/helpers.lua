@@ -50,6 +50,16 @@ function M.merge(...)
   return result
 end
 
+function M.mergeTables(...)
+    local mergedTable = {}
+    for _, array in ipairs({...}) do
+        for _, value in ipairs(array) do
+            table.insert(mergedTable, value)
+        end
+    end
+    return mergedTable
+end
+
 function M.removeKeyFromTableArray(tableArray, keyToRemove)
   local newArray = {}
   for _, item in ipairs(tableArray) do

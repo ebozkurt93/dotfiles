@@ -23,6 +23,13 @@ local originalMenuItems = {
   },
 }
 
+local personalMenuItems = {}
+if helpers.isModuleAvailable("personal") then
+  personalMenuItems = require("personal").actionMenuItems
+end
+
+originalMenuItems = helpers.mergeTables(originalMenuItems, personalMenuItems)
+
 local menuItems = helpers.removeKeyFromTableArray(originalMenuItems, "action")
 
 -- Function to show the menu
@@ -31,7 +38,7 @@ local function showMenu()
     if not choice then
       return
     end
-    helpers.findTableArrayItemByField(originalMenuItems, 'text', choice.text).action()
+    helpers.findTableArrayItemByField(originalMenuItems, "text", choice.text).action()
   end)
 
   chooser:choices(menuItems)
