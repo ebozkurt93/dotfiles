@@ -58,22 +58,47 @@ local function getTargetScreen(currentScreen, direction)
   end
 end
 
-local function moveToScreen(direction)
+local function moveToScreen(direction, keepRelativePosition)
   local currentScreen = hs.mouse.getCurrentScreen()
   local targetScreen = getTargetScreen(currentScreen, direction)
+
   if targetScreen then
     local targetScreenFrame = targetScreen:fullFrame()
-    local centerPoint =
-      hs.geometry.point(targetScreenFrame.x + targetScreenFrame.w / 2, targetScreenFrame.y + targetScreenFrame.h / 2)
-    hs.mouse.absolutePosition(centerPoint)
+    local newPosX, newPosY
+
+    if keepRelativePosition then
+      -- Calculate relative position if keepRelativePosition is true
+      local currentScreenFrame = currentScreen:fullFrame()
+      local mousePos = hs.mouse.absolutePosition()
+
+      local relativeX = (mousePos.x - currentScreenFrame.x) / currentScreenFrame.w
+      local relativeY = (mousePos.y - currentScreenFrame.y) / currentScreenFrame.h
+
+      newPosX = targetScreenFrame.x + targetScreenFrame.w * relativeX
+      newPosY = targetScreenFrame.y + targetScreenFrame.h * relativeY
+    else
+      -- Center the mouse if keepRelativePosition is false
+      newPosX = targetScreenFrame.x + targetScreenFrame.w / 2
+      newPosY = targetScreenFrame.y + targetScreenFrame.h / 2
+    end
+
+    -- Move the mouse to the new position
+    hs.mouse.absolutePosition(hs.geometry.point(newPosX, newPosY))
   end
 end
 
-hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "m", function()
-  moveToScreen("next")
+
+hs.hotkey.bind(globals.hyper, "m", function()
+  moveToScreen("next", true)
 end)
-hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "n", function()
-  moveToScreen("previous")
+hs.hotkey.bind({'shift', 'alt'}, "m", function()
+  moveToScreen("next", false)
+end)
+hs.hotkey.bind(globals.hyper, "n", function()
+  moveToScreen("previous", true)
+end)
+hs.hotkey.bind({'shift', 'alt'}, "n", function()
+  moveToScreen("previous", false)
 end)
 
 
