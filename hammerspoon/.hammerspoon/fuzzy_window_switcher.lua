@@ -76,7 +76,13 @@ end
 local escapeHotkey = hs.hotkey.new({}, "escape", handleEscape)
 
 local function windowFuzzySearch()
-  windows = hs.window.filter.new(true):setOverrideFilter({ allowTitles = 1 }):getWindows(hs.window.sortByFocusedLast)
+  windows = hs.window.filter
+      .new(true)
+      :setOverrideFilter({
+        hasTitlebar = true,
+        -- allowRoles = "AXStandardWindow"
+      })
+      :getWindows(hs.window.sortByFocusedLast)
   _fuzzyChoices = {}
   for i, w in pairs(windows) do
     local title = w:title()
