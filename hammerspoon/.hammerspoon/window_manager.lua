@@ -29,8 +29,8 @@ hs.hotkey.bind(globals.ctrl_alt, "c", function()
     local screen = win:screen()
     local max = screen:frame()
 
-    local customWidthPercent = 0.60
-    local customHeightPercent = 0.60
+    local customWidthPercent = 0.8
+    local customHeightPercent = 0.85
     f.w = max.w * customWidthPercent
     f.h = max.h * customHeightPercent
     f.x = max.x + (max.w - f.w) / 2
