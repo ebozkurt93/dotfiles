@@ -241,7 +241,7 @@ bindkey "^[t" __change_theme
 bindkey "^k" clear-screen
 
 function __open_pr {
-  local p="$(~/Documents/bitbar_plugins/github-prs.5m.py fzf)"
+  local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
   local content="$(cat <(test ${#p[@]} -ne 0 && echo $p))"
   if [[ $1 == 'cmd' ]]; then
     echo "$content"

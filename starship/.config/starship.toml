@@ -20,7 +20,7 @@ format = "[$symbol$version $workspace]($style) "
 [custom.enabled-states]
 command = "~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-short"
 # when = """test "$HOME" = "$PWD" """
-shell = "zsh -f"
+shell = ["zsh", "--no-rcs"]
 when = "test ! -z \"$(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states)\""
 format = "[$output]($style) "
 
@@ -28,7 +28,7 @@ format = "[$output]($style) "
 command = """ gcloud config list account --format "value(core.account)" | xargs echo """
 # this works and it is the method that starship is using, but it is slow and inaccurate at times
 # command = """ cat ~/.config/gcloud/configurations/config_$(cat ~/.config/gcloud/active_config) | grep 'account =' | sed -e 's/account = //' """
-shell = "zsh -f"
+disabled = true
 when = "~/Documents/bitbar_plugins/helpers/check_workdir_subdir.sh"
 format = "☁️ [$output]($style) "
 
