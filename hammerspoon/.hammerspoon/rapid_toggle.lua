@@ -33,6 +33,15 @@ table.insert(
   conditionalBindings,
   hs.hotkey.new(
     {},
+    "escape",
+    disableKeybindings
+  )
+)
+
+table.insert(
+  conditionalBindings,
+  hs.hotkey.new(
+    {},
     "b",
     disableAfter(function()
       macos_helpers.toggleBluetooth()
