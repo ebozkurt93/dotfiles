@@ -1,6 +1,6 @@
 -- menubar enable/disable
 local enabled = false
-local commandString = "~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled meeting"
+local commandString = "~/bin/helpers/show_private_menu_items.sh"
 
 local shell = "/bin/bash"
 local arguments = {"-c", commandString}
