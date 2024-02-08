@@ -95,11 +95,6 @@ helpers.hotkeyScopedToApp({ "ctrl", "alt" }, "m", "Google Chrome", function(app)
   app:selectMenuItem({ "Tab" })
 end)
 
--- todo: update this to be more useable, I probably need two shortcuts(One for desktop and one for downloads)
-helpers.hotkeyExcludingApp({ "alt", "shift" }, "d", "Google Chrome", function()
-  hs.execute("open ~/Desktop")
-end)
-
 local reddit = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
   local urlStartsWith = "https://www.reddit.com/"
 
@@ -163,6 +158,14 @@ local function switchKeyboardLayout()
     hs.keycodes.setLayout(layouts[nextIndex])
   end
 end
+
+hs.hotkey.bind({ "alt", "shift" }, "d", function()
+  hs.execute("open ~/Desktop")
+end)
+
+hs.hotkey.bind({ "alt", "shift" }, "w", function()
+  hs.execute("open ~/Downloads")
+end)
 
 hs.hotkey.bind({ "cmd", "ctrl" }, "9", switchKeyboardLayout)
 
