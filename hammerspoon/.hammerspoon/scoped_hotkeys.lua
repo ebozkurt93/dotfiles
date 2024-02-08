@@ -159,7 +159,7 @@ local function switchKeyboardLayout()
   end
 end
 
-hs.hotkey.bind({ "alt", "shift" }, "d", function()
+hs.hotkey.bind({ "alt", "shift" }, "q", function()
   hs.execute("open ~/Desktop")
 end)
 
