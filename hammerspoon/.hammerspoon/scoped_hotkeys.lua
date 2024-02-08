@@ -114,15 +114,16 @@ local reddit = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
 
   local jsCommand = [[
 
-// toggle reddit theme
-document.getElementById('USER_DROPDOWN_ID').click();
-[...document.querySelectorAll("span")].filter(s => s.textContent === 'Dark Mode')[0].click()
-//document.getElementsByClassName('icon icon-night')[0].click();
+document.querySelectorAll('faceplate-dropdown-menu')[0].childNodes[0].click();
+[...document.querySelectorAll('span')].filter(s => s.textContent === 'Dark Mode')[0].click();
+
+setTimeout(function() {
+document.querySelectorAll('faceplate-dropdown-menu')[0].childNodes[0].click();
+}, 250)
 
 ]]
 
   helpers.runJsOnCurrentBrowserTab(jsCommand)
-  hs.eventtap.keyStroke({}, "escape", 0)
 end)
 
 helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
