@@ -20,4 +20,4 @@ for p in "${paths[@]}"
 do
 	res="$res $($p)"
 done
-echo "$res" | xargs
+echo "$res" | xargs -0
