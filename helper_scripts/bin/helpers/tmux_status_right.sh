@@ -19,5 +19,6 @@ res=""
 for p in "${paths[@]}"
 do
 	res="$res $($p)"
+        res=$(echo $res | xargs -0)
 done
-echo "$res" | xargs -0
+echo "$res"
