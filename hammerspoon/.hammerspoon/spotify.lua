@@ -6,7 +6,7 @@ local shell = "/bin/bash"
 local arguments = {"-c", commandString}
 
 local function taskCallback(exitCode, stdOut, stdErr)
-  enabled = (exitCode ~= 0)
+  enabled = (exitCode == 0)
 end
 
 local function runTask()
