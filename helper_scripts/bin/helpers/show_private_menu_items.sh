@@ -4,4 +4,6 @@
 
 if ! ~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled meeting; then
   echo true
+  exit 0
 fi
+exit -1
