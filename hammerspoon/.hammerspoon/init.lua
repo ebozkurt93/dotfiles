@@ -18,6 +18,7 @@ local _ = require("scoped_hotkeys")
 local _ = require("spotify")
 local _ = require("rapid_toggle")
 local _ = require("action_menu")
+local _ = require("caffeinate")
 local _ = helpers.loadModuleIfAvailable("personal")
 
 -- temporarily disabled

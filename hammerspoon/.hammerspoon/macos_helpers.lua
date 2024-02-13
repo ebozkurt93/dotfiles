@@ -9,13 +9,39 @@ osascript -e 'tell application "Finder" restart'
   )
 end
 
-function M.toggleBluetooth()
-  hs.execute(
-    [=[
+function M.toggleBluetooth(enabled)
+  if enabled ~= nil then
+    local c = 0
+    if enabled then
+      c = 1
+    end
+    hs.execute(string.format("/opt/homebrew/bin/blueutil -p %s", c), true)
+  else
+    hs.execute(
+      [=[
 /opt/homebrew/bin/blueutil -p $(( ! $(/opt/homebrew/bin/blueutil -p) ))
   ]=],
-    true
+      true
+    )
+  end
+end
+
+function M.getBluetoothDevices()
+  local output, _success, _exitCode = hs.execute(
+    [=[
+/opt/homebrew/bin/blueutil --connected | awk '{print $2}' | tr -d ',' | tr '\n' ' ' | xargs
+  ]=],
+    false
   )
+  local result = {}
+  for word in output:gmatch("%S+") do
+    table.insert(result, word)
+  end
+  return result
+end
+
+function M.connectToBluetoothDevice(address)
+  hs.execute(string.format("/opt/homebrew/bin/blueutil --connect '%s'", address), true)
 end
 
 function M.clearNotifications()
