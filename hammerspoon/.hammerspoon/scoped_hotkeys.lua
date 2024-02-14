@@ -36,11 +36,13 @@ helpers.hotkeyScopedToApp({ "cmd" }, "a", "MultiViewer for F1", function(app)
 end)
 
 -- Google Chrome
-helpers.hotkeyScopedToApp({ "cmd", "shift" }, "0", "Google Chrome", function(app)
+hs.hotkey.bind({ "cmd", "shift" }, "0", function()
+  local app = hs.application.get("Google Chrome")
   app:selectMenuItem({ "Profiles", "Erdem" })
 end)
 
-helpers.hotkeyScopedToApp({ "cmd", "shift" }, "8", "Google Chrome", function(app)
+hs.hotkey.bind({ "cmd", "shift" }, "8", function()
+  local app = hs.application.get("Google Chrome")
   app:selectMenuItem({ "Profiles", "VPN" })
 end)
 
