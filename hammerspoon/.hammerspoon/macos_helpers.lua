@@ -352,12 +352,11 @@ function run(input, parameters) {
   hs.osascript.javascript(source)
 end
 
-local function findHiddenWindowsIds()
+local function findHiddenWindowIds()
   local allWindows = hs.window.filter
     .new(true)
     :setOverrideFilter({
-      hasTitlebar = true,
-      allowRoles = "AXStandardWindow",
+      allowRoles = "*",
     })
     :getWindows()
 
@@ -381,7 +380,7 @@ end
 
 -- Minimizing previously minimized windows after dock related actions since `killall Dock` unminimizes them
 function M.dockClearRecentApps()
-  local hiddenWindowIds = findHiddenWindowsIds()
+  local hiddenWindowIds = findHiddenWindowIds()
   hs.execute(
     [[
 #!/bin/sh
@@ -395,7 +394,7 @@ killall Dock
 end
 
 function M.dockMovePosition()
-  local hiddenWindowIds = findHiddenWindowsIds()
+  local hiddenWindowIds = findHiddenWindowIds()
   hs.execute(
     [[
 #!/bin/sh
