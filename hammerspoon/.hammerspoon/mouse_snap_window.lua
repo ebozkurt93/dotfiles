@@ -1,7 +1,9 @@
 local cornerThreshold = 20
 local sideThreshold = 5
+local minAllowedDragDuration = 200
 local cornerHighlight = nil
 local lastDetectedCorner = nil -- Variable to store the last detected corner
+local dragStartTime = nil
 
 local function resizeAndMoveWindow(win, screen, corner)
   local max = screen:frame()
@@ -98,7 +100,9 @@ local function windowDragging(event)
   local mousePoint = hs.mouse.absolutePosition()
   local screen = hs.mouse.getCurrentScreen()
 
-  if event:getType() == hs.eventtap.event.types.leftMouseDragged then
+  if event:getType() == hs.eventtap.event.types.leftMouseDown then
+    dragStartTime = hs.timer.absoluteTime()
+  elseif event:getType() == hs.eventtap.event.types.leftMouseDragged then
     lastDetectedCorner = isNearCorner(mousePoint, screen)
     if lastDetectedCorner then
       createHighlight(screen, lastDetectedCorner)
@@ -107,15 +111,27 @@ local function windowDragging(event)
     end
   elseif event:getType() == hs.eventtap.event.types.leftMouseUp then
     deleteHighlight()
-    local win = hs.window.focusedWindow()
-    if win and lastDetectedCorner then
-      resizeAndMoveWindow(win, screen, lastDetectedCorner)
-      lastDetectedCorner = nil -- Reset the corner detection after resizing
+    local dragDuration = hs.timer.absoluteTime() - dragStartTime
+    -- Convert duration from nanoseconds to milliseconds
+    dragDuration = dragDuration / 1e6
+    if dragDuration >= minAllowedDragDuration then
+      local win = hs.window.focusedWindow()
+      if win and lastDetectedCorner then
+        resizeAndMoveWindow(win, screen, lastDetectedCorner)
+      end
     end
+    lastDetectedCorner = nil
+    dragStartTime = nil
   end
 end
 
-local eventtap =
-  hs.eventtap.new({ hs.eventtap.event.types.leftMouseUp, hs.eventtap.event.types.leftMouseDragged }, windowDragging)
+local eventtap = hs.eventtap.new(
+  {
+    hs.eventtap.event.types.leftMouseDown,
+    hs.eventtap.event.types.leftMouseUp,
+    hs.eventtap.event.types.leftMouseDragged,
+  },
+  windowDragging
+)
 eventtap:start()
 return eventtap
