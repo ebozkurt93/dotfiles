@@ -444,4 +444,15 @@ ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null;
   end)
 end
 
+
+function M.isDarkMode()
+    local script = 'tell application "System Events"\nreturn dark mode of appearance preferences\nend tell'
+    local ok, result = hs.osascript.applescript(script)
+    if ok then
+        return result
+    else
+        return false
+    end
+end
+
 return M

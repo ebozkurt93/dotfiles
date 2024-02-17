@@ -1,3 +1,4 @@
+local macos_helpers = require("macos_helpers")
 local cornerThreshold = 20
 local sideThreshold = 5
 local minAllowedDragDuration = 200
@@ -27,10 +28,16 @@ local function resizeAndMoveWindow(win, screen, corner)
   end
 end
 
-local function createHighlight(screen, corner)
+local function deleteHighlight()
   if cornerHighlight then
     cornerHighlight:delete()
+    cornerHighlight = nil
   end
+end
+
+local function createHighlight(screen, corner)
+  local mode = macos_helpers.isDarkMode()
+  deleteHighlight()
 
   local rect
   local max = screen:frame()
@@ -55,17 +62,11 @@ local function createHighlight(screen, corner)
   end
 
   cornerHighlight = hs.drawing.rectangle(rect)
-  cornerHighlight:setFillColor({ red = 1, green = 1, blue = 1, alpha = 0.3 })
+  local color = mode and 1 or 0
+  cornerHighlight:setFillColor({ red = color, green = color, blue = color, alpha = 0.5 })
   cornerHighlight:setRoundedRectRadii(3, 3)
   cornerHighlight:setStroke(false)
   cornerHighlight:show()
-end
-
-local function deleteHighlight()
-  if cornerHighlight then
-    cornerHighlight:delete()
-    cornerHighlight = nil
-  end
 end
 
 local function isNearCorner(point, screen)
@@ -122,16 +123,14 @@ local function windowDragging(event)
     end
     lastDetectedCorner = nil
     dragStartTime = nil
+    deleteHighlight()
   end
 end
 
-local eventtap = hs.eventtap.new(
-  {
-    hs.eventtap.event.types.leftMouseDown,
-    hs.eventtap.event.types.leftMouseUp,
-    hs.eventtap.event.types.leftMouseDragged,
-  },
-  windowDragging
-)
+local eventtap = hs.eventtap.new({
+  hs.eventtap.event.types.leftMouseDown,
+  hs.eventtap.event.types.leftMouseUp,
+  hs.eventtap.event.types.leftMouseDragged,
+}, windowDragging)
 eventtap:start()
 return eventtap
