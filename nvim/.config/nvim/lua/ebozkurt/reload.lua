@@ -12,5 +12,4 @@ end
 
 function _G.ReloadTheme()
 	vim.cmd([[ source ~/.config/nvim/lua/ebozkurt/themes.lua ]])
-	vim.notify("Nvim theme reloaded!", vim.log.levels.INFO)
 end
