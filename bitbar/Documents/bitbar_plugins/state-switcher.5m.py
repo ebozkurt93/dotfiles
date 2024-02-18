@@ -54,7 +54,7 @@ def main(arg1=None, arg2=None, arg3=None):
             mark = "✅" if get_file_path(state).exists() else "❌"
             print(f"{state:<20} {mark}")
     elif arg1 == 'toggle':
-        toggle_state(arg2, states, on_enabled_commands, on_disabled_commands)
+        toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands)
     elif arg1 == 'run_hook':
         run_hook(arg2, arg3, on_enabled_commands, on_disabled_commands)
 
@@ -72,7 +72,7 @@ def generate_bitbar_menu(states, icons, style):
         print(f"{alternate_content} | bash={sys.argv[0]} param1=toggle param2={state} param3=ignore-event alternate=true refresh=true terminal=false {style}")
     print("Refresh | refresh=true " + style)
 
-def toggle_state(arg2, states, on_enabled_commands, on_disabled_commands):
+def toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands):
     file_path = get_file_path(arg2)
     if arg2 in states:
         if file_path.exists():
@@ -81,7 +81,7 @@ def toggle_state(arg2, states, on_enabled_commands, on_disabled_commands):
         else:
             file_path.touch()
             command = on_enabled_commands.get(arg2, '')
-        if command:
+        if command and arg3 != 'ignore-event':
             run_on_command_hook(arg2, command)
         # Shell command to kill processes related to "BitBar.app"
         shell_command = "ps -ef | grep 'BitBar.app' | awk '{print $2}' | xargs kill 2> /dev/null"
