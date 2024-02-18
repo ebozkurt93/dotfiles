@@ -1,7 +1,7 @@
 local macos_helpers = require("macos_helpers")
 local cornerThreshold = 20
 local sideThreshold = 5
-local minAllowedDragDuration = 200
+local minAllowedDragDuration = 500
 local cornerHighlight = nil
 local lastDetectedCorner = nil -- Variable to store the last detected corner
 local dragStartTime = nil
