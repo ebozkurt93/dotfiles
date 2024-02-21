@@ -9,6 +9,17 @@ osascript -e 'tell application "Finder" restart'
   )
 end
 
+
+function M.isBluetoothOn()
+  local output, _success, _exitCode = hs.execute(
+    [=[
+/opt/homebrew/bin/blueutil -p
+  ]=],
+    false
+  )
+  return output == '1'
+end
+
 function M.toggleBluetooth(enabled)
   if enabled ~= nil then
     local c = 0
