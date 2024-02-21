@@ -51,13 +51,13 @@ function M.merge(...)
 end
 
 function M.mergeTables(...)
-    local mergedTable = {}
-    for _, array in ipairs({...}) do
-        for _, value in ipairs(array) do
-            table.insert(mergedTable, value)
-        end
+  local mergedTable = {}
+  for _, array in ipairs({ ... }) do
+    for _, value in ipairs(array) do
+      table.insert(mergedTable, value)
     end
-    return mergedTable
+  end
+  return mergedTable
 end
 
 function M.removeKeyFromTableArray(tableArray, keyToRemove)

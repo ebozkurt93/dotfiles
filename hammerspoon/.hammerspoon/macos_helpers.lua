@@ -10,7 +10,6 @@ osascript -e 'tell application "Finder" restart'
   )
 end
 
-
 function M.isBluetoothOn()
   local output, _success, _exitCode = hs.execute(
     [=[
@@ -18,7 +17,7 @@ function M.isBluetoothOn()
   ]=],
     false
   )
-  return output == '1'
+  return output == "1"
 end
 
 function M.toggleBluetooth(enabled)
@@ -453,15 +452,14 @@ ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null;
   end)
 end
 
-
 function M.isDarkMode()
-    local script = 'tell application "System Events"\nreturn dark mode of appearance preferences\nend tell'
-    local ok, result = hs.osascript.applescript(script)
-    if ok then
-        return result
-    else
-        return false
-    end
+  local script = 'tell application "System Events"\nreturn dark mode of appearance preferences\nend tell'
+  local ok, result = hs.osascript.applescript(script)
+  if ok then
+    return result
+  else
+    return false
+  end
 end
 
 return M
