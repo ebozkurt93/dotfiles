@@ -1,3 +1,4 @@
+local helpers = require("helpers")
 M = {}
 
 function M.restartSystemEvents()
@@ -433,13 +434,10 @@ killall Dock
 end
 
 function M.toggleGrayscale()
-  local shell = "/bin/bash"
   local commandString = [[
 shortcuts run 'Toggle grayscale'
   ]]
-  local arguments = { "-c", commandString }
-  local task = hs.task.new(shell, nil, arguments)
-  task:start()
+  helpers.runShellCommandInBackground(commandString)
 end
 
 function M.toggleBrightness()

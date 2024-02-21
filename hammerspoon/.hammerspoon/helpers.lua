@@ -205,4 +205,11 @@ function M.isCurrentWindowInFullScreen()
   return false
 end
 
+function M.runShellCommandInBackground(command)
+  local shell = "/bin/bash"
+  local arguments = { "-c", command }
+  local task = hs.task.new(shell, nil, arguments)
+  task:start()
+end
+
 return M
