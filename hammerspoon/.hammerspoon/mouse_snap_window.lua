@@ -97,6 +97,13 @@ local function isNearCorner(point, screen)
   return nearCorner
 end
 
+local function dragDurationLongerThanMinAllowed()
+  local dragDuration = hs.timer.absoluteTime() - dragStartTime
+  -- Convert duration from nanoseconds to milliseconds
+  dragDuration = dragDuration / 1e6
+  return dragDuration >= minAllowedDragDuration
+end
+
 local function windowDragging(event)
   local mousePoint = hs.mouse.absolutePosition()
   local screen = hs.mouse.getCurrentScreen()
@@ -105,17 +112,14 @@ local function windowDragging(event)
     dragStartTime = hs.timer.absoluteTime()
   elseif event:getType() == hs.eventtap.event.types.leftMouseDragged then
     lastDetectedCorner = isNearCorner(mousePoint, screen)
-    if lastDetectedCorner then
+    if lastDetectedCorner and dragDurationLongerThanMinAllowed() then
       createHighlight(screen, lastDetectedCorner)
     else
       deleteHighlight()
     end
   elseif event:getType() == hs.eventtap.event.types.leftMouseUp then
     deleteHighlight()
-    local dragDuration = hs.timer.absoluteTime() - dragStartTime
-    -- Convert duration from nanoseconds to milliseconds
-    dragDuration = dragDuration / 1e6
-    if dragDuration >= minAllowedDragDuration then
+    if dragDurationLongerThanMinAllowed() then
       local win = hs.window.focusedWindow()
       if win and lastDetectedCorner then
         resizeAndMoveWindow(win, screen, lastDetectedCorner)
