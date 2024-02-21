@@ -174,33 +174,53 @@ function obj:center()
   self.hs.window.focusedWindow():centerOnScreen(nil, true, 0)
  end
 
+local function isWindowCoveringAllScreen(win)
+    -- Get the window's frame
+    local winFrame = win:frame()
+
+    -- Get the screen's visible frame (accounts for menu bar and dock)
+    local screenFrame = win:screen():frame()
+
+    -- Check if the window's frame is equal to or very close to the screen's frame
+    local isCovering = winFrame.x <= screenFrame.x and winFrame.y <= screenFrame.y and
+                       winFrame.w >= screenFrame.w and winFrame.h >= screenFrame.h
+
+    return isCovering
+end
+
 function obj:nextScreen()
   local window = self.hs.window.focusedWindow()
   local screen = window:screen()
+  local windowCoveringScreen = isWindowCoveringAllScreen(window)
   local isFullScreen = window:isFullScreen()
   if isFullScreen then
     window:toggleFullScreen()
   end
   hs.timer.doAfter(isFullScreen and 0.7 or 0, function()
     window:moveToScreen(screen:next(), false, true, 0)
-  if isFullScreen then
-    window:toggleFullScreen()
-  end
+    if isFullScreen then
+      window:toggleFullScreen()
+    elseif windowCoveringScreen then
+      window:maximize(0)
+    end
   end)
 end
 
 function obj:prevScreen()
   local window = self.hs.window.focusedWindow()
   local screen = window:screen()
+  local windowCoveringScreen = isWindowCoveringAllScreen(window)
   local isFullScreen = window:isFullScreen()
   if isFullScreen then
     window:toggleFullScreen()
   end
   hs.timer.doAfter(isFullScreen and 0.7 or 0, function()
     window:moveToScreen(screen:previous(), false, true, 0)
-  if isFullScreen then
-    window:toggleFullScreen()
-  end
+    if isFullScreen then
+      window:toggleFullScreen()
+    elseif windowCoveringScreen then
+      window:maximize(0)
+    end
   end)
 end
 
