@@ -31,5 +31,6 @@ require("ebozkurt.null-ls")
 require("ebozkurt.ufo")
 require("ebozkurt.obsidian")
 require("ebozkurt.themes")
+require("ebozkurt.transparent")
 require("ebozkurt.theme-gen")
 
