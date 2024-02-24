@@ -325,3 +325,21 @@ function __kitty_font_changer() {
 
 zle -N __kitty_font_changer
 bindkey "^g" __kitty_font_changer
+
+function __kitty_toggle_transparency() {
+  local file="$HOME/dotfiles/kitty/.config/kitty/toggled-settings.conf"
+  local lineNum='4'
+
+  # Check if the line is commented
+  if sed -n "${lineNum}p" $file | grep -q '^# '; then
+    sed -i '' "${lineNum}s/^# //" $file
+    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+  else
+    sed -i '' "${lineNum}s/^/# /" $file
+    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+  fi
+
+  # After reloading config menubar even on full screen for some reason with new changes, but obviously possible to toggle fullscreen again manually
+  pgrep kitty | xargs kill -SIGUSR1
+}
+
