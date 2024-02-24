@@ -204,4 +204,5 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Turn on lsp status information
-require("fidget").setup()
+-- window/blend 0 is needed for transparency
+require("fidget").setup({ window = { blend = 0 } })

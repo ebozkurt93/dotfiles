@@ -220,4 +220,5 @@ require("lazy").setup({
 		end,
 	},
 	"projekt0n/caret.nvim",
+	"xiyaowong/transparent.nvim",
 })
