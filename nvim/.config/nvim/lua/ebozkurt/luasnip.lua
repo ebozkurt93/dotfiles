@@ -60,4 +60,14 @@ ls.add_snippets('javascript', {
 	s("todo", fmt("// todo: {}", { i(1) })),
 })
 
+local date = function()
+    return os.date("%Y-%m-%d")
+end
+
+ls.add_snippets('markdown', {
+	 s("bdate", {
+        f(function() return "[[" .. date() .. "]]" end, {})
+    }),
+})
+
 require("luasnip.loaders.from_vscode").lazy_load()
