@@ -22,6 +22,12 @@ local originalMenuItems = {
     end,
   },
   {
+    ["text"] = "Restart Bartender 5",
+    ["action"] = function()
+      hs.execute("killall 'Bartender 5'; sleep 1; open -gj -a '/Applications/Bartender 5.app'")
+    end,
+  },
+  {
     ["text"] = "Toggle Grayscale",
     ["action"] = function()
       macos_helpers.toggleGrayscale()
