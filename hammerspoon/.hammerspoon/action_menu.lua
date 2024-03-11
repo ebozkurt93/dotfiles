@@ -16,6 +16,12 @@ local originalMenuItems = {
     end,
   },
   {
+    ["text"] = "Connect To Trackpad",
+    ["action"] = function()
+      hs.execute("~/bin/btt")
+    end,
+  },
+  {
     ["text"] = "Toggle Grayscale",
     ["action"] = function()
       macos_helpers.toggleGrayscale()
