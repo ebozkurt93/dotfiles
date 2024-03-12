@@ -19,9 +19,19 @@ local function isConnectedToAllowedNetwork()
   return false
 end
 
+-- during initial setup: enable this temporarily to ask for location preferences for hammerspoon
+-- after that enable location for hammerspoon for capturing current network
+-- print(hs.location.get())
 local caffeineWatcher = hs.caffeinate.watcher.new(function(event)
   if isConnectedToAllowedNetwork() then
-    -- Do nothing if connected to an allowed network
+    if event == hs.caffeinate.watcher.systemWillSleep then
+      previousBluetoothStatus = macos_helpers.isBluetoothOn()
+      macos_helpers.toggleBluetooth(false)
+      -- systemDidWake doesn't work all the time for some reason
+    elseif event == hs.caffeinate.watcher.screensDidUnlock and previousBluetoothStatus then
+      macos_helpers.toggleBluetooth(true)
+    end
+
     return
   end
 
