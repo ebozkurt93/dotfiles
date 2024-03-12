@@ -17,7 +17,7 @@ function M.isBluetoothOn()
   ]=],
     false
   )
-  return output == "1"
+  return output:match("^%s*(.-)%s*$") == "1"
 end
 
 function M.toggleBluetooth(enabled)
