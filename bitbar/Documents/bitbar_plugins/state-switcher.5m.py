@@ -25,6 +25,7 @@ def main(arg1=None, arg2=None, arg3=None):
     style = "size=13"
     config_file = Path.home() / "dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json"
     data = read_json_file(config_file)
+    data = [item for item in data if not item.get('disabled', None)]
 
     states = [item['title'] for item in data]
     icons = {item['title']: item.get('icon', '') for item in data}
