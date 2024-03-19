@@ -18,7 +18,7 @@ local originalMenuItems = {
   {
     ["text"] = "Connect To Trackpad",
     ["action"] = function()
-      hs.execute("~/bin/btt")
+      os.execute("~/bin/btt &")
     end,
   },
   {
