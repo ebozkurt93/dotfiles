@@ -126,19 +126,49 @@ pbpaste | sed -E -e 's/^[ ]?[0-9]* //g' | sed -E -e 's/“[ ]?[0-9]?[ ]?//g' | s
   hs.execute(cmd, true)
 end)
 
+-- temporary solution with override for spotify due to recent changes
+-- https://support.google.com/chrome/thread/264881586/hardware-media-key-handling-no-longer-available-in-chrome-flags-lists?hl=en
 hs.hotkey.bind({ "alt" }, "c", function()
-  hs.eventtap.event.newSystemKeyEvent("NEXT", true):post()
-  hs.eventtap.event.newSystemKeyEvent("NEXT", false):post()
+  local spotify = hs.application.get("Spotify")
+  if spotify then
+    hs.osascript.applescript([[
+    tell application "Spotify"
+      next track
+    end tell
+  ]] )
+  else
+    hs.eventtap.event.newSystemKeyEvent("NEXT", true):post()
+    hs.eventtap.event.newSystemKeyEvent("NEXT", false):post()
+  end
 end)
 
 hs.hotkey.bind({ "alt" }, "x", function()
-  hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
-  hs.eventtap.event.newSystemKeyEvent("PLAY", false):post()
+  local spotify = hs.application.get("Spotify")
+  if spotify then
+    hs.osascript.applescript([[
+    tell application "Spotify"
+      playpause
+    end tell
+  ]] )
+  else
+    hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
+    hs.eventtap.event.newSystemKeyEvent("PLAY", false):post()
+  end
 end)
 
 hs.hotkey.bind({ "alt" }, "z", function()
-  hs.eventtap.event.newSystemKeyEvent("PREVIOUS", true):post()
-  hs.eventtap.event.newSystemKeyEvent("PREVIOUS", false):post()
+
+  local spotify = hs.application.get("Spotify")
+  if spotify then
+    hs.osascript.applescript([[
+    tell application "Spotify"
+      previous track
+    end tell
+  ]] )
+  else
+    hs.eventtap.event.newSystemKeyEvent("PREVIOUS", true):post()
+    hs.eventtap.event.newSystemKeyEvent("PREVIOUS", false):post()
+  end
 end)
 
 local function switchKeyboardLayout()
