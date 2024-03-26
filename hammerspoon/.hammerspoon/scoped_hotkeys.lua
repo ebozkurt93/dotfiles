@@ -111,6 +111,7 @@ document.querySelectorAll('faceplate-dropdown-menu')[0].childNodes[0].click();
 
 setTimeout(function() {
 document.querySelectorAll('faceplate-dropdown-menu')[0].childNodes[0].click();
+document.activeElement.blur();
 }, 250)
 
 ]]
