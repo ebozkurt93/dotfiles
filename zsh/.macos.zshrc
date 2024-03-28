@@ -223,7 +223,7 @@ function __theme_helper() {
 
 function __change_theme() {
   current_nvim_theme=$(__theme_helper current_nvim_theme)
-  local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | grep -v $current_nvim_theme | sort | \
+  local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | grep -v "^$current_nvim_theme$" | sort | \
 	  { echo $current_nvim_theme ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
   if [[ -z $selected_theme ]]; then
 	__theme_helper set_kitty_theme $current_nvim_theme
