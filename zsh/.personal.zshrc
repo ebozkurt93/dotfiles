@@ -110,7 +110,7 @@ function __execute_package_json_command() {
   local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d')
   selection="$selection\n$install_deps_command"
 
-  local selection=$(echo $selection | fzf --bind 'ctrl-p:execute(echo _{})+abort')
+  local selection=$(echo $selection | fzf --tiebreak='begin,chunk' --bind 'ctrl-p:execute(echo _{})+abort')
   [[ -z $selection ]] && return
   if [[ $selection == "$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
