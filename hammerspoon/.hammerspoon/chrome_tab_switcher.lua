@@ -45,6 +45,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "T", function()
             window.activeTabIndex = %d;
             window.index = 1; // Make it the frontmost window
             chrome.activate(); // Bring Chrome to the front
+            chrome.activate(); // Sometimes active doesn't work on once
         ]], choice.windowIndex, choice.tabIndex)
 
         hs.osascript.javascript(switchScript)
