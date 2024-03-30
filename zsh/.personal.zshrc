@@ -107,7 +107,7 @@ function __execute_package_json_command() {
     fi
   done
 
-  local selection=$(cat package.json | jq  '.scripts' | sed -e '1d' -e '$d')
+  local selection=$(cat package.json | jq -r '.scripts | to_entries | .[] | "\(.key) -> \(.value)"')
   selection="$selection\n$install_deps_command"
 
   local selection=$(echo $selection | fzf --tiebreak='begin,chunk' --bind 'ctrl-p:execute(echo _{})+abort')
@@ -121,11 +121,11 @@ function __execute_package_json_command() {
     echo $cmd | pbcopy
     echo "Copied install dependencies command ($cmd) to clipboard"
   elif [[ $selection =~ ^_.* ]]; then
-    cmd=$(echo "$info[$op-run_cmd] $(echo "$selection" | cut -c2- | cut -d'"' -f2)")
+    cmd=$(echo "$info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | cut -c2- | xargs)")
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-     eval $info[$op-run_cmd] $(echo "$selection" | cut -d'"' -f2)
+     eval $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs)
   fi
   zle send-break
 }
