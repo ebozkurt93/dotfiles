@@ -125,7 +125,7 @@ function __execute_package_json_command() {
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-     eval $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs)
+     $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs) </dev/tty
   fi
   zle send-break
 }
