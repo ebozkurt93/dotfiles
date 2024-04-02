@@ -1,9 +1,10 @@
+local globals = require("globals")
 local function browser(browserName)
-    local function open()
-        hs.application.launchOrFocus(browserName)
-    end
-    local function jump(url)
-        local script = ([[(function() {
+  local function open()
+    hs.application.launchOrFocus(browserName)
+  end
+  local function jump(url)
+    local script = ([[(function() {
       var browser = Application('%s');
       browser.activate();
 
@@ -18,18 +19,20 @@ local function browser(browserName)
       }
     })();
   ]]):format(browserName, url)
-   hs.osascript.javascript(script)
-    end
-    return { open = open, jump = jump }
+    hs.osascript.javascript(script)
+  end
+  return { open = open, jump = jump }
 end
 
-hs.hotkey.bind({"alt"}, "l", function()
-    local currentWindow = hs.window.focusedWindow()
-    local chrome = browser("Google Chrome")
-    chrome.jump("meet.google.com")
+hs.hotkey.bind(globals.hyper, "l", function()
+  local currentWindow = hs.window.focusedWindow()
+  local chrome = browser("Google Chrome")
+  chrome.jump("meet.google.com")
+  hs.timer.doAfter(1, function()
     local newWindow = hs.window.focusedWindow()
     if string.match(newWindow:title(), "Meet - ") then
-        hs.eventtap.keyStroke({"cmd"}, "D")
+      hs.eventtap.keyStroke({ "cmd" }, "D")
+      currentWindow:focus()
     end
-    currentWindow:focus()
+  end)
 end)
