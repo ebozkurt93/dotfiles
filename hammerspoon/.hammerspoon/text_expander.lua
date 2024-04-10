@@ -7,10 +7,16 @@ end
 
 local keywords = {
   ["@@lorem"] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lobortis fermentum molestie. Vestibulum congue auctor nisi, eu ultrices lectus facilisis eu. Nulla molestie ornare massa, sed malesuada urna consequat sed. Curabitur a nibh blandit felis imperdiet interdum. Vivamus eu malesuada purus. Suspendisse in lacus non quam sagittis porttitor. In hac habitasse platea dictumst. Nullam suscipit nulla non tellus interdum faucibus. Ut eget mauris mi. Nam rhoncus quis massa sit amet placerat. Donec sollicitudin enim nec ex rutrum, in ornare arcu venenatis. Praesent consequat enim ante, et ornare eros pellentesque ut.",
+  ["@alph"] = function()
+    return string.rep("abcdefghijklmnopqrstuvwxyz", 3)
+  end,
   ["@@ip"] = function()
     local status, body, headers = hs.http.get("https://icanhazip.com", nil)
     return string.gsub(body, "^%s*(.-)%s*$", "%1")
     --return body
+  end,
+  ["@@localip"] = function()
+    return hs.network.interfaceDetails('en0')['IPv4']['Addresses'][1]
   end,
   ["@unixtime"] = function()
     return tostring(os.time())
