@@ -60,6 +60,7 @@ local function showMenu()
   end)
 
   chooser:choices(menuItems)
+  chooser:queryChangedCallback(helpers.queryChangedCallback(chooser, menuItems))
   chooser:show()
 end
 

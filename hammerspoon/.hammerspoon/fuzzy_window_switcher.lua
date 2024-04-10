@@ -1,4 +1,4 @@
--- Fuzzy Window Switcher
+local helpers = require('helpers')
 
 local _fuzzyChoices = nil
 local _fuzzyChooser = nil
@@ -12,51 +12,6 @@ local function resetChooser(keepFilter)
   if not keepFilter then
     _appFilter = nil
   end
-end
-
-local function fuzzyQuery(s, m)
-  local s_len = s:len()
-  local m_len = m:len()
-  local s_index, m_index = 1, 1
-  local match_start = nil
-
-  while s_index <= s_len and m_index <= m_len do
-    if s:sub(s_index, s_index) == m:sub(m_index, m_index) then
-      match_start = match_start or s_index
-      m_index = m_index + 1
-    end
-    s_index = s_index + 1
-  end
-
-  if m_index <= m_len then
-    return -1
-  end
-  local match_end = s_index - 1
-  return m_len / (match_end - match_start + 1)
-end
-
-local function _fuzzyFilterChoices(query)
-  _query = query
-  if query:len() == 0 then
-    _fuzzyChooser:choices(_fuzzyChoices)
-    return
-  end
-  local pickedChoices = {}
-  for i, j in pairs(_fuzzyChoices) do
-    -- this is to support queries where app name is given at start or end while query contains partial window title
-    local fullText = (j["subText"] .. " " .. j["text"] .. " " .. j["subText"]):lower()
-    -- local fullText = (j["text"] .. " " .. j["subText"]):lower()
-    local score = fuzzyQuery(fullText, query:lower())
-    if score > 0 then
-      j["fzf_score"] = score
-      table.insert(pickedChoices, j)
-    end
-  end
-  local sort_func = function(a, b)
-    return a["fzf_score"] > b["fzf_score"]
-  end
-  table.sort(pickedChoices, sort_func)
-  _fuzzyChooser:choices(pickedChoices)
 end
 
 local function _fuzzyPickWindow(item)
@@ -120,6 +75,7 @@ local function windowFuzzySearch()
       local item = {
         ["text"] = title,
         ["subText"] = app,
+        ["searchText"] = title .. ' ' .. app,
         ["image"] = icon,
         ["windowID"] = w:id(),
         ["window"] = w,
@@ -130,7 +86,7 @@ local function windowFuzzySearch()
     end
   end
   _fuzzyChooser = hs.chooser.new(_fuzzyPickWindow):choices(_fuzzyChoices):searchSubText(true)
-  _fuzzyChooser:queryChangedCallback(_fuzzyFilterChoices) -- Enable true fuzzy find
+  _fuzzyChooser:queryChangedCallback(helpers.queryChangedCallback(_fuzzyChooser, _fuzzyChoices, 'searchText'))
 
   _fuzzyChooser:showCallback(function()
     escapeHotkey:enable()
