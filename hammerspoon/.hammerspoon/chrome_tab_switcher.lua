@@ -1,3 +1,5 @@
+local helpers = require('helpers')
+
 hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "T", function()
     local chrome = hs.application.find("Google Chrome")
     if not chrome then
@@ -12,6 +14,7 @@ hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "T", function()
             window.tabs().forEach(function(tab, tabIndex) {
                 tabsInfo.push({
                     title: tab.title(),
+                    url: tab.url(),
                     windowIndex: windowIndex + 1, // JavaScript is 0-indexed, AppleScript is 1-indexed
                     tabIndex: tabIndex + 1
                 });
@@ -29,8 +32,9 @@ hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "T", function()
     -- Creating chooser entries with tab titles and their window/tab indices
     local choices = hs.fnutils.imap(tabsInfo, function(tabInfo)
         return {
-            text = tabInfo.title,
-            subText = "Window: " .. tabInfo.windowIndex .. " | Tab: " .. tabInfo.tabIndex,
+            text = tabInfo.title ~= "" and tabInfo.title or tabInfo.url,
+            subText = " Window: " .. tabInfo.windowIndex .. " | Tab: " .. tabInfo.tabIndex .. " | " .. tabInfo.url,
+            searchText = tabInfo.title .. ' ' .. tabInfo.url,
             windowIndex = tabInfo.windowIndex,
             tabIndex = tabInfo.tabIndex
         }
@@ -53,5 +57,6 @@ hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "T", function()
     end)
 
     chooser:choices(choices)
+    chooser:queryChangedCallback(helpers.queryChangedCallback(chooser, choices, 'searchText'))
     chooser:show()
 end)

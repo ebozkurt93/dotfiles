@@ -1,3 +1,5 @@
+local fzy = require('fzy')
+
 P = function(v)
   print(hs.inspect.inspect(v))
   return v
@@ -210,6 +212,37 @@ function M.runShellCommandInBackground(command)
   local arguments = { "-c", command }
   local task = hs.task.new(shell, nil, arguments)
   task:start()
+end
+
+function M.debounce(func, delay)
+  local timer = nil
+  return function(...)
+    local args = { ... }
+    if timer then timer:stop() end
+    timer = hs.timer.doAfter(delay, function()
+      func(table.unpack(args))
+    end)
+  end
+end
+
+local function chooserFuzzyFilter(chooser, choices, key, query)
+  if query:len() == 0 then
+    chooser:choices(choices)
+    return
+  end
+  local filtered = fzy.filter_table(query, choices, key)
+  local results = {}
+  for _, item in ipairs(filtered) do
+    table.insert(results, item.item)
+  end
+  chooser:choices(results)
+end
+
+function M.queryChangedCallback(chooser, choices, key)
+  key = key or 'text'
+  return function(query)
+    chooserFuzzyFilter(chooser, choices, key, query)
+  end
 end
 
 return M
