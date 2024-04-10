@@ -1,4 +1,4 @@
-hs.hotkey.bind({"cmd", "alt", "ctrl"}, "T", function()
+hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "T", function()
     local chrome = hs.application.find("Google Chrome")
     if not chrome then
         hs.alert.show("Chrome not found")
@@ -38,6 +38,8 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "T", function()
 
     local chooser = hs.chooser.new(function(choice)
         if not choice then return end
+        -- This is sometimes needed especially when there are several windows open
+        hs.application.launchOrFocus("Google Chrome")
         -- Switch to the selected tab and focus on the window
         local switchScript = string.format([[
             var chrome = Application('Google Chrome');
@@ -45,7 +47,6 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "T", function()
             window.activeTabIndex = %d;
             window.index = 1; // Make it the frontmost window
             chrome.activate(); // Bring Chrome to the front
-            chrome.activate(); // Sometimes active doesn't work on once
         ]], choice.windowIndex, choice.tabIndex)
 
         hs.osascript.javascript(switchScript)
@@ -54,4 +55,3 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "T", function()
     chooser:choices(choices)
     chooser:show()
 end)
-
