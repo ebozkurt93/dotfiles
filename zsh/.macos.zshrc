@@ -343,3 +343,29 @@ function __kitty_toggle_transparency() {
   pgrep kitty | xargs kill -SIGUSR1
 }
 
+function __kitty_change_setting() {
+  local file="$HOME/dotfiles/kitty/.config/kitty/toggled-settings.conf"
+  local lineNum=$1
+  local ops=("toggle" "enable" "disable")
+  local op="toggle"
+
+  if [[ " ${ops[*]} " =~ " $2 " ]]; then
+    local op="$2"
+  fi
+
+  if [[ "$op" = "toggle" ]]; then
+    # Check if the line is commented
+    if sed -n "${lineNum}p" $file | grep -q '^# '; then
+      sed -i '' "${lineNum}s/^# //" $file
+    else
+      sed -i '' "${lineNum}s/^/# /" $file
+    fi
+  elif [[ "$op" = "enable" ]]; then
+      sed -i '' "${lineNum}s/^# //" $file
+  else
+      sed -i '' "${lineNum}s/^# //" $file
+      sed -i '' "${lineNum}s/^/# /" $file
+  fi
+
+  pgrep kitty | xargs kill -SIGUSR1
+}
