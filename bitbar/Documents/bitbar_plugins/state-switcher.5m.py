@@ -51,9 +51,10 @@ def main(arg1=None, arg2=None, arg3=None):
     elif arg1 == 'states':
         print(' '.join(states))
     elif arg1 == 'states-with-marks':
+        max_len = max([len(state) for state in states])
         for state in states:
             mark = "✅" if get_file_path(state).exists() else "❌"
-            print(f"{state:<20} {mark}")
+            print(f"{state:<{max_len}} {mark}")
     elif arg1 == 'toggle':
         toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands)
     elif arg1 == 'run_hook':
