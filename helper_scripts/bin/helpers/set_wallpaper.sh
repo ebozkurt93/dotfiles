@@ -12,7 +12,7 @@ fi
 
 if [[ "$1"  == "find" ]]; then
 	# find images and sort by modified at
-	echo "$(find -E $(cd ~/Downloads; pwd -P) -regex '.*\.(jpg|png|heic)' -exec ls -t {} +)"
+	echo "$(find -E $(cd ~/Downloads; pwd -P) -regex '.*\.(jpg|jpeg|png|heic)' -exec ls -t {} +)"
 	exit
 fi
 
@@ -26,7 +26,7 @@ if [[ ! -f $file_path ]]; then
 	exit
 fi
 content="$(head -n 1 $file_path)"
-if [[ ! "$content" =~ .(png|jpg|heic) ]]; then
+if [[ ! "$content" =~ .(png|jpeg|jpg|heic) ]]; then
 	echo invalid content in $file_path
 	echo invalid content in $content
 	exit
