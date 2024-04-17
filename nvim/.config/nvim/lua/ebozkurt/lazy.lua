@@ -144,7 +144,7 @@ require("lazy").setup({
 
 	-- debugging
 	"mfussenegger/nvim-dap",
-	{ "rcarriga/nvim-dap-ui", dependencies = { "mfussenegger/nvim-dap" } },
+	{ "rcarriga/nvim-dap-ui", dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" } },
 	"leoluz/nvim-dap-go",
 	"mfussenegger/nvim-dap-python",
 	"theHamsta/nvim-dap-virtual-text",
@@ -154,6 +154,7 @@ require("lazy").setup({
 	{
 		"nvim-neotest/neotest",
 		dependencies = {
+			"nvim-neotest/nvim-nio",
 			"nvim-lua/plenary.nvim",
 			"nvim-treesitter/nvim-treesitter",
 			"antoinemadec/FixCursorHold.nvim",
