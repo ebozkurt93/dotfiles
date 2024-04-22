@@ -33,6 +33,11 @@ echo ""
 echo "Disable auto-correct"
 defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
+echo ""
+echo "Prevent creating .DS_Store files on network and usb stores"
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
 # Mouse & Trackpad
 echo ""
 echo "Setting trackpad & mouse speed to a reasonable number"
