@@ -32,7 +32,7 @@ local function updateSpotifyStatus()
     local currentTrack = hs.spotify.getCurrentTrack()
     local currentArtist = hs.spotify.getCurrentArtist()
 
-    spotifyStatus:setTitle("󰓇  " .. isPlaying .. currentTrack .. " - " .. currentArtist)
+    spotifyStatus:setTitle("󰓇  " .. isPlaying .. currentArtist .. " - " .. currentTrack)
     spotifyStatus:returnToMenuBar()
   else
     spotifyStatus:setTitle("Spotify status disabled")
