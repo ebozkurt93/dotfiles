@@ -5,6 +5,29 @@ P = function(v)
   return v
 end
 
+local function getTimestamp()
+  return os.date("%Y-%m-%d %H:%M:%S") -- YYYY-MM-DD HH:MM:SS
+end
+
+local function writeTextToFile(path, text)
+  local file = io.open(path, "a")
+  if file then
+    file:write(getTimestamp() .. " - " .. text .. "\n")
+    file:close()
+  else
+    hs.alert("Failed to open file.")
+  end
+end
+
+DebugLog = function(value)
+  local path = os.getenv("HOME") .. "/hs-debug.txt"
+  if (type(value) == "table") then
+    value = hs.inspect.inspect(value)
+  end
+  writeTextToFile(path, tostring(value))
+  return value
+end
+
 M = {}
 
 function M.escape_magic(s)
