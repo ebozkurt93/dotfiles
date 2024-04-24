@@ -1,14 +1,15 @@
 -- Set up mason
 require("mason").setup()
 require("mason-lspconfig").setup({
+  -- some of the commented out in the list below should be installed, but mason only supports installing lsp's by default
   ensure_installed = {
     "bashls",
     "cssls",
     "jsonls",
-    "stylua",
+    -- "stylua",
     "gopls",
-    "staticcheck", -- used for go as well
-    "prettier",
+    -- "staticcheck", -- used in golang
+    -- "prettier",
     "tsserver",
   },
 })
