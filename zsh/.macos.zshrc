@@ -140,7 +140,7 @@ function __theme_helper() {
   'catppuccin-latte' 'catppuccin-frappe' 'catppuccin-mocha' 'catppuccin-macchiato'
   'night-owl' 'nordic' 'poimandres' 'moonbow'
   'github-dark' 'github-light'
-  'caret-dark' 'caret-light'
+  'caret-dark' 'caret-light' 'miasma'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

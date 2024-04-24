@@ -120,4 +120,7 @@ elseif selected_theme == 'caret-dark' then
 elseif selected_theme == 'caret-light' then
 	vim.opt.background = 'light'
 	vim.cmd [[ colorscheme caret ]]
+elseif selected_theme == 'miasma' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme miasma ]]
 end
