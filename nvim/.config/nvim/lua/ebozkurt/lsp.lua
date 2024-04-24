@@ -1,6 +1,17 @@
 -- Set up mason
 require("mason").setup()
-require("mason-lspconfig").setup()
+require("mason-lspconfig").setup({
+  ensure_installed = {
+    "bashls",
+    "cssls",
+    "jsonls",
+    "stylua",
+    "gopls",
+    "staticcheck", -- used for go as well
+    "prettier",
+    "tsserver",
+  },
+})
 
 -- Set up lspconfig.
 -- todo: remove if solution below works, this should not be used anymore
