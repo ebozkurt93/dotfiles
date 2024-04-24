@@ -27,8 +27,7 @@ local caffeineWatcher = hs.caffeinate.watcher.new(function(event)
     if event == hs.caffeinate.watcher.systemWillSleep then
       previousBluetoothStatus = macos_helpers.isBluetoothOn()
       macos_helpers.toggleBluetooth(false)
-      -- systemDidWake doesn't work all the time for some reason
-    elseif event == hs.caffeinate.watcher.screensDidUnlock and previousBluetoothStatus then
+    elseif event == hs.caffeinate.watcher.systemDidWake and previousBluetoothStatus then
       macos_helpers.toggleBluetooth(true)
     end
 
