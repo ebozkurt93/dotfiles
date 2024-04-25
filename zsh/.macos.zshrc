@@ -224,7 +224,7 @@ function __theme_helper() {
 function __change_theme() {
   current_nvim_theme=$(__theme_helper current_nvim_theme)
   local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | grep -v "^$current_nvim_theme$" | sort | \
-	  { echo $current_nvim_theme ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}')
+	  { echo $current_nvim_theme ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}' --preview-window 0)
   if [[ -z $selected_theme ]]; then
 	__theme_helper set_kitty_theme $current_nvim_theme
 	__theme_helper set_nvim_theme $current_nvim_theme
@@ -312,9 +312,10 @@ function __kitty_font_changer() {
     'InputMonoNarrow-Regular'
     'NotoSansMono-Regular'
     'Iosevka'
+    'BerkeleyMono-Regular'
   )
   local selected_font=$(echo $fonts | tr ' ' '\n' | sort | grep -v $current_font | \
-    { echo $current_font ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __kitty_change_font {}')
+    { echo $current_font ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __kitty_change_font {}' --preview-window 0)
   if [[ ! -z $selected_font ]]; then
     __kitty_change_font "$selected_font"
   else
