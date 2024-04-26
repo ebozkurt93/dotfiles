@@ -50,7 +50,8 @@ require("lazy").setup({
 	{ url = "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },
 	{ "williamboman/mason.nvim" },
 	{ "williamboman/mason-lspconfig.nvim" },
-	{ "jose-elias-alvarez/null-ls.nvim", dependencies = "nvim-lua/plenary.nvim" },
+	-- { "jose-elias-alvarez/null-ls.nvim", dependencies = "nvim-lua/plenary.nvim" },
+	{ "nvimtools/none-ls.nvim", dependencies = "nvim-lua/plenary.nvim" },
 	{ "j-hui/fidget.nvim", branch = "legacy" },
 
 	{

@@ -32,7 +32,7 @@ null_ls.setup({
 		null_ls.builtins.formatting.buildifier,
 		-- proto
 		null_ls.builtins.formatting.protolint,
-		null_ls.builtins.diagnostics.protoc_gen_lint,
+		null_ls.builtins.diagnostics.buf,
 		-- terraform
 		null_ls.builtins.formatting.terraform_fmt,
 		-- sh
