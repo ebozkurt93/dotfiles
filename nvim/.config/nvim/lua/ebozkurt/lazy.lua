@@ -211,7 +211,13 @@ require("lazy").setup({
   "rebelot/kanagawa.nvim",
   "haishanh/night-owl.vim",
   "AlexvZyl/nordic.nvim",
-  "olivercederborg/poimandres.nvim",
+  {
+    "olivercederborg/poimandres.nvim",
+    lazy = false,
+    -- without this priority treesitter highlighting for go files get removed
+    priority = 1000,
+  },
+
   "arturgoms/moonbow.nvim",
   {
     "projekt0n/github-nvim-theme",
