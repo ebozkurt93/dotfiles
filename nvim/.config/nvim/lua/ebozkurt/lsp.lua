@@ -19,7 +19,10 @@ require("mason-lspconfig").setup({
 -- local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 --local bufopts = { noremap = true, silent = true, buffer = 0 }
-local my_on_attach = function()
+local my_on_attach = function(client, bufnr)
+	if vim.lsp.inlay_hint then
+		vim.lsp.inlay_hint.enable(true)
+	end
 	vim.api.nvim_exec_autocmds("User", { pattern = "LspAttached" })
 end
 require("mason-lspconfig").setup_handlers({
@@ -27,7 +30,7 @@ require("mason-lspconfig").setup_handlers({
 	-- and will be called for each installed server that doesn't have
 	-- a dedicated handler.
 	function(server_name) -- default handler (optional)
-		local custom_configured_servers = { "tsserver", "eslint" }
+		local custom_configured_servers = { "tsserver", "eslint", "gopls" }
 		if vim.tbl_contains(custom_configured_servers, server_name) then
 			return
 		end
@@ -45,8 +48,8 @@ require("mason-lspconfig").setup_handlers({
 
 require("lspconfig").tsserver.setup({
 	capabilities = capabilities,
-	on_attach = function(client)
-		my_on_attach()
+	on_attach = function(client, bufnr)
+		my_on_attach(client, bufnr)
 		-- disable formatter for tsserver, since prettier is already doing it
 		client.server_capabilities.documentFormattingProvider = false
 		client.server_capabilities.documentRangeFormattingProvider = false
@@ -55,11 +58,46 @@ require("lspconfig").tsserver.setup({
 	root_dir = function()
 		return vim.loop.cwd()
 	end,
+	settings = {
+    javascript = {
+      inlayHints = {
+        includeInlayEnumMemberValueHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayParameterNameHints = "all", -- 'none' | 'literals' | 'all';
+        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayVariableTypeHints = true,
+      },
+    },
+    typescript = {
+      inlayHints = {
+        includeInlayEnumMemberValueHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayParameterNameHints = "all", -- 'none' | 'literals' | 'all';
+        includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayVariableTypeHints = true,
+      },
+    },
+  },
 })
 -- go install golang.org/x/tools/gopls@latest
 require("lspconfig").gopls.setup({
 	capabilities = capabilities,
 	on_attach = my_on_attach,
+	settings = {
+		gopls = { hints = {
+			rangeVariableTypes = true,
+			parameterNames = true,
+			constantValues = true,
+			assignVariableTypes = true,
+			compositeLiteralFields = true,
+			compositeLiteralTypes = true,
+			functionTypeParameters = true,
+		} },
+	}
 })
 
 -- local util = require('lspconfig/util')
@@ -102,7 +140,8 @@ require("lspconfig").lua_ls.setup({
 		diagnostics = { globals = { "vim", "exepath", "hs" } },
 		workspace = { library = {
 			string.format('%s/.hammerspoon/Spoons/EmmyLua.spoon/annotations', os.getenv 'HOME'),
-		} }
+		} },
+		hint = { enable = true }
 	} },
 })
 
