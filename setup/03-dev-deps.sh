@@ -20,6 +20,7 @@ echo "Installing default versions of asdf plugins"
 echo "Installed plugin versions"
 
 mkdir -p ~/Documents/bitbar_plugins/tmp
+mkdir -p ~/personal-repositories
 
 cd $src_pwd
-./install-neovim.sh
+./build-neovim.sh
