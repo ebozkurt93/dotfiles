@@ -133,6 +133,24 @@ function __execute_package_json_command() {
 zle -N __execute_package_json_command
 bindkey "^p" __execute_package_json_command
 
+function __execute_makefile_command() {
+  local file="Makefile"
+
+  if [[ ! -f  "$file" ]]; then
+    echo "No Makefile found"
+    zle send-break
+    return
+  fi
+
+  local selection=$(awk -F: '/^[a-zA-Z0-9_-]+:/ { print $1 }' $file | sort -u | fzf --tiebreak='begin,chunk')
+  [[ -z $selection ]] && return
+  make $selection </dev/tty
+  zle send-break
+}
+
+zle -N __execute_makefile_command
+bindkey "^[m" __execute_makefile_command
+
 function __ch() {
   ch
   zle reset-prompt
