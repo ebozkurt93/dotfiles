@@ -29,15 +29,11 @@ rm jetbrains_mono.zip
 echo "Installed Jetbrains Mono"
 
 echo "Installing Noto Sans Mono"
-curl -L 'https://fonts.google.com/download?family=Noto%20Sans%20Mono' > noto_sans_mono.zip
-unzip noto_sans_mono.zip -d noto_sans_mono
-cp -a noto_sans_mono/static/NotoSansMono/ ~/Library/Fonts
-rm -rf noto_sans_mono
-rm noto_sans_mono.zip
+curl -L -o ~/Library/Fonts/NotoSansMono.ttf https://github.com/google/fonts/raw/main/ofl/notosansmono/NotoSansMono%5Bwdth,wght%5D.ttf
 echo "Installed Noto Sans Mono"
 
 curl -L https://rubjo.github.io/victor-mono/VictorMonoAll.zip > victor_mono.zip
-echo "34288e16ca4834efc721aaf0c6f4ef3d86a85a5a791769787b50853ec21afd3b  victor_mono.zip" | shasum -a 256 -c - \
+echo "bf69bd719fb00ccb503e7574df07dccc257f1f3f8417526b642112f5d7aa3f02  victor_mono.zip" | shasum -a 256 -c - \
   || { echo "Mismatched SHA256 in victor_mono.zip, exiting..."; exit; }
 unzip victor_mono.zip -d victor_mono
 cp -a victor_mono/ttf/ ~/Library/Fonts
