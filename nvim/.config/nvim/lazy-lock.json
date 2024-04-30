@@ -37,7 +37,7 @@
   "mellow.nvim": { "branch": "main", "commit": "52c3571fa8c2e7faec09e0fb3da56fca89576297" },
   "miasma.nvim": { "branch": "main", "commit": "c672feec07d4e77ac485ee58e3432a96ebe51953" },
   "moonbow.nvim": { "branch": "master", "commit": "d3bdb22350b03a62868670b2e5d9aef256e380bb" },
-  "neogit": { "branch": "master", "commit": "0cae7abc30cb91d661f28257c331fcb5b5198e31" },
+  "neogit": { "branch": "nightly", "commit": "df527d152d34214a3a24a577bf7ef1f121e8add2" },
   "neotest": { "branch": "master", "commit": "f03a78cef74db5638e4312e18b767294a90de8da" },
   "neotest-go": { "branch": "main", "commit": "6a2f996d89fe4631942e035b1c114544ee045043" },
   "neotest-jest": { "branch": "main", "commit": "514fd4eae7da15fd409133086bb8e029b65ac43f" },

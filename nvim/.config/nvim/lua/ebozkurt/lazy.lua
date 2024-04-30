@@ -115,7 +115,7 @@ require("lazy").setup({
   { "kevinhwang91/nvim-ufo", dependencies = "kevinhwang91/promise-async" },
 
   "lewis6991/gitsigns.nvim",
-  { "TimUntersberger/neogit", dependencies = "nvim-lua/plenary.nvim" },
+  { "TimUntersberger/neogit", branch = 'nightly', dependencies = "nvim-lua/plenary.nvim" },
   "tpope/vim-fugitive",
   "ruanyl/vim-gh-line",
   { "sindrets/diffview.nvim", dependencies = "nvim-lua/plenary.nvim" },
