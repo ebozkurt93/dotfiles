@@ -2,8 +2,7 @@
 
 # Development
 cask "docker"
-cask "visual-studio-code"
-cask "sublime-merge"
+# cask "visual-studio-code"
 
 # work apps
 # cask "zoom"

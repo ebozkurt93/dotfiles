@@ -37,7 +37,6 @@ if is_macos; then
 fi
 
 alias code='open -a /Applications/Visual\ Studio\ Code.app/'
-alias smerge='open -a /Applications/Sublime\ Merge.app/'
 
 # homebrew related settings
 # asdf
