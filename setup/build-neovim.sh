@@ -34,7 +34,7 @@ fi
 cd $nvim_repo_dir
 git checkout master
 git pull
-git fetch --tags
+git fetch --tags --force
 git checkout $selected_tag
 
 remove_neovim
