@@ -201,10 +201,12 @@ function __find_and_run_executable {
     echo "./$filename" | pbcopy
     echo "Copied command (./$filename) to clipboard"
   else
+    pwd="$PWD"
     dname=$(dirname $selection)
     filename=$(basename $selection)
     cd $dname
     ./$filename
+    cd $pwd
   fi
   zle send-break
 }
