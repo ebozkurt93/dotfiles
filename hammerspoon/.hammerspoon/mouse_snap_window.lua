@@ -159,6 +159,7 @@ local function windowDragging(event)
     dragTimer = nil
     deleteHighlight()
     prevMousePoint = nil
+    maxVelocity = 0
   end
 end
 
