@@ -2,9 +2,16 @@ local macos_helpers = require("macos_helpers")
 local cornerThreshold = 20
 local sideThreshold = 5
 local minAllowedDragDuration = 500
+local minDragDurationBypassVelocity = 80
 local cornerHighlight = nil
-local lastDetectedCorner = nil -- Variable to store the last detected corner
+local lastDetectedCorner = nil
 local dragStartTime = nil
+
+-- Used for calculating max mouse velocity, to determine if we should ignore minAllowedDragDuration
+local dragTimer = nil
+local mousePoint = nil
+local prevMousePoint = nil
+local maxVelocity = 0
 
 local function resizeAndMoveWindow(win, screen, corner)
   local max = screen:frame()
@@ -79,9 +86,8 @@ local function isNearCorner(point, screen)
     nearCorner = "topRight"
   elseif math.abs(point.x - max.x) <= cornerThreshold and math.abs(point.y - (max.y + max.h)) <= cornerThreshold then
     nearCorner = "bottomLeft"
-  elseif
-    math.abs(point.x - (max.x + max.w)) <= cornerThreshold
-    and math.abs(point.y - (max.y + max.h)) <= cornerThreshold
+  elseif math.abs(point.x - (max.x + max.w)) <= cornerThreshold
+      and math.abs(point.y - (max.y + max.h)) <= cornerThreshold
   then
     nearCorner = "bottomRight"
   elseif math.abs(point.x - max.x) <= sideThreshold then
@@ -104,22 +110,44 @@ local function dragDurationLongerThanMinAllowed()
   return dragDuration >= minAllowedDragDuration
 end
 
+local function mouseVelocityHighEnough()
+  return maxVelocity > minDragDurationBypassVelocity
+end
+
+local function calculateDistance(p1, p2)
+  local xDiff = p2.x - p1.x
+  local yDiff = p2.y - p1.y
+  return math.sqrt(xDiff ^ 2 + yDiff ^ 2)
+end
+
+local function updateMouseVelocity()
+  local currentVelocity = nil
+  if (prevMousePoint == nil) then
+    currentVelocity = 0
+  else
+    currentVelocity = calculateDistance(prevMousePoint, mousePoint)
+  end
+  prevMousePoint = mousePoint
+  maxVelocity = math.max(maxVelocity, currentVelocity)
+end
+
 local function windowDragging(event)
-  local mousePoint = hs.mouse.absolutePosition()
+  mousePoint = hs.mouse.absolutePosition()
   local screen = hs.mouse.getCurrentScreen()
 
   if event:getType() == hs.eventtap.event.types.leftMouseDown then
     dragStartTime = hs.timer.absoluteTime()
+    dragTimer = hs.timer.doEvery(0.1, updateMouseVelocity)
   elseif event:getType() == hs.eventtap.event.types.leftMouseDragged then
     lastDetectedCorner = isNearCorner(mousePoint, screen)
-    if lastDetectedCorner and dragDurationLongerThanMinAllowed() then
+    if lastDetectedCorner and (dragDurationLongerThanMinAllowed() or mouseVelocityHighEnough()) then
       createHighlight(screen, lastDetectedCorner)
     else
       deleteHighlight()
     end
   elseif event:getType() == hs.eventtap.event.types.leftMouseUp then
     deleteHighlight()
-    if dragDurationLongerThanMinAllowed() then
+    if (dragDurationLongerThanMinAllowed() or mouseVelocityHighEnough()) then
       local win = hs.window.focusedWindow()
       if win and lastDetectedCorner then
         resizeAndMoveWindow(win, screen, lastDetectedCorner)
@@ -127,7 +155,10 @@ local function windowDragging(event)
     end
     lastDetectedCorner = nil
     dragStartTime = nil
+    dragTimer:stop()
+    dragTimer = nil
     deleteHighlight()
+    prevMousePoint = nil
   end
 end
 
