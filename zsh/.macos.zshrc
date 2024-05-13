@@ -62,15 +62,15 @@ function nvim_remote_exec {
 
 # given a file pattern and commands, this function will rerun commands whenever files change
 function res {
-  find . -name "$1" | entr -r ${@:2}
+  find . -name "$1" | entr ${@:2}
 }
 
 function resr {
-  find . -name "$1" | entr -rs ${@:2}
+  find . -name "$1" | entr -s ${@:2}
 }
 
-alias dev-rust='res "*.rs" cargo run'
-alias dev-go='res "*.go" go run .'
+alias dev-rust='res "*.rs" -r cargo run'
+alias dev-go='res "*.go" -r go run .'
 
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.py
