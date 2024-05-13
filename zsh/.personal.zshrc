@@ -79,6 +79,18 @@ alias ta='t a'
 
 alias yt='docker run --rm -i -e PGID=$(id -g) -e PUID=$(id -u) -v "$(pwd)":/workdir:rw mikenye/youtube-dl'
 alias ffmpeg='docker run --rm -i -t -v $PWD:/tmp/workdir jrottenberg/ffmpeg'
+function pandoc() {
+  local dockerfile_dir="$HOME/dotfiles/docker"
+  local dockerfile_name="pandoc.Dockerfile"
+  local image_name="pandoc-custom"
+
+  if [[ "$(docker images -q $image_name 2> /dev/null)" == "" ]]; then
+    echo "Building Docker image..."
+    docker build -t $image_name -f "$dockerfile_dir/$dockerfile_name" $dockerfile_dir
+  fi
+
+  docker run --rm --volume "$(pwd):/data" $image_name "$@"
+}
 
 function __get_pid_for_port() {
   echo "$(lsof -i:$1 -t)"
