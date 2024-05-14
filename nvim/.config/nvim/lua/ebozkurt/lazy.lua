@@ -228,4 +228,5 @@ require("lazy").setup({
   "projekt0n/caret.nvim",
   "xiyaowong/transparent.nvim",
   "xero/miasma.nvim",
+  { "fynnfluegge/monet.nvim", name = "monet" }
 })

@@ -12,6 +12,14 @@ vim.cmd [[ colorscheme gruvbox ]]
 -- vim.cmd[[colorscheme tokyonight]]
 -- vim.cmd[[colorscheme tokyonight-moon]]
 
+local function reloadPackages(pattern)
+	for name, _ in pairs(package.loaded) do
+		if name:match(pattern) then
+			package.loaded[name] = nil
+		end
+	end
+end
+
 if selected_theme == 'mellow' then
 	vim.cmd [[colorscheme mellow]]
 elseif selected_theme == 'rose-pine' then
@@ -123,4 +131,18 @@ elseif selected_theme == 'caret-light' then
 elseif selected_theme == 'miasma' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme miasma ]]
+elseif selected_theme == 'monet-dark' then
+	vim.opt.background = 'dark'
+	reloadPackages('^monet')
+	require("monet").setup {
+		dark_mode = true,
+	}
+	vim.cmd [[ colorscheme monet ]]
+elseif selected_theme == 'monet-light' then
+	vim.opt.background = 'light'
+	reloadPackages('^monet')
+	require("monet").setup {
+		dark_mode = false,
+	}
+	vim.cmd [[ colorscheme monet ]]
 end
