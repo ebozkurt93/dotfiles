@@ -60,12 +60,6 @@ helpers.hotkeyScopedToApp({ "alt" }, "d", "Google Chrome", function()
   hs.eventtap.keyStroke({}, "return", 0)
 end)
 
-helpers.hotkeyScopedToApp({ "cmd" }, "g", "Google Chrome", function()
-  hs.eventtap.rightClick(hs.mouse.absolutePosition())
-  hs.eventtap.keyStroke({}, "g", 0)
-  hs.eventtap.keyStroke({}, "return", 0)
-end)
-
 helpers.hotkeyScopedToApp({ "ctrl" }, "m", "Google Chrome", function(app)
   app:selectMenuItem({ "Tab", "Mute site" })
   local title = hs.window.focusedWindow():title()
