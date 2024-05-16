@@ -199,9 +199,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
 		if vim.lsp.inlay_hint then
 			vim.keymap.set('n', '<leader>gi', function()
-				for _, buf_nr in ipairs(vim.api.nvim_list_bufs()) do
-					vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(), { bufnr = buf_nr })
-				end
+				vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 			end, { desc = 'Toggle Inlay Hints' })
 		end
 		vim.keymap.set('n', 'ca', '<cmd>Lspsaga code_action<cr>', bufopts)
