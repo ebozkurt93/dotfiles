@@ -60,6 +60,7 @@ alias gpristine='git reset --hard && git clean -df'
 alias remove_node_modules="find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +"
 
 # docker
+alias lzd='lazydocker'
 alias d='docker'
 alias dr='docker run --rm -i -t'
 alias dx='docker exec -i -t'
