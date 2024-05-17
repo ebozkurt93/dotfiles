@@ -146,7 +146,6 @@ local function windowDragging(event)
       deleteHighlight()
     end
   elseif event:getType() == hs.eventtap.event.types.leftMouseUp then
-    deleteHighlight()
     if (dragDurationLongerThanMinAllowed() or mouseVelocityHighEnough()) then
       local win = hs.window.focusedWindow()
       if win and lastDetectedCorner then
@@ -157,9 +156,9 @@ local function windowDragging(event)
     dragStartTime = nil
     dragTimer:stop()
     dragTimer = nil
-    deleteHighlight()
     prevMousePoint = nil
     maxVelocity = 0
+    hs.timer.doAfter(0.05, deleteHighlight)
   end
 end
 
