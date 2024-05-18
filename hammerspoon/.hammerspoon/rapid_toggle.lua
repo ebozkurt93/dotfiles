@@ -94,7 +94,7 @@ table.insert(
 ]],
         true
       )
-      macos_helpers.restartBitBar()
+      macos_helpers.refreshBitBarPlugins()
     end)
   )
 )

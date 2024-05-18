@@ -85,10 +85,7 @@ def toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands):
             command = on_enabled_commands.get(arg2, '')
         if command and arg3 != 'ignore-event':
             run_on_command_hook(arg2, command)
-        # Shell command to kill processes related to "BitBar.app"
-        shell_command = "ps -ef | grep 'BitBar.app' | awk '{print $2}' | xargs kill 2> /dev/null"
-        subprocess.run(shell_command, shell=True)
-        subprocess.run('open -a "/Applications/BitBar.app"', shell=True)
+        subprocess.run('open -g "bitbar://refreshPlugin?name=*"', shell=True)
 
 def run_hook(arg2, arg3, on_enabled_commands, on_disabled_commands):
     command = ''
