@@ -8,7 +8,7 @@
 
 local function get_active_lsp_clients()
 	local bf = vim.api.nvim_get_current_buf()
-	local tbl = vim.tbl_map(function(t) return t.name end, vim.lsp.get_active_clients({bufnr = bf}))
+	local tbl = vim.tbl_map(function(t) return t.name end, vim.lsp.get_clients({bufnr = bf}))
 	return vim.trim(table.concat(tbl, ', '))
 end
 

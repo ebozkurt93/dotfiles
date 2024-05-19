@@ -11,6 +11,18 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.runtimepath:prepend(lazypath)
 
+local function isCopilotEnabled()
+  local isCopilotSettingEnabled = os.getenv("COPILOT_ENABLED") == "true"
+  local path = os.getenv("COPILOT_ENABLED_PATH")
+
+  -- dash(-) is a pattern variable for lua, therefore it needs to be escaped
+  local function escape_magic(s)
+    return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1"))
+  end
+
+  return isCopilotSettingEnabled and path ~= nil and path ~= "" and string.match(vim.fn.getcwd(), escape_magic(path))
+end
+
 --- startup and add configure plugins
 require("lazy").setup({
   { "nvim-telescope/telescope.nvim", dependencies = { { "nvim-lua/plenary.nvim" } } },
@@ -54,17 +66,7 @@ require("lazy").setup({
 
   {
     "zbirenbaum/copilot.lua",
-    enabled = function()
-      local isCopilotEnabled = os.getenv("COPILOT_ENABLED") == "true"
-      local path = os.getenv("COPILOT_ENABLED_PATH")
-
-      -- dash(-) is a pattern variable for lua, therefore it needs to be escaped
-      local function escape_magic(s)
-        return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1"))
-      end
-
-      return isCopilotEnabled and path ~= nil and path ~= "" and string.match(vim.fn.getcwd(), escape_magic(path))
-    end,
+    enabled = isCopilotEnabled,
     config = function()
       require("copilot").setup({
         suggestion = { enabled = false },
@@ -74,6 +76,7 @@ require("lazy").setup({
   },
   {
     "zbirenbaum/copilot-cmp",
+    enabled = isCopilotEnabled,
     config = function()
       require("copilot_cmp").setup()
     end,
@@ -201,7 +204,7 @@ require("lazy").setup({
   "folke/tokyonight.nvim",
   { "catppuccin/nvim", name = "catppuccin" },
   { "rose-pine/neovim", name = "rose-pine" },
-  "kvrohit/mellow.nvim",
+  "mellow-theme/mellow.nvim",
   "sainnhe/everforest",
   -- use {'shaunsingh/oxocarbon.nvim', branch = 'fennel'}
   "B4mbus/oxocarbon-lua.nvim",
@@ -230,3 +233,28 @@ require("lazy").setup({
   "xero/miasma.nvim",
   { "fynnfluegge/monet.nvim", name = "monet" }
 })
+
+-- todo: Check and optimally remove this in near future
+-- Override vim.notify temporarily for some plugins and messages to ignore warnings while nvim version is being bumped
+local suppressed_plugins = { 'obsidian' }
+
+local suppressed_messages = {
+  'vim.tbl_islist is deprecated, use vim.islist instead.'
+}
+
+local original_notify = vim.notify
+vim.notify = function(msg, level, opts)
+  if level == vim.log.levels.WARN or level == vim.log.levels.INFO then
+    for _, plugin in ipairs(suppressed_plugins) do
+      if string.match(msg, plugin) then
+        return
+      end
+    end
+    for _, message in ipairs(suppressed_messages) do
+      if string.match(msg, message) then
+        return
+      end
+    end
+  end
+  original_notify(msg, level, opts)
+end
