@@ -39,6 +39,13 @@ local originalMenuItems = {
       macos_helpers.toggleGrayscale()
     end,
   },
+  {
+    -- this doesn't really hide the cursor, but more moves to bottom right of the screen
+    ["text"] = "Hide cursor/mouse",
+    ["action"] = function()
+      hs.mouse.absolutePosition(hs.geometry.point(10000, 10000))
+    end,
+  },
 }
 
 local personalMenuItems = {}
