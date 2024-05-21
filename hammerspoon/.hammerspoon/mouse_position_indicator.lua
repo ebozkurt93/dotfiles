@@ -88,7 +88,12 @@ local function removeIndicator()
 end
 
 local function startEvents()
-    eventtapEvents = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved, hs.eventtap.event.types.keyDown },
+    eventtapEvents = hs.eventtap.new({
+        hs.eventtap.event.types.mouseMoved,
+        -- this also captures scroll on trackpad
+        hs.eventtap.event.types.scrollWheel,
+        hs.eventtap.event.types.keyDown
+    },
         function(event)
             removeIndicator()
             return false
