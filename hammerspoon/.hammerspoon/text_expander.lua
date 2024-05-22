@@ -1,9 +1,6 @@
 -- Modified version of https://github.com/Hammerspoon/hammerspoon/issues/1042
 local helpers = require("helpers")
-local personalKeywords = {}
-if helpers.isModuleAvailable("personal") then
-  personalKeywords = require("personal").expansions
-end
+local _, personalKeywords = helpers.safeRequire("personal", {"expansions"}, {})
 
 local keywords = {
   ["@@lorem"] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. In lobortis fermentum molestie. Vestibulum congue auctor nisi, eu ultrices lectus facilisis eu. Nulla molestie ornare massa, sed malesuada urna consequat sed. Curabitur a nibh blandit felis imperdiet interdum. Vivamus eu malesuada purus. Suspendisse in lacus non quam sagittis porttitor. In hac habitasse platea dictumst. Nullam suscipit nulla non tellus interdum faucibus. Ut eget mauris mi. Nam rhoncus quis massa sit amet placerat. Donec sollicitudin enim nec ex rutrum, in ornare arcu venenatis. Praesent consequat enim ante, et ornare eros pellentesque ut.",

@@ -48,10 +48,7 @@ local originalMenuItems = {
   },
 }
 
-local personalMenuItems = {}
-if helpers.isModuleAvailable("personal") then
-  personalMenuItems = require("personal").actionMenuItems
-end
+local _, personalMenuItems = helpers.safeRequire("personal", {"actionMenuItems"}, {})
 
 originalMenuItems = helpers.mergeTables(originalMenuItems, personalMenuItems)
 

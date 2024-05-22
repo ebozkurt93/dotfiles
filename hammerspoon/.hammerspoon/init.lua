@@ -21,7 +21,7 @@ local _ = require("spotify")
 local _ = require("rapid_toggle")
 local _ = require("action_menu")
 local _ = require("caffeinate")
-local _ = helpers.loadModuleIfAvailable("personal")
+local _, _ = helpers.safeRequire("personal", {}, nil)
 
 -- temporarily disabled
 -- require("google_meet_mic_toggle")

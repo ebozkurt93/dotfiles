@@ -1,13 +1,9 @@
 local helpers = require("helpers")
 local macos_helpers = require("macos_helpers")
 
-local allowedNetworks = {}
 local devices = {}
 local previousBluetoothStatus = nil
-if helpers.isModuleAvailable("personal") then
-  local personal = require("personal")
-  allowedNetworks = personal.privateNetworks
-end
+local _, allowedNetworks = helpers.safeRequire("personal", {"privateNetworks"}, {})
 
 local function isConnectedToAllowedNetwork()
   local currentNetwork = hs.wifi.currentNetwork()

@@ -34,30 +34,17 @@ function M.escape_magic(s)
   return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1"))
 end
 
-function M.isModuleAvailable(name)
-  if package.loaded[name] then
-    return true
-  else
-    for _, searcher in ipairs(package.searchers or package.loaders) do
-      local loader = searcher(name)
-      if type(loader) == "function" then
-        package.preload[name] = loader
-        return true
-      end
-    end
-    return false
-  end
-end
+function M.safeRequire(moduleName, fieldPath, defaultValue)
+  local ok, module = pcall(require, moduleName)
+  if not ok then return nil, defaultValue end
 
-function M.loadModuleIfAvailable(name)
-  local function requiref(m)
-    require(m)
+  local field = module
+  for _, key in ipairs(fieldPath) do
+    field = field[key]
+    if field == nil then return module, defaultValue end
   end
 
-  local res = pcall(requiref, name)
-  if not res then
-    return {}
-  end
+  return module, field
 end
 
 -- merges two or more tables
