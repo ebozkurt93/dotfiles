@@ -111,6 +111,10 @@ document.activeElement.blur();
 ]]
 
   helpers.runJsOnCurrentBrowserTab(jsCommand)
+  hs.timer.doAfter(0.1, function ()
+    hs.eventtap.keyStroke({'shift'}, "space")
+  end)
+
 end)
 
 helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
