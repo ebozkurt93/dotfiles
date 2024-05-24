@@ -91,6 +91,15 @@ helpers.hotkeyScopedToApp({ "ctrl", "alt" }, "m", "Google Chrome", function(app)
   app:selectMenuItem({ "Tab" })
 end)
 
+-- move tab to left/right
+helpers.hotkeyScopedToApp({ "shift", "alt" }, "h", "Google Chrome", function()
+  hs.eventtap.keyStroke({'ctrl', 'shift'}, 'pageup', 0)
+end)
+
+helpers.hotkeyScopedToApp({ "shift", "alt" }, "l", "Google Chrome", function()
+  hs.eventtap.keyStroke({'ctrl', 'shift'}, 'pagedown', 0)
+end)
+
 local reddit = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
   local urlStartsWith = "https://www.reddit.com/"
 
