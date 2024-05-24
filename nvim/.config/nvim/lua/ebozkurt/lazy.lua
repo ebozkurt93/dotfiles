@@ -118,7 +118,7 @@ require("lazy").setup({
   { "kevinhwang91/nvim-ufo", dependencies = "kevinhwang91/promise-async" },
 
   "lewis6991/gitsigns.nvim",
-  { "TimUntersberger/neogit", branch = 'nightly', dependencies = "nvim-lua/plenary.nvim" },
+  { "TimUntersberger/neogit", dependencies = "nvim-lua/plenary.nvim" },
   "tpope/vim-fugitive",
   "ruanyl/vim-gh-line",
   { "sindrets/diffview.nvim", dependencies = "nvim-lua/plenary.nvim" },
@@ -234,27 +234,3 @@ require("lazy").setup({
   { "fynnfluegge/monet.nvim", name = "monet" }
 })
 
--- todo: Check and optimally remove this in near future
--- Override vim.notify temporarily for some plugins and messages to ignore warnings while nvim version is being bumped
-local suppressed_plugins = { 'obsidian' }
-
-local suppressed_messages = {
-  'vim.tbl_islist is deprecated, use vim.islist instead.'
-}
-
-local original_notify = vim.notify
-vim.notify = function(msg, level, opts)
-  if level == vim.log.levels.WARN or level == vim.log.levels.INFO then
-    for _, plugin in ipairs(suppressed_plugins) do
-      if string.match(msg, plugin) then
-        return
-      end
-    end
-    for _, message in ipairs(suppressed_messages) do
-      if string.match(msg, message) then
-        return
-      end
-    end
-  end
-  original_notify(msg, level, opts)
-end
