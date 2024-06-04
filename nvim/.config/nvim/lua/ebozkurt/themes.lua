@@ -145,4 +145,7 @@ elseif selected_theme == 'monet-light' then
 		dark_mode = false,
 	}
 	vim.cmd [[ colorscheme monet ]]
+elseif selected_theme == 'neofusion' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme neofusion ]]
 end

@@ -127,6 +127,7 @@ require("lazy").setup({
   { "folke/which-key.nvim" },
 
   { "folke/todo-comments.nvim", dependencies = "nvim-lua/plenary.nvim" },
+  { "folke/neodev.nvim", opts = {} },
 
   "sindrets/winshift.nvim",
   {
@@ -231,6 +232,7 @@ require("lazy").setup({
   "projekt0n/caret.nvim",
   "xiyaowong/transparent.nvim",
   "xero/miasma.nvim",
-  { "fynnfluegge/monet.nvim", name = "monet" }
+  { "fynnfluegge/monet.nvim", name = "monet" },
+  { "diegoulloao/neofusion.nvim", priority = 1000 }
 })
 
