@@ -466,4 +466,13 @@ function M.isDarkMode()
   end
 end
 
+function M.toggleTheme()
+  hs.execute([[ osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode' ]])
+end
+
+function M.toggleLowPowerMode()
+  hs.execute([[ ~/bin/helpers/low-power-mode-toggle.sh ]], true)
+  M.refreshBitBarPlugins()
+end
+
 return M

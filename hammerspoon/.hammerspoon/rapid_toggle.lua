@@ -29,123 +29,60 @@ local function disableAfter(func)
   end
 end
 
-table.insert(
-  conditionalBindings,
+conditionalBindings = {
   hs.hotkey.new(
     {},
     "escape",
     disableKeybindings
-  )
-)
-
-table.insert(
-  conditionalBindings,
+  ),
   hs.hotkey.new(
     {},
     "b",
-    disableAfter(function()
-      macos_helpers.toggleBluetooth()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.toggleBluetooth)
+  ),
   hs.hotkey.new(
     {},
     "d",
-    disableAfter(function()
-      macos_helpers.dockMovePosition()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.dockMovePosition)
+  ),
   hs.hotkey.new(
     {},
     "g",
-    disableAfter(function()
-      macos_helpers.toggleGrayscale()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.toggleGrayscale)
+  ),
   hs.hotkey.new(
     {},
     "n",
-    disableAfter(function()
-      macos_helpers.clearNotifications()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.clearNotifications)
+  ),
   hs.hotkey.new(
     {},
     "p",
-    disableAfter(function()
-      hs.execute(
-        [[
-~/bin/helpers/low-power-mode-toggle.sh
-]],
-        true
-      )
-      macos_helpers.refreshBitBarPlugins()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.toggleLowPowerMode)
+  ),
   hs.hotkey.new(
     {},
     "r",
-    disableAfter(function()
-      macos_helpers.dockClearRecentApps()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.dockClearRecentApps)
+  ),
   hs.hotkey.new(
     {},
     "s",
-    disableAfter(function()
-      macos_helpers.toggleBrightness()
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.toggleBrightness)
+  ),
   hs.hotkey.new(
     {},
     "t",
-    disableAfter(function()
-      hs.execute([[
-osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode'
-]])
-    end)
-  )
-)
-
-table.insert(
-  conditionalBindings,
+    disableAfter(macos_helpers.toggleTheme)
+  ),
   hs.hotkey.new(
     {},
     "w",
     disableAfter(function()
-      hs.execute([[
-~/bin/helpers/set_wallpaper.sh
-]])
+      hs.execute([[ ~/bin/helpers/set_wallpaper.sh ]])
     end)
   )
-)
+}
 
 disableKeybindings()
 
