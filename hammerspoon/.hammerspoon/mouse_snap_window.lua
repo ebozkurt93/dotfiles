@@ -15,23 +15,24 @@ local maxVelocity = 0
 
 local function resizeAndMoveWindow(win, screen, corner)
   local max = screen:frame()
+  local animationDuration = 0.001 -- default value is `hs.window.animationDuration`
 
   if corner == "topLeft" then
-    win:setFrame(hs.geometry.rect(max.x, max.y, max.w / 2, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x, max.y, max.w / 2, max.h / 2), animationDuration)
   elseif corner == "topRight" then
-    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y, max.w / 2, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y, max.w / 2, max.h / 2), animationDuration)
   elseif corner == "bottomLeft" then
-    win:setFrame(hs.geometry.rect(max.x, max.y + (max.h / 2), max.w / 2, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x, max.y + (max.h / 2), max.w / 2, max.h / 2), animationDuration)
   elseif corner == "bottomRight" then
-    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y + (max.h / 2), max.w / 2, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y + (max.h / 2), max.w / 2, max.h / 2), animationDuration)
   elseif corner == "left" then
-    win:setFrame(hs.geometry.rect(max.x, max.y, max.w / 2, max.h))
+    win:setFrame(hs.geometry.rect(max.x, max.y, max.w / 2, max.h), animationDuration)
   elseif corner == "right" then
-    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y, max.w / 2, max.h))
+    win:setFrame(hs.geometry.rect(max.x + (max.w / 2), max.y, max.w / 2, max.h), animationDuration)
   elseif corner == "top" then
-    win:setFrame(hs.geometry.rect(max.x, max.y, max.w, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x, max.y, max.w, max.h / 2), animationDuration)
   elseif corner == "bottom" then
-    win:setFrame(hs.geometry.rect(max.x, max.y + (max.h / 2), max.w, max.h / 2))
+    win:setFrame(hs.geometry.rect(max.x, max.y + (max.h / 2), max.w, max.h / 2), animationDuration)
   end
 end
 
