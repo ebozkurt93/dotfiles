@@ -10,3 +10,6 @@
 
 [includeIf "gitdir:~/bemlo/"]
 	path = ~/dotfiles/bemlo/git/.gitconfig
+
+[includeIf "gitdir:~/instabee/"]
+	path = ~/dotfiles/instabee/git/.gitconfig
