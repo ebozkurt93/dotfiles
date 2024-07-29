@@ -4,3 +4,6 @@
 [submodule "dotfiles-personal"]
 	path = personal
 	url = git@github.com:ebozkurt93/dotfiles-personal.git
+[submodule "dotfiles-instabee"]
+	path = instabee
+	url = git@github.com:ebozkurt93/dotfiles-instabee.git
