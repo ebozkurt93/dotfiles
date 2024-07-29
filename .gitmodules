@@ -1,6 +1,3 @@
-[submodule "bemlo"]
-	path = bemlo
-	url = git@github.com:ebozkurt93/dotfiles-bemlo.git
 [submodule "dotfiles-personal"]
 	path = personal
 	url = git@github.com:ebozkurt93/dotfiles-personal.git

@@ -6,7 +6,7 @@ cd ..
 # .DS_Store files are creating issues when running stow
 find . -name ".DS_Store" -delete
 
-directories="zsh vim nvim kitty tmux fzf git asdf bitbar starship personal bemlo instabee helper_scripts lima hammerspoon"
+directories="zsh vim nvim kitty tmux fzf git asdf bitbar starship personal instabee helper_scripts lima hammerspoon"
 
 if [ "$1" = "-R" ]; then
   echo "Stowing and unstowing directories: ${directories[@]}"
