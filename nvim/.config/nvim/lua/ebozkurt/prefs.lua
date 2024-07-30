@@ -3,7 +3,6 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.ruler = true
 vim.opt.mouse = 'a'
--- todo: check what this does, I've copied this from my previous config but not sure I really understand
 vim.opt.modelines = 0
 vim.opt.belloff = 'all'
 vim.opt.swapfile = false

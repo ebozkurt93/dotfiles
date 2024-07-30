@@ -113,7 +113,6 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   done
 fi
 
-# todo: remove the killall here
 killall Dock
 
 # Safari

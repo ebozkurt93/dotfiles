@@ -15,8 +15,6 @@ require("mason-lspconfig").setup({
 })
 
 -- Set up lspconfig.
--- todo: remove if solution below works, this should not be used anymore
--- local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 --local bufopts = { noremap = true, silent = true, buffer = 0 }
 local my_on_attach = function(client, bufnr)

@@ -17,7 +17,6 @@ local shared_keys = {
 }
 
 local picker_options = {
-	-- todo: set hidden back to false when you enable searching all git files
 	hidden = false,
 	follow = false,
 	no_ignore = true,
