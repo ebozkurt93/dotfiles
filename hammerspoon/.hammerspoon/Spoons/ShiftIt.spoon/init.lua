@@ -55,13 +55,15 @@ local latestMove = {
   direction = 'unknown',
   stepX = -1,
   stepY = -1,
+  time = -1,
 }
 
 function obj:move(unit) self.hs.window.focusedWindow():move(unit, nil, true, 0) end
 
 function obj:moveWithCycles(unitFn)
   local windowId = self.hs.window.focusedWindow():id()
-  local sameMoveAction = latestMove.windowId == windowId and latestMove.direction == unitFn
+  local currentTime = os.time()
+  local sameMoveAction = latestMove.windowId == windowId and latestMove.direction == unitFn and currentTime - latestMove.time <= 3
   if sameMoveAction then
     latestMove.stepX = obj.nextCycleSizeX[latestMove.stepX]
     latestMove.stepY = obj.nextCycleSizeY[latestMove.stepY]
@@ -71,6 +73,7 @@ function obj:moveWithCycles(unitFn)
   end
   latestMove.windowId = windowId
   latestMove.direction = unitFn
+  latestMove.time = currentTime
 
   local before = self.hs.window.focusedWindow():frame()
   self:move(unitFn(latestMove.stepX, latestMove.stepY))
