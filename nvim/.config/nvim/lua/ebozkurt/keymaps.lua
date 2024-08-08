@@ -158,6 +158,7 @@ vim.keymap.set("n", "<leader>DM", function()
 	-- 		end
 	-- 	end)
 end, { noremap = true })
+vim.keymap.set('n', '<leader>O', '<cmd>:Oil<cr>', { noremap = true })
 
 --telescope
 vim.api.nvim_create_autocmd('User', {
