@@ -124,7 +124,7 @@ require("lazy").setup({
   { "sindrets/diffview.nvim", dependencies = "nvim-lua/plenary.nvim" },
 
   { "folke/trouble.nvim", dependencies = "kyazdani42/nvim-web-devicons" },
-  { "folke/which-key.nvim" },
+  { "folke/which-key.nvim", opts = { delay = 1500 } },
 
   { "folke/todo-comments.nvim", dependencies = "nvim-lua/plenary.nvim" },
   { "folke/neodev.nvim", opts = {} },
