@@ -22,8 +22,8 @@ cask "signal"
 
 # other
 cask "appcleaner"
+brew "jordanbaird-ice"
 cask "hammerspoon"
-cask "bartender"
 cask "raycast"
 cask "maccy"
 cask "nordvpn"
