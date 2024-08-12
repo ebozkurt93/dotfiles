@@ -81,6 +81,11 @@ conditionalBindings = {
     disableAfter(function()
       hs.execute([[ ~/bin/helpers/set_wallpaper.sh ]])
     end)
+  ),
+  hs.hotkey.new(
+    {},
+    "i",
+    disableAfter(macos_helpers.toggleWifi)
   )
 }
 

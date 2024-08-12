@@ -55,6 +55,15 @@ function M.connectToBluetoothDevice(address)
   hs.execute(string.format("/opt/homebrew/bin/blueutil --connect '%s'", address), true)
 end
 
+function M.toggleWifi(enabled)
+    local wifi = hs.wifi.interfaceDetails()
+    if type(enabled) == "boolean" then
+        hs.wifi.setPower(enabled)
+    else
+        hs.wifi.setPower(not wifi.power)
+    end
+end
+
 function M.clearNotifications()
   local source = [[
 
