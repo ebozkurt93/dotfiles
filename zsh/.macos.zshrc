@@ -75,7 +75,7 @@ alias dev-go='res "*.go" -r go run .'
 local function __state_switcher_toggle() {
   local p=~/Documents/bitbar_plugins/state-switcher.5m.py
   local selected_state=$($p states-with-marks | sort | fzf \
-    --bind 'ctrl-space:execute(echo _{})+abort,alt-j:execute(echo __{})+abort,alt-k:execute(echo ___{})+abort'
+    --bind 'ctrl-space:become(echo _{})+abort,alt-j:become(echo __{})+abort,alt-k:become(echo ___{})+abort'
   )
   selected_state=$(echo $selected_state | awk '{print $1}')
 
@@ -265,7 +265,7 @@ function __bt_device_toggle() {
   fi
   local c=$(blueutil --paired --format json | jq -r \
     '.[] | .name + " " + (.connected|tostring|sub("true"; "✅")|sub("false"; "❌")) + " " + .address')
-  local selection=$(echo "$c" | sort | fzf --bind 'ctrl-p:execute(echo _{})+abort')
+  local selection=$(echo "$c" | sort | fzf --bind 'ctrl-p:become(echo _{})+abort')
   [[ -z $selection ]] && return
   address=$(echo $selection | awk '{print $NF}')
   if [[ $selection =~ ^_.* ]]; then

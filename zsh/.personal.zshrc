@@ -134,7 +134,7 @@ function __execute_package_json_command() {
   local selection=$(cat package.json | jq -r '.scripts | to_entries | .[] | "\(.key) -> \(.value)"')
   selection="$selection\n$install_deps_command"
 
-  local selection=$(echo $selection | fzf --tiebreak='begin,chunk' --bind 'ctrl-p:execute(echo _{})+abort')
+  local selection=$(echo $selection | fzf --tiebreak='begin,chunk' --bind 'ctrl-p:become(echo _{})+abort')
   [[ -z $selection ]] && return
   if [[ $selection == "$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
@@ -149,7 +149,7 @@ function __execute_package_json_command() {
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-     $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs) </dev/tty
+    eval $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs) </dev/tty
   fi
   zle send-break
 }
@@ -204,7 +204,7 @@ zle -N __cd_fzf
 bindkey "^[f" __cd_fzf
 
 function __find_and_run_executable {
-  local selection=$(find . -maxdepth 4 -perm -111 -type f | fzf --bind 'ctrl-p:execute(echo _{})+abort')
+  local selection=$(find . -maxdepth 4 -perm -111 -type f | fzf --bind 'ctrl-p:become(echo _{})+abort')
   [[ -z $selection ]] && return
   if [[ $selection =~ ^_.* ]]; then
     selection="$(echo "$selection" | cut -c2-)"
