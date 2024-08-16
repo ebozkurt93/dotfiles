@@ -31,6 +31,36 @@ local keywords = {
 
 keywords = helpers.merge(keywords, personalKeywords)
 
+local function showExpansionsViaChooser()
+  expander:stop()
+  local choices = {}
+  for text, _ in pairs(keywords) do
+    table.insert(choices, { ['text'] = text })
+  end
+
+  local chooser = hs.chooser.new(function(choice)
+    if not choice then return end
+    local word = choice['text']
+
+    if type(keywords[word]) == "function" then
+      hs.eventtap.keyStrokes(keywords[word]())
+    else
+      hs.eventtap.keyStrokes(keywords[word])
+    end
+
+  end)
+
+  chooser:choices(choices)
+  chooser:queryChangedCallback(helpers.queryChangedCallback(chooser, choices))
+  chooser:hideCallback(function() expander:start() end)
+  chooser:show()
+end
+
+hs.hotkey.bind({ "cmd", "shift" }, "e", function()
+  showExpansionsViaChooser()
+end)
+
+
 local function getLastXCharacters(str, x)
   if #str <= x then
     return str
