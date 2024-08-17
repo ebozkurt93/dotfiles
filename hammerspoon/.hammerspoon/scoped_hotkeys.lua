@@ -91,6 +91,10 @@ helpers.hotkeyScopedToApp({ "ctrl", "alt" }, "m", "Google Chrome", function(app)
   app:selectMenuItem({ "Tab" })
 end)
 
+helpers.hotkeyScopedToApp({ "cmd", "ctrl" }, "f", "Google Chrome", function(app)
+  app:selectMenuItem('(Enter|Exit) Full Screen', true)
+end)
+
 -- move tab to left/right
 helpers.hotkeyScopedToApp({ "shift", "alt" }, "h", "Google Chrome", function()
   hs.eventtap.keyStroke({'ctrl', 'shift'}, 'pageup', 0)
