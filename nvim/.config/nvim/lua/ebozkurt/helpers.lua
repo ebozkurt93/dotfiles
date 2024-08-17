@@ -65,5 +65,28 @@ function M.get_python_path(workspace)
 	return exepath('python3') or exepath('python') or 'python'
 end
 
-return M
+function M.save_table_to_json(table, path)
+	local json_str = vim.fn.json_encode(table)
+	local file = io.open(path, "w")
+	if file then
+		file:write(json_str)
+		file:close()
+	else
+		vim.notify("Cannot open file in path: " .. path, vim.log.levels.ERROR)
+	end
+end
 
+function M.read_json_to_table(path)
+	local file = io.open(path, "r")
+	if file then
+		local json_str = file:read("*a")
+		file:close()
+		local table = vim.fn.json_decode(json_str)
+		return table
+	else
+		vim.notify("Cannot open file in path: " .. path, vim.log.levels.ERROR)
+		return {}
+	end
+end
+
+return M
