@@ -475,7 +475,30 @@ function M.isDarkMode()
   end
 end
 
+-- attempts to toggle/update terminal theme if it can find correct variation based on names
+local function toggleTerminalTheme()
+  local isDarkMode = M.isDarkMode()
+  local themeName = string.gsub(hs.execute([[ __theme_helper current_nvim_theme ]], true), "\n", "")
+  local newThemeName = nil
+
+  if not themeName then
+  elseif isDarkMode and themeName:sub(- #'dark') then
+    newThemeName = string.gsub(themeName, 'dark', 'light')
+  elseif not isDarkMode and themeName:sub(- #'light') then
+    newThemeName = string.gsub(themeName, 'light', 'dark')
+  end
+
+  if newThemeName then
+    local themeNames = string.gsub(hs.execute([[ __theme_helper get_themes ]], true), "\n", "")
+    if themeNames:match(newThemeName:gsub('%-', '%%-')) then
+      hs.execute([[ __theme_helper set_kitty_theme ]] .. newThemeName, true)
+      hs.execute([[ __theme_helper set_nvim_theme ]] .. newThemeName, true)
+    end
+  end
+end
+
 function M.toggleTheme()
+  toggleTerminalTheme()
   hs.execute([[ osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode' ]])
 end
 
