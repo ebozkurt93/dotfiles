@@ -21,6 +21,8 @@ def run_on_command_hook(custom_state, command):
 def get_file_path(state):
     return Path.home() / "Documents/bitbar_plugins/tmp" / state
 
+state_icons_file_path  = Path.home() / "Documents/bitbar_plugins/tmp/enabled_state_icons.txt"
+
 def main(arg1=None, arg2=None, arg3=None):
     style = "size=13"
     config_file = Path.home() / "dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json"
@@ -38,8 +40,6 @@ def main(arg1=None, arg2=None, arg3=None):
         generate_bitbar_menu(states, icons, style)
     elif arg1 == 'enabled-states':
         print(' '.join(state for state in states if get_file_path(state).exists()))
-    elif arg1 == 'enabled-states-short':
-        print(' '.join(icons[state] for state in states if get_file_path(state).exists()))
     elif arg1 == 'is-state-enabled':
         sys.exit(0 if get_file_path(arg2).exists() else 1)
     elif arg1 == 'always-sourced-if-enabled':
@@ -56,7 +56,7 @@ def main(arg1=None, arg2=None, arg3=None):
             mark = "✅" if get_file_path(state).exists() else "❌"
             print(f"{state:<{max_len}} {mark}")
     elif arg1 == 'toggle':
-        toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands)
+        toggle_state(arg2, arg3, states, icons, on_enabled_commands, on_disabled_commands)
     elif arg1 == 'run_hook':
         run_hook(arg2, arg3, on_enabled_commands, on_disabled_commands)
 
@@ -74,7 +74,7 @@ def generate_bitbar_menu(states, icons, style):
         print(f"{alternate_content} | bash={sys.argv[0]} param1=toggle param2={state} param3=ignore-event alternate=true refresh=true terminal=false {style}")
     print("Refresh | refresh=true " + style)
 
-def toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands):
+def toggle_state(arg2, arg3, states, icons, on_enabled_commands, on_disabled_commands):
     file_path = get_file_path(arg2)
     if arg2 in states:
         if file_path.exists():
@@ -83,6 +83,8 @@ def toggle_state(arg2, arg3, states, on_enabled_commands, on_disabled_commands):
         else:
             file_path.touch()
             command = on_enabled_commands.get(arg2, '')
+        with open(state_icons_file_path, 'w') as f:
+            f.write(' '.join(icons[state] for state in states if get_file_path(state).exists()))
         if command and arg3 != 'ignore-event':
             run_on_command_hook(arg2, command)
         subprocess.run('open -g "bitbar://refreshPlugin?name=*"', shell=True)

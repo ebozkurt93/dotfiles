@@ -12,16 +12,10 @@ disabled = true
 [terraform]
 format = "[$symbol$version $workspace]($style) "
 
-# [custom.home]
-# command = "echo home" # shows output of command
-# when = """test "$HOME" = "$PWD" """
-# format = "[$output]($style)"
-
 [custom.enabled-states]
-command = "~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-short"
-# when = """test "$HOME" = "$PWD" """
-shell = ["zsh", "--no-rcs"]
-when = "test ! -z \"$(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states)\""
+command = "cat ~/Documents/bitbar_plugins/tmp/enabled_state_icons.txt"
+shell = "sh"
+when = "true"
 format = "[$output]($style) "
 
 [custom.gcloud]
