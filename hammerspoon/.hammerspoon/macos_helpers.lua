@@ -30,7 +30,7 @@ function M.toggleBluetooth(enabled)
   else
     hs.execute(
       [=[
-/opt/homebrew/bin/blueutil -p $(( ! $(/opt/homebrew/bin/blueutil -p) ))
+/opt/homebrew/bin/blueutil -p toggle
   ]=],
       true
     )
