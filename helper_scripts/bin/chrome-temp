@@ -6,11 +6,20 @@ base_chrome_data_dir="$HOME/.chrome_temp_data_dir"
 # the location of the profile which will be used as base, if it is empty new profile will be an empty one
 base_profile_dir=""
 
+find_and_kill_running_instances() {
+  ps aux | grep "$base_chrome_data_dir" | grep "Google Chrome" | awk ' { print $2 } ' | xargs kill -9 >/dev/null 2>&1
+}
+
 if [[ "$1" == "-r" ]]; then
-  echo "Removing temporary chrome data directory"
+  echo "Killing currently running temporary chrome instances & removing temporary chrome data directory"
+  find_and_kill_running_instances
   if [[ -d "$base_chrome_data_dir" ]]; then
     rm -rf $base_chrome_data_dir
   fi
+  exit
+elif [[ "$1" == "-s" ]]; then
+  echo "Killing currently running temporary chrome instances"
+  find_and_kill_running_instances
   exit
 fi
 
@@ -27,4 +36,6 @@ if [[ ! -z "$base_profile_dir" ]]; then
   cat <<< $(jq ".profile.name = \"$temp_profile_name\"" "$preferences_file_path") > "$preferences_file_path"
 fi
 
-open "$chrome_path" -n --args --user-data-dir="$base_chrome_data_dir" --profile-directory="$temp_profile_name"
+open "$chrome_path" -n --args --user-data-dir="$base_chrome_data_dir" --profile-directory="$temp_profile_name" \
+  --disable-search-engine-choice-screen --no-default-browser-check --no-first-run \
+  --disable-features=PrivacySandboxSettings4
