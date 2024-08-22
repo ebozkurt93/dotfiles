@@ -10,6 +10,7 @@ osascript -e 'tell application "Finder" restart'
   )
 end
 
+-- for bluetooth related actions, hammerspoon needs to be added under Privacy & Security / Bluetooth
 function M.isBluetoothOn()
   local output, _success, _exitCode = hs.execute(
     [=[
