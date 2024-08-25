@@ -24,6 +24,8 @@ hs.urlevent.bind('sleepWatcher', function(eventName, params)
   P(params)
 
   if not isConnectedToAllowedNetwork() then
+    previousBluetoothStatus = nil
+    btConnectedDevices = {}
     return
   end
 
