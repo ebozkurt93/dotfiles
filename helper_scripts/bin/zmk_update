@@ -22,7 +22,7 @@ elif [[ "$selected" == "download_latest_firmware" ]]; then
 	rm -rf ~/Downloads/firmware
 	rm ~/Downloads/firmware.zip
 	cd ~/Downloads
-	databaseId=$(gh run list --repo 'ebozkurt93/chocofi-zmk-config' --limit 1 --json 'databaseId' | jq -r '.[0] | .databaseId')
+	databaseId=$(gh run list --repo 'ebozkurt93/chocofi-zmk-config' --status 'success' --limit 1 --json 'databaseId' | jq -r '.[0] | .databaseId')
 	gh run download --repo 'ebozkurt93/chocofi-zmk-config' $databaseId
 else
 	echo "invalid, exiting"
