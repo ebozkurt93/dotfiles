@@ -1,0 +1,58 @@
+#!/bin/bash
+
+interfaces_dir='/opt/homebrew/etc/wireguard'
+# assuming interfaces have no space in their names
+interfaces="$(ls $interfaces_dir | sed -e 's/.conf$//')"
+pass=$(~/bin/helpers/pass.sh)
+
+options=$(cat <<-END
+up
+down
+down-all
+status
+END
+)
+
+if [[ ! -z "$1" ]]; then
+  selected="$1"
+else
+  selected=$(echo $options | tr ' ' '\n' | fzf)
+fi
+
+if [[ "$selected" == "up" ]]; then
+  if [[ ! -z "$2" ]]; then
+    selected="$2"
+  else
+    selected=$(echo "$interfaces" | fzf)
+  fi
+  if [[ ! -z "$selected" ]]; then
+    echo "$pass" | sudo -S wg-quick up "$selected"
+  else
+    echo "invalid interface"
+  fi
+elif [[ "$selected" == "down" ]]; then
+  if [[ ! -z "$2" ]]; then
+    selected="$2"
+  else
+    selected=$(echo "$interfaces" | fzf)
+  fi
+  if [[ ! -z "$selected" ]]; then
+    echo "$pass" | sudo -S wg-quick down "$selected"
+  else
+    echo "invalid interface"
+  fi
+elif [[ "$selected" == "down-all" ]]; then
+  for interface in $interfaces; do
+      echo "$pass" | sudo -S wg-quick down "$interface"
+  done
+elif [[ "$selected" == "status" ]]; then
+  status="$(echo "$pass" | sudo -S wg show)"
+  if [[ "$status" =~ "latest handshake:" ]]; then
+    exit 0
+  else
+    exit 1
+  fi
+else
+  echo "invalid, exiting"
+fi
+
