@@ -2,7 +2,7 @@
 
 source ~/.zprofile
 source ~/.zshrc > /dev/null 2>&1
-~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled bemlo || exit
+~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled instabee || exit
 
 style="size=13"
 
