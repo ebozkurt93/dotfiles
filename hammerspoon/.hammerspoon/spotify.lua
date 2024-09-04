@@ -55,6 +55,15 @@ spotifyStatus:setMenu({
       end
     end,
   },
+  {
+    title = "Kill Spotify",
+    fn = function()
+      local spotifyApp = hs.application.get("Spotify")
+      if spotifyApp then
+        spotifyApp:kill()
+      end
+    end,
+  },
 })
 
 return { timer, spotifyStatus, enabled, taskTimer }
