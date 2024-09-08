@@ -499,7 +499,7 @@ local function toggleTerminalTheme()
 end
 
 function M.toggleTheme()
-  toggleTerminalTheme()
+  -- toggleTerminalTheme()
   hs.execute([[ osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode' ]])
 end
 
