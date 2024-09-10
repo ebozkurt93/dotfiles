@@ -44,7 +44,7 @@ require("mason-lspconfig").setup_handlers({
 	-- end
 })
 
-require("lspconfig").tsserver.setup({
+require("lspconfig").ts_ls.setup({
 	capabilities = capabilities,
 	on_attach = function(client, bufnr)
 		my_on_attach(client, bufnr)
