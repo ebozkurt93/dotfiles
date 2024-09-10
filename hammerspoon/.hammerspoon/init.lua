@@ -20,6 +20,7 @@ local _ = require("scoped_hotkeys")
 local _ = require("spotify")
 local _ = require("rapid_toggle")
 local _ = require("action_menu")
+local _ = require("bt_menu")
 local _ = require("sleepwatcher")
 local _, _ = helpers.safeRequire("personal", {}, nil)
 
