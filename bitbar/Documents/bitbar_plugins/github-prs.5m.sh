@@ -95,7 +95,8 @@ if [ $length != 0 ]; then
     if [[ $q = 0 ]]; then
       continue
     fi
-    printf "%-30s %-70s %-20s %-2s %-7s %-52s | href=${urls[$q]} $style $( [[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=blue ") \n" "${pr_names[$q]}" "${pr_titles[$q]}" \
+    printf "%-30s %-70s %-20s %-2s %-7s %-52s | href=${urls[$q]} $style $( [[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=blue ") \
+    $( [[ "${authors[$q]}" == "app/dependabot" ]] && echo " color=#999999 ") \n" "${pr_names[$q]}" "${pr_titles[$q]}" \
     "👤 ${authors[$q]}" "💬 ${comment_counts[$q]}" "📜+${additions[$q]}-${deletions[q]}" "${is_draft[q]} ${review_decision[q]} ${mergeable[q]}"
   done
   echo "---"
