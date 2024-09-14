@@ -45,6 +45,8 @@ alias dsync='echo "$(cd ~/dotfiles/ && git pull && cd ~/dotfiles/scripts && ./st
 alias sr='exec $SHELL'
 alias nn='cd ~/Documents; cd `ls | grep Notes`; nvim'
 
+source ~/bin/helpers/colors.sh
+
 function __nvim_launch_with_custom_config() {
   local config=$(find ~/.config -maxdepth 1 -iname '*nvim*' | fzf --prompt="Neovim Configs > " --layout=reverse --border --exit-0)
  
@@ -138,7 +140,7 @@ function __execute_package_json_command() {
   [[ -z $selection ]] && return
   if [[ $selection == "$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
-    echo $cmd
+    echo ${BOLD}${BRIGHT_BLUE}$cmd${RESET}
     eval $cmd
   elif [[ $selection == "_$install_deps_command" ]]; then
     cmd="$info[$op-install_cmd]"
@@ -149,7 +151,9 @@ function __execute_package_json_command() {
     echo $cmd | pbcopy
     echo "Copied command ($cmd) to clipboard"
   else
-    eval $info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs) </dev/tty
+    cmd=$(echo "$info[$op-run_cmd] $(echo "$selection" | awk -F '->' '{print $1}' | xargs)")
+    echo "${BOLD}${BRIGHT_BLUE}$cmd${RESET}"
+    eval $cmd </dev/tty
   fi
   zle send-break
 }
@@ -168,6 +172,7 @@ function __execute_makefile_command() {
 
   local selection=$(awk -F: '/^[a-zA-Z0-9_-]+:/ { print $1 }' $file | sort -u | fzf --tiebreak='begin,chunk')
   [[ -z $selection ]] && return
+  echo "${BOLD}${BRIGHT_BLUE}make $selection${RESET}"
   make $selection </dev/tty
   zle send-break
 }
