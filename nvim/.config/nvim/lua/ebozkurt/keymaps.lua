@@ -9,9 +9,23 @@ vim.keymap.set('n', '<leader><space>', function()
 	print " "
 end, { desc = 'Clear search highlights' })
 vim.keymap.set('n', '<leader>n', function()
-	local current = vim.opt.relativenumber:get()
-	for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
-		vim.wo[win_nr].relativenumber = not current
+	local current_relative_number = vim.opt.relativenumber:get()
+	local current_status_column = vim.o.statuscolumn
+	if current_relative_number and current_status_column == '' then
+		for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+			vim.wo[win_nr].relativenumber = not current_relative_number
+		end
+	elseif not current_relative_number and current_status_column == '' then
+		for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+			vim.wo[win_nr].relativenumber = not current_relative_number
+			-- using this to make column a bit smaller, as absolute number is visible anyways
+			vim.wo[win_nr].statuscolumn = "%s%=%{v:lnum}%= %{v:relnum}%= "
+			-- vim.wo[win_nr].statuscolumn = "%s%=%{v:lnum}%= %{v:relnum?v:relnum:v:lnum}%= "
+		end
+	else
+		for _, win_nr in ipairs(vim.api.nvim_list_wins()) do
+			vim.wo[win_nr].statuscolumn = ""
+		end
 	end
 end, { noremap = true })
 vim.keymap.set('n', '<leader>sv', '<cmd>lua ReloadConfig()<cr>', { noremap = true, silent = false })
