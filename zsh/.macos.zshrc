@@ -140,7 +140,7 @@ function __theme_helper() {
   'night-owl' 'nordic' 'poimandres' 'moonbow'
   'github-dark' 'github-light'
   'caret-dark' 'caret-light' 'miasma'
-  'monet-light' 'monet-dark' 'neofusion'
+  'monet-light' 'monet-dark' 'neofusion' 'seoul256-dark' 'seoul256-light'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

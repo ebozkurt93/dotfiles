@@ -233,6 +233,7 @@ require("lazy").setup({
   "xiyaowong/transparent.nvim",
   "xero/miasma.nvim",
   { "fynnfluegge/monet.nvim", name = "monet" },
-  { "diegoulloao/neofusion.nvim", priority = 1000 }
+  { "diegoulloao/neofusion.nvim", priority = 1000 },
+  "junegunn/seoul256.vim"
 })
 
