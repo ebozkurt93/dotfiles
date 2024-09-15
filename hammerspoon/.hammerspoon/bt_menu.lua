@@ -57,6 +57,6 @@ fi) &
   chooser:show()
 end
 
-hs.hotkey.bind({ "ctrl", "shift" }, "b", showMenu)
+hs.hotkey.bind({ "ctrl", "shift", "alt" }, "b", showMenu)
 
 return { items }
