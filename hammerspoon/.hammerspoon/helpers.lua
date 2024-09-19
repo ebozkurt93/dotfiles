@@ -121,6 +121,8 @@ function M.isCurrentTabUrlStartingWith(startsWith)
   return currentUrl:sub(1, #startsWith) == startsWith
 end
 
+-- For these to work executing javascript from applescript must be enabled
+-- View > Developer > Allow JavaScript from Apple Events
 function M.runJsOnCurrentBrowserTab(jsScript)
   local script = [[
 var chrome = Application("Google Chrome");
@@ -134,7 +136,10 @@ var command = `
 chrome.windows[0].activeTab.execute({javascript:command})
 ]]
 
-  hs.osascript.javascript(script:format(jsScript))
+  local status, _, output = hs.osascript.javascript(script:format(jsScript))
+  if (status == false) then
+    P(output)
+  end
 end
 
 function M.runJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
