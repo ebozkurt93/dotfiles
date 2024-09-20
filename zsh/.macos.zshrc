@@ -195,6 +195,8 @@ function __theme_helper() {
 	# SIGUSR1 reloads kitty config
 	~/bin/helpers/tmux_status_color.sh
 	pgrep kitty | xargs kill -SIGUSR1
+	# this is done to reload wezterm config
+	touch ~/dotfiles/wezterm/.config/wezterm/wezterm.lua
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
