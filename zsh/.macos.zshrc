@@ -194,9 +194,8 @@ function __theme_helper() {
 	fi
 	# SIGUSR1 reloads kitty config
 	~/bin/helpers/tmux_status_color.sh
-	pgrep kitty | xargs kill -SIGUSR1
-	# this is done to reload wezterm config
-	touch ~/dotfiles/wezterm/.config/wezterm/wezterm.lua
+	__reload_kitty_config
+	__reload_wezterm_config
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
@@ -299,8 +298,23 @@ function __open_folder() {
 zle -N __open_folder
 bindkey "^[o" __open_folder
 
+function __reload_kitty_config {
+  pgrep kitty | xargs kill -SIGUSR1
+}
+
+# in most cases wezterm reloads its own config, however when we change theme we need to notify wezterm(as we convert theme from kitty one dynamicly)
+function __reload_wezterm_config {
+  touch ~/dotfiles/wezterm/.config/wezterm/wezterm.lua
+}
+
+function __wezterm_change_font() {
+  sed -i '' "3s/.*/M.font = \'$1\'/" ~/dotfiles/wezterm/.config/wezterm/overrides.lua;
+}
+
+
 function __kitty_change_font() {
-  sed -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf; pgrep kitty | xargs kill -SIGUSR1
+  sed -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf;
+  __reload_kitty_config
 }
 
 function __kitty_font_changer() {
@@ -326,8 +340,33 @@ function __kitty_font_changer() {
   zle reset-prompt
 }
 
-zle -N __kitty_font_changer
-bindkey "^g" __kitty_font_changer
+function __wezterm_font_changer() {
+  local current_font=$(sed -n '3p' ~/dotfiles/wezterm/.config/wezterm/overrides.lua | sed -n "s/.*'\(.*\)'/\1/p")
+  local fonts=(
+  'Fira Code Retina'
+  'Victor Mono'
+  'JetBrains Mono'
+  'IBM Plex Mono'
+  'Input Mono Narrow'
+  'Noto Sans Mono'
+  'Iosevka'
+  'Berkeley Mono'
+  )
+
+  local selected_font=$(printf "%s\n" "${fonts[@]}" | sort | grep -v "$current_font" | \
+  { echo $current_font; cat; } | \
+  fzf --preview 'source ~/.zshrc; __wezterm_change_font {}' --preview-window 0)
+
+  if [[ ! -z $selected_font ]]; then
+    __wezterm_change_font "$selected_font"
+  else
+    __wezterm_change_font "$current_font"
+  fi
+  zle reset-prompt
+}
+
+zle -N __wezterm_font_changer
+bindkey "^g" __wezterm_font_changer
 
 function __kitty_toggle_transparency() {
   local file="$HOME/dotfiles/kitty/.config/kitty/toggled-settings.conf"
@@ -343,7 +382,26 @@ function __kitty_toggle_transparency() {
   fi
 
   # After reloading config menubar even on full screen for some reason with new changes, but obviously possible to toggle fullscreen again manually
-  pgrep kitty | xargs kill -SIGUSR1
+  __reload_kitty_config
+}
+
+function __wezterm_toggle_transparency() {
+  local file="$HOME/dotfiles/wezterm/.config/wezterm/overrides.lua"
+  local lineNum='4'
+
+  # Check if the line is commented
+  if sed -n "${lineNum}p" $file | grep -q '^-- '; then
+    sed -i '' "${lineNum}s/^-- //" $file
+    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+  else
+    sed -i '' "${lineNum}s/^/-- /" $file
+    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+  fi
+}
+
+function __term_toggle_transparency() {
+  __wezterm_toggle_transparency
+  __kitty_toggle_transparency
 }
 
 function __kitty_change_setting() {
@@ -370,5 +428,35 @@ function __kitty_change_setting() {
       sed -i '' "${lineNum}s/^/# /" $file
   fi
 
-  pgrep kitty | xargs kill -SIGUSR1
+  __reload_kitty_config
+}
+
+function __wezterm_change_setting() {
+  local file="$HOME/dotfiles/wezterm/.config/wezterm/overrides.lua"
+  local lineNum=$1
+  local ops=("toggle" "enable" "disable")
+  local op="toggle"
+
+  if [[ " ${ops[*]} " =~ " $2 " ]]; then
+    local op="$2"
+  fi
+
+  if [[ "$op" = "toggle" ]]; then
+    # Check if the line is commented
+    if sed -n "${lineNum}p" $file | grep -q '^-- '; then
+      sed -i '' "${lineNum}s/^-- //" $file
+    else
+      sed -i '' "${lineNum}s/^/-- /" $file
+    fi
+  elif [[ "$op" = "enable" ]]; then
+      sed -i '' "${lineNum}s/^-- //" $file
+  else
+      sed -i '' "${lineNum}s/^-- //" $file
+      sed -i '' "${lineNum}s/^/-- /" $file
+  fi
+}
+
+function __term_change_setting() {
+__kitty_change_setting $1 $2
+__wezterm_change_setting $1 $2
 }

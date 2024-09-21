@@ -200,7 +200,7 @@ hs.hotkey.bind(globals.hyper, "o", function()
 end)
 
 hs.hotkey.bind(globals.hyper, "k", function()
-  hs.application.launchOrFocus("Kitty")
+  hs.application.launchOrFocus("Wezterm")
 end)
 
 return { reddit }
