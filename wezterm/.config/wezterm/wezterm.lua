@@ -48,4 +48,5 @@ return {
 	check_for_updates = false,
 	window_close_confirmation = 'NeverPrompt',
 	max_fps = 120,
+	force_reverse_video_cursor = true
 }
