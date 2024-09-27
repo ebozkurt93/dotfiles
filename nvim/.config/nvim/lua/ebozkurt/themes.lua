@@ -21,6 +21,16 @@ local function reloadPackages(pattern)
 end
 
 if selected_theme == 'mellow' then
+	local variants = require("mellow.colors")
+	local cfg = require("mellow.config").config
+	local c = variants[cfg.variant]
+	vim.g.mellow_highlight_overrides = {
+		["NeogitDiffAddHighlight"] = { bg = c.bright_green, fg = cfg.transparent and c.none or c.bg },
+		["NeogitDiffDeleteHighlight"] = { bg = c.bright_red, fg = cfg.transparent and c.none or c.bg },
+		["NeogitDiffAdd"] = { bg = c.green, fg = cfg.transparent and c.none or c.bg },
+		["NeogitDiffDelete"] = { bg = c.red, fg = cfg.transparent and c.none or c.bg },
+	}
+	reloadPackages('^mellow')
 	vim.cmd [[colorscheme mellow]]
 elseif selected_theme == 'rose-pine' then
 	require('rose-pine').setup({
