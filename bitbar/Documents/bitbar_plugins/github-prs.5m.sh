@@ -12,7 +12,7 @@ queries=()
 while read line
 do
   # support for very basic commenting
-  if [[ "$line" == //* ]]; then
+  if [[ "$line" == //* || -z "$line" ]]; then
     continue
   fi
   queries=("${queries[@]}" "$line")
