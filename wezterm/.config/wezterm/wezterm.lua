@@ -29,6 +29,7 @@ return {
 		'Iosevka',
 		'Berkeley Mono',
 
+		'Apple Color Emoji',
 		'Symbols Nerd Font',
 	},
 
