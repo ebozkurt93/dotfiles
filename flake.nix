@@ -26,7 +26,6 @@
                   asdf-vm
                   bat
                   blueutil
-
                   entr
                   fd
                   fzf
@@ -42,6 +41,9 @@
                   tmux
                   tree
                   viu
+
+                  zsh
+                  zsh-autosuggestions
 
                   nil # nix language server
                   # nixfmt-rfc-style
