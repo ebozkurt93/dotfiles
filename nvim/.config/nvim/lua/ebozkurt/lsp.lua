@@ -98,6 +98,16 @@ require("lspconfig").gopls.setup({
 	}
 })
 
+require("lspconfig").nil_ls.setup({
+   settings = {
+      ['nil'] = {
+         formatting = {
+            command = { "alejandra" },
+         },
+      },
+   },
+})
+
 -- local util = require('lspconfig/util')
 -- local path = util.path
 local path = require("lspconfig/util").path
