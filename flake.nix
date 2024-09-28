@@ -18,38 +18,7 @@
           (
             {pkgs, ...}: {
               home = {
-                packages = with pkgs; [
-                  hello
-
-                  atuin
-                  # todo: replace asdf entirely
-                  asdf-vm
-                  bat
-                  blueutil
-                  entr
-                  fd
-                  fzf
-                  git
-                  gh
-                  gnupg
-                  gnugrep
-                  jq
-                  lazydocker
-                  lazygit
-                  ripgrep
-                  starship
-                  stow
-                  tmux
-                  tree
-                  viu
-
-                  zsh
-                  zsh-autosuggestions
-
-                  nil # nix language server
-                  # nixfmt-rfc-style
-                  alejandra # nix formatter
-                ];
+                packages = import ./packages.nix {inherit pkgs;};
                 stateVersion = "24.05";
                 username = "erdembozkurt";
                 homeDirectory = "/Users/erdembozkurt";
