@@ -39,6 +39,9 @@
                   ripgrep
                   starship
                   stow
+                  tmux
+                  tree
+                  viu
 
                   nil # nix language server
                   # nixfmt-rfc-style
