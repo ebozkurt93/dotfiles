@@ -42,10 +42,8 @@ alias code='open -a /Applications/Visual\ Studio\ Code.app/'
 # asdf
 . ~/.asdf/plugins/java/set-java-home.zsh
 export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
-# fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # zsh-autosuggestions
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source ~/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 bindkey '^ ' autosuggest-accept
 
 alias d-stop="docker system info > /dev/null 2>&1 && ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print \$1}'|xargs kill"
