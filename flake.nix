@@ -27,6 +27,12 @@
                   bat
                   blueutil
 
+                  entr
+                  fd
+                  fzf
+                  gh
+                  gnupg
+
                   nil # nix language server
                   # nixfmt-rfc-style
                   alejandra # nix formatter
