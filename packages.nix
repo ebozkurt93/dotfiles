@@ -1,6 +1,5 @@
 { pkgs }:
 with pkgs; [
-  hello
   atuin
   asdf-vm
   bat
