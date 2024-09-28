@@ -29,6 +29,7 @@
                   entr
                   fd
                   fzf
+                  git
                   gh
                   gnupg
                   gnugrep
