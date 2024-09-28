@@ -21,8 +21,11 @@
                 packages = with pkgs; [
                   hello
 
+                  atuin
                   # todo: replace asdf entirely
                   asdf-vm
+                  bat
+                  blueutil
 
                   nil # nix language server
                   # nixfmt-rfc-style

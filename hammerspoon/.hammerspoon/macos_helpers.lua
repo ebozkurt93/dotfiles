@@ -14,7 +14,7 @@ end
 function M.isBluetoothOn()
   local output, _success, _exitCode = hs.execute(
     [=[
-/opt/homebrew/bin/blueutil -p
+blueutil -p
   ]=],
     false
   )
@@ -27,11 +27,11 @@ function M.toggleBluetooth(enabled)
     if enabled then
       c = 1
     end
-    hs.execute(string.format("/opt/homebrew/bin/blueutil -p %s", c), true)
+    hs.execute(string.format("blueutil -p %s", c), true)
   else
     hs.execute(
       [=[
-/opt/homebrew/bin/blueutil -p toggle
+blueutil -p toggle
   ]=],
       true
     )
@@ -41,7 +41,7 @@ end
 function M.getBluetoothDevices()
   local output, _success, _exitCode = hs.execute(
     [=[
-/opt/homebrew/bin/blueutil --connected | awk '{print $2}' | tr -d ',' | tr '\n' ' ' | xargs
+blueutil --connected | awk '{print $2}' | tr -d ',' | tr '\n' ' ' | xargs
   ]=],
     false
   )
@@ -53,7 +53,7 @@ function M.getBluetoothDevices()
 end
 
 function M.connectToBluetoothDevice(address)
-  hs.execute(string.format("/opt/homebrew/bin/blueutil --connect '%s'", address), true)
+  hs.execute(string.format("blueutil --connect '%s'", address), true)
 end
 
 function M.toggleWifi(enabled)

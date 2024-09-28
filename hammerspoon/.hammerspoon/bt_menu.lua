@@ -7,7 +7,7 @@ local function refetchItems()
   items = {}
 
 
-  local data, success = hs.execute('/opt/homebrew/bin/blueutil --paired --format json')
+  local data, success = hs.execute('blueutil --paired --format json')
   if (success) then
     devices = hs.json.decode(data)
   else
@@ -38,11 +38,11 @@ local function showMenu()
     end
     local selected = helpers.findTableArrayItemByField(items, "address", choice.address)
     hs.execute(([=[
-(blueutil=/opt/homebrew/bin/blueutil
-if [[ "$($blueutil --is-connected %s)" == '1' ]]; then
-  $blueutil --disconnect %s --wait-disconnect %s
+(
+if [[ "$(blueutil --is-connected %s)" == '1' ]]; then
+  blueutil --disconnect %s --wait-disconnect %s
 else
-  $blueutil --connect %s --wait-connect %s
+  blueutil --connect %s --wait-connect %s
 fi) &
 ]=]  ):format(selected.address,
       selected.address,
