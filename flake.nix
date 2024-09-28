@@ -32,6 +32,13 @@
                   fzf
                   gh
                   gnupg
+                  gnugrep
+                  jq
+                  lazydocker
+                  lazygit
+                  ripgrep
+                  starship
+                  stow
 
                   nil # nix language server
                   # nixfmt-rfc-style
