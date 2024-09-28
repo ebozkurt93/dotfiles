@@ -40,7 +40,6 @@ alias code='open -a /Applications/Visual\ Studio\ Code.app/'
 
 # homebrew related settings
 # asdf
-. /opt/homebrew/opt/asdf/libexec/asdf.sh
 . ~/.asdf/plugins/java/set-java-home.zsh
 export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
 # fzf

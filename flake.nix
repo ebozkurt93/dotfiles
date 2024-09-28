@@ -21,6 +21,9 @@
                 packages = with pkgs; [
                   hello
 
+                  # todo: replace asdf entirely
+                  asdf-vm
+
                   nil # nix language server
                   # nixfmt-rfc-style
                   alejandra # nix formatter
