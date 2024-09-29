@@ -233,11 +233,11 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>dl', '<cmd>Telescope diagnostics<cr>', bufopts)
 		vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float, bufopts)
 		vim.keymap.set('n', '<leader>r', '<cmd>Lspsaga rename<cr>', bufopts)
-		vim.keymap.set('n', '<leader>fs', function()
-			vim.lsp.buf.format({ timeout_ms = 5000 })
-		end, bufopts)
 	end
 })
+vim.keymap.set('n', '<leader>fs', function()
+	vim.lsp.buf.format({ timeout_ms = 5000 })
+end)
 vim.keymap.set('n', '<leader>ls', '<cmd>:LspRestart all<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>TC', function()
 	require('ebozkurt.theme-gen').generate() end,
