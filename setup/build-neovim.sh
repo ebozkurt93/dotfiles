@@ -1,5 +1,7 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i bash -p ninja cmake gettext curl libiconv-darwin
+#! nix-shell -i bash
+#! nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/2dcd9c55e8914017226f5948ac22c53872a13ee2.tar.gz
+#! nix-shell -p ninja cmake gettext curl libiconv-darwin
 
 if [[ $(uname -s) != "Darwin" ]]; then
     echo "This script is only intended to run on macOS."
