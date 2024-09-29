@@ -4,6 +4,7 @@ with pkgs; [
   asdf-vm
   bat
   blueutil
+  colima
   entr
   fd
   fzf
