@@ -46,10 +46,6 @@ export PATH=$PATH:~/.asdf/installs/golang/1.19.1/packages/bin
 source ~/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 bindkey '^ ' autosuggest-accept
 
-alias d-stop="docker system info > /dev/null 2>&1 && ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print \$1}'|xargs kill"
-alias d-start="open -a /Applications/Docker.app"
-alias d-restart="d-stop; sleep 1; d-start && while ! docker system info > /dev/null 2>&1; do sleep 1; done"
-alias ds="d-stop || d-start"
 alias ss='echo $__sourced_states'
 
 function nvim_remote_exec {

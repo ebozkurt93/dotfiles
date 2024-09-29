@@ -5,6 +5,8 @@ with pkgs; [
   bat
   blueutil
   colima
+  docker
+  docker-compose
   entr
   fd
   fzf
