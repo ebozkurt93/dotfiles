@@ -4,6 +4,7 @@ with pkgs; [
   asdf-vm
   bat
   blueutil
+  coreutils
   colima
   docker
   docker-compose
