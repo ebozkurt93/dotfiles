@@ -22,6 +22,7 @@ search_json_format="assignees,author,authorAssociation,body,closedAt,commentsCou
 pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
 # pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
 
+temp_prs_file=~/Documents/bitbar_plugins/tmp/prs_$(date +%Y%m%d%H%M%S).txt
 prs_file=~/Documents/bitbar_plugins/tmp/prs.txt
 
 if [ "$1" = 'refetch-prs' ]; then
@@ -34,14 +35,14 @@ if [ "$1" = 'refetch-prs' ]; then
   all_pr_ids=$(echo "$all_pr_ids" | tr ' ' '\n' | sort | uniq | xargs)
 
   read -a all_pr_ids <<< $all_pr_ids
-  rm $prs_file
   # adding empty array since no results makes jq fail
-  echo '[]' >> "$prs_file"
+  echo '[]' >> "$temp_prs_file"
   for url in "${all_pr_ids[@]}"; do
     pr=$(`echo gh pr view "$url" --json "$pr_json_format" | xargs`)
-    echo "[$pr]" >> $prs_file
+    echo "[$pr]" >> $temp_prs_file
   done
 
+  mv $temp_prs_file $prs_file
   exit
 fi
 
