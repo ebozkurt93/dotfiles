@@ -6,9 +6,9 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     home-manager,
+    ...
   }: {
     homeConfigurations = {
       erdembozkurt = home-manager.lib.homeManagerConfiguration {

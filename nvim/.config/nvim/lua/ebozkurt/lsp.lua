@@ -107,6 +107,7 @@ require("lspconfig").nil_ls.setup({
       },
    },
 })
+require("lspconfig").nixd.setup({})
 
 -- local util = require('lspconfig/util')
 -- local path = util.path

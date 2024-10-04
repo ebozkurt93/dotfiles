@@ -28,5 +28,6 @@ with pkgs; [
   zsh
   zsh-autosuggestions
   nil # nix language server
+  nixd
   alejandra # nix formatter
 ]
