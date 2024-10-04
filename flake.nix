@@ -16,12 +16,21 @@
 
         modules = [
           (
-            {pkgs, ...}: {
+            {
+              pkgs,
+              lib,
+              ...
+            }: {
               home = {
                 packages = import ./packages.nix {inherit pkgs;};
                 stateVersion = "24.05";
                 username = "erdembozkurt";
                 homeDirectory = "/Users/erdembozkurt";
+                activation = {
+                  script = lib.mkAfter ''
+                    ${let scripts = import ./scripts.nix {inherit lib pkgs;}; in scripts.installTPM}
+                  '';
+                };
               };
             }
           )

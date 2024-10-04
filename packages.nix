@@ -11,6 +11,7 @@ with pkgs; [
   entr
   fd
   fzf
+  gawk
   git
   gh
   gnupg
