@@ -31,7 +31,9 @@ alias ..='cd ..'
 alias cd...='cd ../..'
 alias ch='cd ~'
 alias ...='cd ../..'
-alias ls='ls -G'
+if command -v eza > /dev/null; then
+  alias ls='eza --icons=auto'
+fi
 alias l='ls -lF'
 alias dir='ls'
 alias la='ls -lah'

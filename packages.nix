@@ -9,6 +9,7 @@ with pkgs; [
   docker
   docker-compose
   entr
+  eza
   fd
   fzf
   gawk
