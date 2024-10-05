@@ -10,10 +10,9 @@
     home-manager,
     ...
   }: {
-    homeConfigurations = {
-      erdembozkurt = home-manager.lib.homeManagerConfiguration {
+    homeConfigurations = let
+      darwinBase = {
         pkgs = nixpkgs.legacyPackages.aarch64-darwin;
-
         modules = [
           (
             {
@@ -24,18 +23,32 @@
               home = {
                 packages = import ./packages.nix {inherit pkgs;};
                 stateVersion = "24.05";
-                username = "erdembozkurt";
-                homeDirectory = "/Users/erdembozkurt";
-                activation = {
-                  script = lib.mkAfter ''
-                    ${let scripts = import ./scripts.nix {inherit lib pkgs;}; in scripts.installTPM}
-                  '';
-                };
+                activation = lib.mkMerge [
+                  (lib.optionalAttrs (pkgs ? tmux) {
+                    installTPM = lib.mkAfter ''
+                      ${let scripts = import ./scripts.nix {inherit lib pkgs;}; in scripts.installTPM}
+                    '';
+                  })
+                ];
               };
             }
           )
         ];
       };
+    in {
+      erdembozkurt = home-manager.lib.homeManagerConfiguration (darwinBase
+        // {
+          modules =
+            darwinBase.modules
+            ++ [
+              ({...}: {
+                home = {
+                  username = "erdembozkurt";
+                  homeDirectory = "/Users/erdembozkurt";
+                };
+              })
+            ];
+        });
     };
   };
 }
