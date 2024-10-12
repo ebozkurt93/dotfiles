@@ -16,7 +16,7 @@ function M.isBluetoothOn()
     [=[
 blueutil -p
   ]=],
-    false
+    true
   )
   return output:match("^%s*(.-)%s*$") == "1"
 end
@@ -43,7 +43,7 @@ function M.getBluetoothDevices()
     [=[
 blueutil --connected | awk '{print $2}' | tr -d ',' | tr '\n' ' ' | xargs
   ]=],
-    false
+    true
   )
   local result = {}
   for word in output:gmatch("%S+") do

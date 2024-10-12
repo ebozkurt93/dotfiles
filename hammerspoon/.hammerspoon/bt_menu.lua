@@ -7,7 +7,7 @@ local function refetchItems()
   items = {}
 
 
-  local data, success = hs.execute('blueutil --paired --format json')
+  local data, success = hs.execute('blueutil --paired --format json', true)
   if (success) then
     devices = hs.json.decode(data)
   else
@@ -48,7 +48,8 @@ fi) &
       selected.address,
       selected.address,
       selected.address,
-      selected.address))
+      selected.address),
+      true)
 
   end)
 
