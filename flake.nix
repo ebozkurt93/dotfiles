@@ -20,11 +20,13 @@
             lib,
             ...
           }: {
-            home = {
+            home = let
               packages = import ./packages.nix {inherit pkgs;};
+            in {
+              inherit packages;
               stateVersion = "24.05";
               activation = lib.mkMerge [
-                (lib.optionalAttrs (pkgs ? tmux) {
+                (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
                   installTPM = lib.mkAfter ''
                     ${let scripts = import ./scripts.nix {inherit lib pkgs;}; in scripts.installTPM}
                   '';
