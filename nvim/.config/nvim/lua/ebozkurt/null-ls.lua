@@ -36,6 +36,7 @@ null_ls.setup({
 		-- terraform
 		null_ls.builtins.formatting.terraform_fmt,
 		-- sh
+		null_ls.builtins.formatting.shfmt,
 		null_ls.builtins.hover.printenv,
 	},
 })

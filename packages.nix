@@ -28,7 +28,14 @@ with pkgs; [
   viu
   zsh
   zsh-autosuggestions
+
+  # lsp's, formatters etc
   nil # nix language server
   nixd
   alejandra # nix formatter
+  nodePackages.bash-language-server
+  nodePackages.typescript-language-server
+  lua-language-server
+  vscode-langservers-extracted # only using vscode-json-language-server
+  shfmt
 ]

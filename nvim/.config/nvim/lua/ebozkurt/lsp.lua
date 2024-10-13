@@ -3,14 +3,11 @@ require("mason").setup()
 require("mason-lspconfig").setup({
   -- some of the commented out in the list below should be installed, but mason only supports installing lsp's by default
   ensure_installed = {
-    "bashls",
     "cssls",
-    "jsonls",
     -- "stylua",
     "gopls",
     -- "staticcheck", -- used in golang
     -- "prettier",
-    "tsserver",
   },
 })
 
@@ -153,6 +150,9 @@ require("lspconfig").lua_ls.setup({
 		hint = { enable = true }
 	} },
 })
+
+require'lspconfig'.bashls.setup{}
+require'lspconfig'.jsonls.setup{}
 
 -- require 'lspconfig'.eslint.setup {}
 
