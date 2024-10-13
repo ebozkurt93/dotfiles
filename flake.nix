@@ -1,6 +1,7 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    bw-nixpkgs.url = "github:NixOS/nixpkgs/0cb2fd7c59fed0cd82ef858cbcbdb552b9a33465";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -8,6 +9,7 @@
   outputs = {
     self,
     nixpkgs,
+    bw-nixpkgs,
     home-manager,
     ...
   }: {
@@ -48,6 +50,9 @@
                 home = {
                   username = "erdembozkurt";
                   homeDirectory = "/Users/erdembozkurt";
+                  packages = [
+                    bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
+                  ];
                 };
               })
             ];
