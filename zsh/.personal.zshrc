@@ -21,10 +21,6 @@ function is_macos {
   [ "$(uname 2> /dev/null)" = "Darwin" ]
 }
 
-if is_macos; then
-  source $HOME/.macos.zshrc
-fi
-
 # convenience aliases
 alias cd..='cd ..'
 alias ..='cd ..'
@@ -236,3 +232,6 @@ function __find_and_run_executable {
 zle -N __find_and_run_executable
 bindkey "^[r" __find_and_run_executable
 
+if is_macos; then
+  source $HOME/.macos.zshrc
+fi

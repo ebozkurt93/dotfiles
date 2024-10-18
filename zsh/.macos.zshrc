@@ -28,13 +28,9 @@ function _load_custom_zsh_on_dir () {
 	done
 }
 
-if is_macos; then
-  function chpwd() {
-    _load_custom_zsh_on_dir
-  }
-
+function chpwd() {
   _load_custom_zsh_on_dir
-fi
+}
 
 alias code='open -a /Applications/Visual\ Studio\ Code.app/'
 
@@ -453,3 +449,5 @@ function __term_change_setting() {
 __kitty_change_setting $1 $2
 __wezterm_change_setting $1 $2
 }
+
+_load_custom_zsh_on_dir
