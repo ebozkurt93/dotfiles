@@ -12,6 +12,7 @@ local highlight = {
 -- local c = "▕"
 local c = "┊"
 require("ibl").setup({
+	enabled = false,
 	indent = {
 		char = c,
 		tab_char = c,
