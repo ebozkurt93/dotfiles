@@ -35,7 +35,7 @@ function chpwd() {
 alias code='open -a /Applications/Visual\ Studio\ Code.app/'
 
 # mise
-eval "$(~/.nix-profile/bin/mise activate zsh)"
+eval "$(mise activate zsh)"
 # zsh-autosuggestions
 source ~/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 bindkey '^ ' autosuggest-accept
