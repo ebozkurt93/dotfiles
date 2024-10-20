@@ -1,3 +1,4 @@
 tmp
 # executables used in bitbar
-*._
+state-switcher.*
+*_

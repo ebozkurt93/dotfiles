@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PATH="${PATH}:${HOME}/.nix-profile/bin"
-~/Documents/bitbar_plugins/state-switcher.5m.py is-state-enabled instabee || exit
+~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled instabee || exit
 
 style="size=13"
 

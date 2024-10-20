@@ -4,15 +4,15 @@ function _load_custom_zsh_on_dir () {
 	  source $HOME/.$__custom_state.zshrc
 	  __sourced_states+=($__custom_state)
 	fi
-	local states=($(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states))
+	local states=($(~/Documents/bitbar_plugins/state-switcher.5m enabled-states))
 	for state in "${states[@]}"; do
 	  if [[ $state == 'personal' ]]; then
 	    # this one is unique, always sourced it by default
 	    continue
 	  fi
 	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
-	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m.py state-paths $state))
-	    if $(~/Documents/bitbar_plugins/state-switcher.5m.py always-sourced-if-enabled $state); then
+	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m state-paths $state))
+	    if $(~/Documents/bitbar_plugins/state-switcher.5m always-sourced-if-enabled $state); then
 	        source $HOME/.$state.zshrc
 	        __sourced_states+=($state)
 	        continue
@@ -62,7 +62,7 @@ alias dev-rust='res "*.rs" -r cargo run'
 alias dev-go='res "*.go" -r go run .'
 
 local function __state_switcher_toggle() {
-  local p=~/Documents/bitbar_plugins/state-switcher.5m.py
+  local p=~/Documents/bitbar_plugins/state-switcher.5m
   local selected_state=$($p states-with-marks | sort | fzf \
     --bind 'ctrl-space:become(echo _{})+abort,alt-j:become(echo __{})+abort,alt-k:become(echo ___{})+abort'
   )
@@ -99,7 +99,7 @@ alias lg='lazygit'
 alias hsr='pgrep Hammerspoon | xargs kill; open -a /Applications/Hammerspoon.app'
 
 function __find_repos {
-  p=($(~/Documents/bitbar_plugins/state-switcher.5m.py enabled-states-paths) ~/bin)
+  p=($(~/Documents/bitbar_plugins/state-switcher.5m enabled-states-paths) ~/bin)
   selected_dir="$(cat <(echo ~/dotfiles) \
     <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) \
     | sort | uniq | fzf --preview 'cd {}; tree -L 3 --filelimit 100 --dirsfirst \
