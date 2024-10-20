@@ -40,7 +40,7 @@ alias viconf='(cd ~/dotfiles/nvim/.config/nvim && vi)'
 alias vidotfiles='(cd ~/dotfiles/ && vi)'
 alias vibackups='(cd ~/.vim/backups && vi)'
 alias dsync='echo "$(cd ~/dotfiles/ && git pull && cd ~/dotfiles/scripts && ./stow.sh -R)"'
-alias hma='(cd ~/dotfiles && nix run .#homeConfigurations.erdembozkurt.activationPackage)'
+alias hma='(cd ~/dotfiles && mise deactivate && nix run .#homeConfigurations.erdembozkurt.activationPackage)'
 alias sr='exec $SHELL'
 alias nn='cd ~/Documents; cd `ls | grep Notes`; nvim'
 
