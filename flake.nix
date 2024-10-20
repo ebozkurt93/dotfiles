@@ -27,13 +27,17 @@
             in {
               inherit packages;
               stateVersion = "24.05";
-              activation = lib.mkMerge [
-                (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
-                  installTPM = lib.mkAfter ''
-                    ${let scripts = import ./scripts.nix {inherit lib pkgs;}; in scripts.installTPM}
-                  '';
-                })
-              ];
+              activation = let
+                scripts = import ./scripts.nix {inherit lib pkgs;};
+              in
+                lib.mkMerge [
+                  (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
+                    installTPM = lib.mkAfter scripts.installTPM;
+                  })
+                  {
+                    installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
+                  }
+                ];
             };
           }
         )

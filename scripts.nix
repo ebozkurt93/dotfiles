@@ -5,6 +5,7 @@
 }: {
   installTPM = let
     requiredPackages = with pkgs; [git tmux gawk];
+    # sh
   in ''
     export PATH=${lib.makeBinPath requiredPackages}:$PATH
 
@@ -15,4 +16,10 @@
     $HOME/.tmux/plugins/tpm/bin/clean_plugins
     $HOME/.tmux/plugins/tpm/bin/install_plugins
   '';
+  installStateSwitcher =
+    # sh
+    ''
+      cd $HOME/dotfiles/bitbar/Documents/bitbar_plugins/source/state-switcher
+      nix develop -c make all
+    '';
 }
