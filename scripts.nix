@@ -19,6 +19,7 @@
   installStateSwitcher =
     # sh
     ''
+      mise deactivate
       cd $HOME/dotfiles/bitbar/Documents/bitbar_plugins/source/state-switcher
       nix develop -c make all
     '';
