@@ -1,7 +1,6 @@
 { pkgs }:
 with pkgs; [
   atuin
-  asdf-vm
   bat
   blueutil
   coreutils
@@ -20,6 +19,7 @@ with pkgs; [
   jq
   lazydocker
   lazygit
+  mise
   ripgrep
   starship
   stow

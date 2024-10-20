@@ -12,12 +12,8 @@ echo "Handling stow"
 echo "Done with stow"
 echo 'Go through personal.zshrc and run any subsequent comments initial install commands listed there'
 
-echo "Creating asdf plugins"
-./asdf.sh -I
-echo "Done with creating asdf plugins"
-echo "Installing default versions of asdf plugins"
-./asdf.sh -Install
-echo "Installed plugin versions"
+# todo: maybe move this to nix/home-manager
+mise install
 
 mkdir -p ~/Documents/bitbar_plugins/tmp
 mkdir -p ~/personal-repositories
