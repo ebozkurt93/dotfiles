@@ -64,7 +64,8 @@ comment_counts=$(echo $content | jq -r '.[] | "\(.comments)"' | jq length)
 additions=$(echo $content | jq -r '.[] | "\(.additions)"')
 deletions=$(echo $content | jq -r '.[] | "\(.deletions)"')
 is_draft=$(echo $content | jq -r '.[] | "\(.isDraft)"' | sed -e 's/true/Draft/g' -e 's/false//g')
-review_decision=$(echo $content | jq -r '.[] | "\(.reviewDecision)"' | sed -e 's/APPROVED/Approved/g' -e 's/REVIEW_REQUIRED/Review required/g')
+review_decision=$(echo $content | jq -r '.[] | "\(.reviewDecision)"' | sed -e 's/APPROVED/Approved/g' \
+  -e 's/REVIEW_REQUIRED/Review required/g' -e 's/CHANGES_REQUESTED/Changes requested/g')
 mergeable=$(echo $content | jq -r '.[] | "\(.mergeable)"' | sed -e '/MERGEABLE/!s/.*/Not mergeable/g' -e 's/MERGEABLE//g')
 urls=$(echo $content | jq -r '.[] | "\(.url)"')
 
