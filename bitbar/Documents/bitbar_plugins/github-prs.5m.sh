@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ~/.zprofile
+source ~/.zshrc > /dev/null 2>&1
 PATH="${PATH}:${HOME}/.nix-profile/bin"
 ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled instabee || exit
 
