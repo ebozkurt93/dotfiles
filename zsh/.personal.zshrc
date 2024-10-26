@@ -44,6 +44,9 @@ alias hma='(cd ~/dotfiles && mise deactivate && nix run .#homeConfigurations.erd
 alias sr='exec $SHELL'
 alias nn='cd ~/Documents; cd `ls | grep Notes`; nvim'
 
+alias ns='nix-shell --run $SHELL'
+alias nd='nix develop -c $SHELL'
+
 source ~/bin/helpers/colors.sh
 
 function __nvim_launch_with_custom_config() {
