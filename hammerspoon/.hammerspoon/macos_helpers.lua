@@ -508,4 +508,8 @@ function M.toggleLowPowerMode()
   M.refreshBitBarPlugins()
 end
 
+function M.setWallpaper()
+  hs.execute([[ ~/bin/helpers/set_wallpaper.sh ]])
+end
+
 return M
