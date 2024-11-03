@@ -38,7 +38,7 @@ return {
 
 	enable_tab_bar = false,
 	audible_bell = "Disabled",
-	adjust_window_size_when_changing_font_size = true,
+	adjust_window_size_when_changing_font_size = false,
 	hide_tab_bar_if_only_one_tab = true,
 
 	window_background_opacity = overrides.window_background_opacity or 1,
