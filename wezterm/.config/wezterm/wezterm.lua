@@ -1,6 +1,7 @@
 local wezterm = require 'wezterm'
 local themegen = require 'themegen'
 local overrides = require 'overrides'
+local other = require 'other'
 
 return {
 	keys = {
@@ -36,6 +37,7 @@ return {
 	colors = themegen.generate_wezterm_colors(),
 	window_padding = overrides.window_padding or { left = 0, right = 0, top = 0, bottom = 0 },
 
+	default_prog = other.default_prog(),
 	enable_tab_bar = false,
 	audible_bell = "Disabled",
 	adjust_window_size_when_changing_font_size = false,
