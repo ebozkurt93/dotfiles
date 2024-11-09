@@ -66,7 +66,7 @@ function M.toggleWifi(enabled)
 end
 
 function M.clearNotifications()
-  local source = [[
+  local sonomaSource = [[
 
 function run(input, parameters) {
 
@@ -370,7 +370,21 @@ function run(input, parameters) {
 }
 
 ]]
-  hs.osascript.javascript(source)
+
+  local source = [[
+tell application "System Events" to tell application process "NotificationCenter"
+	try
+		perform (actions of UI elements of UI element 1 of scroll area 1 of group 1 of group 1 of window "Notification Center" of application process "NotificationCenter" of application "System Events" whose name starts with "Name:Close")
+	end try
+end tell
+]]
+
+  local osMajorVersion = hs.host.operatingSystemVersion().major
+  if osMajorVersion == 14 then
+    hs.osascript.javascript(sonomaSource)
+  else
+    hs.osascript.applescript(source)
+  end
 end
 
 local function findHiddenWindowIds()
