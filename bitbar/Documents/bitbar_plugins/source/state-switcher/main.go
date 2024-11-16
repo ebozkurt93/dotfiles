@@ -204,7 +204,7 @@ func toggleState(arg2, arg3 string, titles []string, icons map[string]string, on
 		}
 		var enabledIcons []string
 		for _, title := range titles {
-			if fileExists(getFilePath(title)) {
+			if fileExists(getFilePath(title)) && len(icons[title]) > 0 {
 				enabledIcons = append(enabledIcons, icons[title])
 			}
 		}
