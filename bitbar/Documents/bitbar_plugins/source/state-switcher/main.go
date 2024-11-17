@@ -232,8 +232,8 @@ func runHook(arg2, arg3 string, onEnabledCommands, onDisabledCommands map[string
 }
 
 func runOnCommandHook(customState, command string) {
-	cmdStr := fmt.Sprintf(`zsh -c "__custom_state=%s; source ~/.zshrc; eval \"%s\" > /dev/null 2>&1;"`, customState, command)
-	cmd := exec.Command("sh", "-c", cmdStr)
+	cmdStr := fmt.Sprintf(`export PATH="$HOME/.nix-profile/bin:$PATH"; __custom_state=%s;  source ~/.zshrc; %s;`, customState, command)
+	cmd := exec.Command(os.Getenv("HOME") + "/.nix-profile/bin/zsh", "-c", cmdStr)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Start()
