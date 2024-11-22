@@ -68,6 +68,8 @@ review_decision=$(echo $content | jq -r '.[] | "\(.reviewDecision)"' | sed -e 's
   -e 's/REVIEW_REQUIRED/Review required/g' -e 's/CHANGES_REQUESTED/Changes requested/g')
 mergeable=$(echo $content | jq -r '.[] | "\(.mergeable)"' | sed -e '/MERGEABLE/!s/.*/Not mergeable/g' -e 's/MERGEABLE//g')
 urls=$(echo $content | jq -r '.[] | "\(.url)"')
+created_at=$(echo $content | jq -r '.[] | "\(.createdAt)"')
+updated_at=$(echo $content | jq -r '.[] | "\(.updatedAt)"')
 
 while read -r line; do pr_names+=("$line"); done <<<"$pr_names"
 while read -r line; do pr_titles+=("$line"); done <<<"$pr_titles"
@@ -78,6 +80,8 @@ while read -r line; do deletions+=("$line"); done <<<"$deletions"
 while read -r line; do is_draft+=("$line"); done <<<"$is_draft"
 while read -r line; do review_decision+=("$line"); done <<<"$review_decision"
 while read -r line; do mergeable+=("$line"); done <<<"$mergeable"
+while read -r line; do created_at+=("$line"); done <<<"$created_at"
+while read -r line; do updated_at+=("$line"); done <<<"$updated_at"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
 if [ "$1" = 'fzf' ]; then
@@ -85,7 +89,14 @@ if [ "$1" = 'fzf' ]; then
     if [[ $q = 0 ]]; then
       continue
     fi
-    printf "%-30s %-80s %-20s %-50s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${urls[$q]}"
+    # printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${created_at[$q]}" "${updated_at[$q]}" "${urls[$q]}"
+    printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" \
+  "$(if [ ${#pr_names[$q]} -gt 30 ]; then echo "${pr_names[$q]:0:27}..."; else echo "${pr_names[$q]}"; fi)" \
+  "$(if [ ${#pr_titles[$q]} -gt 80 ]; then echo "${pr_titles[$q]:0:77}..."; else echo "${pr_titles[$q]}"; fi)" \
+  "$(if [ ${#authors[$q]} -gt 20 ]; then echo "${authors[$q]:0:17}..."; else echo "${authors[$q]}"; fi)" \
+  "$(if [ ${#created_at[$q]} -gt 25 ]; then echo "${created_at[$q]:0:22}..."; else echo "${created_at[$q]}"; fi)" \
+  "$(if [ ${#updated_at[$q]} -gt 25 ]; then echo "${updated_at[$q]:0:22}..."; else echo "${updated_at[$q]}"; fi)" \
+  "${urls[$q]}"
     done
   exit
 fi
