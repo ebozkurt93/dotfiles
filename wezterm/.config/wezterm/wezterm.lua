@@ -2,6 +2,7 @@ local wezterm = require 'wezterm'
 local themegen = require 'themegen'
 local overrides = require 'overrides'
 local other = require 'other'
+local _ = require 'window-size'
 
 return {
 	keys = {
