@@ -27,6 +27,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
 vim.cmd [[
 	autocmd BufNewFile,BufRead *.zshrc set filetype=zsh
 	autocmd BufNewFile,BufRead *.tfvars set filetype=hcl
+	autocmd BufNewFile,BufRead *.jsonl set filetype=json
 ]]
 
 -- search
