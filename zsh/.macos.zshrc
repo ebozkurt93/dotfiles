@@ -102,11 +102,19 @@ function __find_repos {
     <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) \
     | sort | uniq | fzf --preview 'cd {}; tree -L 3 --filelimit 100 --dirsfirst \
       -C --noreport' --preview-window right --bind \
-      'ctrl-p:change-preview-window(up|hidden|right)')"
-  test -z $selected_dir && return
-  cd $selected_dir
-  # if this is missing, prompt shows old directory till another command runs
+      'ctrl-p:change-preview-window(up|hidden|right),ctrl-n:become(echo \*{})+abort')"
+
+  test -z "$selected_dir" && return
+  if [[ "${selected_dir:0:1}" == "*" ]]; then
+    selected_dir="${selected_dir:1}"
+    openNvim=true
+  fi
+
+  cd "$selected_dir"
   zle reset-prompt
+  if [[ -n $openNvim ]]; then
+    nvim
+  fi
 }
 zle -N __find_repos
 bindkey "^f" __find_repos
