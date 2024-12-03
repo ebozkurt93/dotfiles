@@ -1,0 +1,59 @@
+font-family = "Fira Code"
+font-family = "Symbols Nerd Font"
+font-size = 13
+
+theme = GruvboxDark
+
+cursor-opacity = 0.5
+# background-opacity = 1
+# background-blur-radius = 0
+background-opacity = 1
+
+# potential overrides
+window-padding-x = 2
+window-padding-y = 2
+# background-opacity = 0.7
+background-blur-radius = 16
+
+mouse-hide-while-typing = true
+mouse-shift-capture = false
+
+# command = 
+# command = ghostty -e ~/.nix-profile/bin/tmux list-sessions &>/dev/null && ~/.nix-profile/bin/tmux attach-session
+# command = ~/.nix-profile/bin/tmux attach-session -t 0
+# command = ~/.nix-profile/bin/tmux attach-session
+# command = if ~/.nix-profile/bin/tmux list-sessions &>/dev/null; then ~/.nix-profile/bin/tmux attach-session; fi
+
+
+
+keybind = super+c=copy_to_clipboard
+keybind = super+v=paste_from_clipboard
+
+
+window-decoration = true
+window-colorspace = srgb
+window-save-state = always
+
+focus-follows-mouse = false
+clipboard-read = ask
+clipboard-write = allow
+clipboard-trim-trailing-spaces = true
+clipboard-paste-protection = true
+clipboard-paste-bracketed-safe = true
+
+confirm-close-surface = false
+quit-after-last-window-closed = true
+macos-non-native-fullscreen = true
+macos-titlebar-proxy-icon = hidden
+
+macos-option-as-alt = true
+# macos-window-shadow = true
+
+macos-auto-secure-input = true
+macos-secure-input-indication = true
+
+# Changing this value at runtime works after a small delay.
+auto-update = check
+
+config-file = ?theme
+config-file = ?overrides

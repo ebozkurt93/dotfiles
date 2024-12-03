@@ -191,6 +191,9 @@ function __theme_helper() {
 	~/bin/helpers/tmux_status_color.sh
 	__reload_kitty_config
 	__reload_wezterm_config
+	# fix: temporary solution till I have a better way of auto generating ghostty theme
+	nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate_for_ghostty()<cr>" > /dev/null 2>&1
+	__reload_ghostty_config
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
@@ -306,6 +309,10 @@ function __reload_wezterm_config {
   touch ~/dotfiles/wezterm/.config/wezterm/wezterm.lua
 }
 
+function __reload_ghostty_config {
+  osascript -e 'tell application "Ghostty" to activate' -e 'tell application "System Events" to keystroke "," using {command down, shift down}'
+}
+
 function __wezterm_change_font() {
   sed -i '' "3s/.*/M.font = \'$1\'/" ~/dotfiles/wezterm/.config/wezterm/overrides.lua;
 }
@@ -314,6 +321,11 @@ function __wezterm_change_font() {
 function __kitty_change_font() {
   sed -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf;
   __reload_kitty_config
+}
+
+function __ghostty_change_font() {
+  sed -i '' "3s/.*/font-family = \"$1\"/" ~/dotfiles/ghostty/.config/ghostty/overrides;
+  __reload_ghostty_config
 }
 
 function __kitty_font_changer() {
@@ -364,8 +376,35 @@ function __wezterm_font_changer() {
   zle reset-prompt
 }
 
-zle -N __wezterm_font_changer
-bindkey "^g" __wezterm_font_changer
+function __ghostty_font_changer() {
+  local current_font=$(sed -n '3p' ~/dotfiles/ghostty/.config/ghostty/overrides | sed -n 's/.*= "\(.*\)"/\1/p')
+  local fonts=(
+  'Fira Code Retina'
+  'Victor Mono'
+  'JetBrains Mono'
+  'IBM Plex Mono'
+  'Input Mono Narrow'
+  # todo: this looks a bit weird look into it
+  'Noto Sans Mono'
+  'Iosevka'
+  'Berkeley Mono'
+  )
+
+  local selected_font=$(printf "%s\n" "${fonts[@]}" | sort | grep -v "$current_font" | \
+  { echo $current_font; cat; } | \
+  fzf --preview 'source ~/.zshrc; __ghostty_change_font {}' --preview-window 0)
+
+
+  if [[ ! -z $selected_font ]]; then
+    __ghostty_change_font "$selected_font"
+  else
+    __ghostty_change_font "$current_font"
+  fi
+  zle reset-prompt
+}
+
+zle -N __ghostty_font_changer
+bindkey "^g" __ghostty_font_changer
 
 function __kitty_toggle_transparency() {
   local file="$HOME/dotfiles/kitty/.config/kitty/toggled-settings.conf"
@@ -398,9 +437,26 @@ function __wezterm_toggle_transparency() {
   fi
 }
 
+function __ghostty_toggle_transparency() {
+  local file="$HOME/dotfiles/ghostty/.config/ghostty/overrides"
+  local lineNum='4'
+
+  # Check if the line is commented
+  if sed -n "${lineNum}p" $file | grep -q '^# '; then
+    sed -i '' "${lineNum}s/^# //" $file
+    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+  else
+    sed -i '' "${lineNum}s/^/# /" $file
+    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+  fi
+
+  __reload_ghostty_config
+}
+
 function __term_toggle_transparency() {
   __wezterm_toggle_transparency
   __kitty_toggle_transparency
+  __ghostty_toggle_transparency
 }
 
 function __kitty_change_setting() {
@@ -455,9 +511,37 @@ function __wezterm_change_setting() {
   fi
 }
 
+function __ghostty_change_setting() {
+  local file="$HOME/dotfiles/ghostty/.config/ghostty/overrides"
+  local lineNum=$1
+  local ops=("toggle" "enable" "disable")
+  local op="toggle"
+
+  if [[ " ${ops[*]} " =~ " $2 " ]]; then
+    local op="$2"
+  fi
+
+  if [[ "$op" = "toggle" ]]; then
+    # Check if the line is commented
+    if sed -n "${lineNum}p" $file | grep -q '^# '; then
+      sed -i '' "${lineNum}s/^# //" $file
+    else
+      sed -i '' "${lineNum}s/^/# /" $file
+    fi
+  elif [[ "$op" = "enable" ]]; then
+      sed -i '' "${lineNum}s/^# //" $file
+  else
+      sed -i '' "${lineNum}s/^# //" $file
+      sed -i '' "${lineNum}s/^/# /" $file
+  fi
+
+  __reload_ghostty_config
+}
+
 function __term_change_setting() {
 __kitty_change_setting $1 $2
 __wezterm_change_setting $1 $2
+__ghostty_change_setting $1 $2
 }
 
 _load_custom_zsh_on_dir

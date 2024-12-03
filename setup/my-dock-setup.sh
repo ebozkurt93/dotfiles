@@ -31,7 +31,7 @@ apps=(
 "/Applications/Spotify.app"
 "/Applications/Pocket Casts.app"
 # "{'tile-type'='small-spacer-tile';}"
-"/Applications/Wezterm.app"
+"/Applications/Ghostty.app"
 "/Applications/Slack.app"
 # "{'tile-type'='small-spacer-tile';}"
 "/Applications/Obsidian.app"

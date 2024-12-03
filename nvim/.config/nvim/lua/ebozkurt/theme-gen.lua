@@ -66,6 +66,11 @@ function M.template(str, table)
 end
 
 function M.generate(name)
+	M.generate_for_kitty(name)
+	M.generate_for_ghostty(name)
+end
+
+function M.generate_for_kitty(name)
 	local blank_name = name == nil or name == ''
 	local kitty = M.template(
 		[[
@@ -117,6 +122,47 @@ color15 ${color15}
 		print('Generated theme')
 	end
 	return kitty
+end
+
+function M.generate_for_ghostty(name)
+	local blank_name = name == nil or name == ''
+	local ghostty_template = M.template(
+		[[
+# Auto-generated theme file
+
+palette = 0=${color0}
+palette = 1=${color1}
+palette = 2=${color2}
+palette = 3=${color3}
+palette = 4=${color4}
+palette = 5=${color5}
+palette = 6=${color6}
+palette = 7=${color7}
+palette = 8=${color8}
+palette = 9=${color9}
+palette = 10=${color10}
+palette = 11=${color11}
+palette = 12=${color12}
+palette = 13=${color13}
+palette = 14=${color14}
+palette = 15=${color15}
+
+background = ${bg}
+foreground = ${fg}
+cursor-color = ${fg}
+selection-background = ${selection_background}
+selection-foreground = ${selection_foreground}
+]],
+		vim.tbl_extend("force", M.find_colors(), { _style_name = name or 'Current theme' })
+	)
+	vim.fn.system("echo '" .. ghostty_template .. "' > ~/dotfiles/ghostty/.config/ghostty/theme")
+	if not blank_name then
+		vim.fn.system("echo '" .. ghostty_template .. "' > ~/dotfiles/ghostty/.config/ghostty/themes/" .. name .. "")
+		print('Generated and stored ghostty theme ' .. name)
+	else
+		print('Generated ghostty theme')
+	end
+	return ghostty_template
 end
 
 return M
