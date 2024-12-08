@@ -19,13 +19,7 @@ background-blur-radius = 16
 mouse-hide-while-typing = true
 mouse-shift-capture = false
 
-# command = 
-# command = ghostty -e ~/.nix-profile/bin/tmux list-sessions &>/dev/null && ~/.nix-profile/bin/tmux attach-session
-# command = ~/.nix-profile/bin/tmux attach-session -t 0
-# command = ~/.nix-profile/bin/tmux attach-session
-# command = if ~/.nix-profile/bin/tmux list-sessions &>/dev/null; then ~/.nix-profile/bin/tmux attach-session; fi
-
-
+command = "/bin/zsh -l -c 'tmux attach || $SHELL'"
 
 keybind = super+c=copy_to_clipboard
 keybind = super+v=paste_from_clipboard
