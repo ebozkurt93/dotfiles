@@ -1,3 +1,4 @@
+# vi: ft=conf
 font-family = "Fira Code"
 font-family = "Symbols Nerd Font"
 font-size = 13
