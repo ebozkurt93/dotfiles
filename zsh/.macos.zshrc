@@ -281,8 +281,8 @@ function __bt_device_toggle() {
   zle send-break
 }
 
-zle -N __bt_device_toggle 
-bindkey "^[b" __bt_device_toggle 
+zle -N __bt_device_toggle
+bindkey '^Xb' __bt_device_toggle
 
 function wp_change() {
   local wp_file=$(~/bin/helpers/set_wallpaper.sh wp-path)
