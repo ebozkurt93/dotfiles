@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# Converts a kitty theme into a ghostty one
+# Usage: ./kitty-to-ghostty.sh <kitty_theme_file> <ghostty_theme_file>
+
+kitty_file="$1"
+ghostty_file="$2"
+
+if [ -z "$kitty_file" ] || [ -z "$ghostty_file" ]; then
+    echo "Usage: $0 <kitty_theme_file> <ghostty_theme_file>"
+    exit 1
+fi
+
+foreground=""
+background=""
+selection_background=""
+selection_foreground=""
+cursor_color=""
+
+while IFS= read -r line; do
+    line="$(echo "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')"
+    [ -z "$line" ] && continue
+    case "$line" in
+        \#*) continue;;
+    esac
+    key=$(echo "$line" | awk '{print $1}')
+    val=$(echo "$line" | awk '{print $2}')
+
+    # If value is 'none', treat it as unset
+    [ "$val" = "none" ] && val=""
+
+    case "$key" in
+        foreground) foreground="$val" ;;
+        background) background="$val" ;;
+        selection_background) selection_background="$val" ;;
+        selection_foreground) selection_foreground="$val" ;;
+        cursor_text_color) : ;; # ignored
+        cursor) cursor_color="$val" ;;
+        color[0-9]|color1[0-5])
+            num=$(echo "$key" | sed 's/color//')
+            eval "color$num=$val"
+            ;;
+    esac
+done < "$kitty_file"
+
+{
+    for i in $(seq 0 15); do
+        eval c=\$color$i
+        [ -z "$c" ] && c="#000000"
+        echo "palette = $i=$c"
+    done
+
+    [ -n "$background" ] && echo "background = $background"
+    [ -n "$foreground" ] && echo "foreground = $foreground"
+    [ -n "$cursor_color" ] && echo "cursor-color = $cursor_color"
+    [ -n "$selection_background" ] && echo "selection-background = $selection_background"
+    [ -n "$selection_foreground" ] && echo "selection-foreground = $selection_foreground"
+} > "$ghostty_file"

@@ -67,7 +67,6 @@ end
 
 function M.generate(name)
 	M.generate_for_kitty(name)
-	M.generate_for_ghostty(name)
 end
 
 function M.generate_for_kitty(name)

@@ -191,8 +191,7 @@ function __theme_helper() {
 	~/bin/helpers/tmux_status_color.sh
 	__reload_kitty_config
 	__reload_wezterm_config
-	# fix: temporary solution till I have a better way of auto generating ghostty theme
-	nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate_for_ghostty()<cr>" > /dev/null 2>&1
+	~/bin/helpers/kitty-to-ghostty ~/.config/kitty/current-theme.conf ~/.config/ghostty/theme
 	__reload_ghostty_config
 	return
   fi
