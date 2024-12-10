@@ -25,6 +25,14 @@ end
 
 --- startup and add configure plugins
 require("lazy").setup({
+  {
+    'prochri/telescope-all-recent.nvim',
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "kkharji/sqlite.lua",
+    },
+    opts = {}
+  },
   { "nvim-telescope/telescope.nvim", dependencies = { { "nvim-lua/plenary.nvim" } } },
   { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
   { "nvim-telescope/telescope-file-browser.nvim" },
@@ -179,7 +187,7 @@ require("lazy").setup({
   {
     "kristijanhusak/vim-dadbod-ui",
     dependencies = {
-      { "tpope/vim-dadbod", lazy = true },
+      { "tpope/vim-dadbod", lazy = false },
       { "kristijanhusak/vim-dadbod-completion", ft = { "sql", "mysql", "plsql" }, lazy = true },
     },
     cmd = {
