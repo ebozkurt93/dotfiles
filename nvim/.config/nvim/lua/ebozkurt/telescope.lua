@@ -70,6 +70,7 @@ require('telescope').setup {
 		-- builtin picker
 	},
 	extensions = {
+		fzf = {},
 		file_browser = {
 			theme = 'ivy',
 			hijack_netrw = true,
