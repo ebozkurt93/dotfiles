@@ -44,6 +44,7 @@ while IFS= read -r line; do
 done < "$kitty_file"
 
 {
+    echo "# vi: ft=conf"
     for i in $(seq 0 15); do
         eval c=\$color$i
         [ -z "$c" ] && c="#000000"
