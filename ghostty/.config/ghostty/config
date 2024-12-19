@@ -19,7 +19,7 @@ background-blur-radius = 16
 mouse-hide-while-typing = true
 mouse-shift-capture = false
 
-command = "/bin/zsh -l -c 'tmux attach || $SHELL'"
+command = "/bin/zsh -c ~/dotfiles/ghostty/.config/ghostty/startup.sh"
 
 keybind = super+c=copy_to_clipboard
 keybind = super+v=paste_from_clipboard
