@@ -35,6 +35,17 @@ helpers.hotkeyScopedToApp({ "cmd" }, "a", "MultiViewer for F1", function(app)
   app:selectMenuItem({ "Window", "Bring All to Front" })
 end)
 
+helpers.hotkeyScopedToApp({ "cmd", "alt" }, "r", "Ghostty", function(app)
+  local appName = app:name()
+  app:kill()
+
+  hs.timer.doAfter(0.10, function()
+    app = hs.application.open(appName)
+      hs.eventtap.keyStroke({ "cmd", "ctrl" }, "f", 0, app)
+  end)
+end)
+
+
 -- Google Chrome
 hs.hotkey.bind({ "cmd", "shift" }, "0", function()
   local app = hs.application.get("Google Chrome")
