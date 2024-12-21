@@ -40,8 +40,22 @@ helpers.hotkeyScopedToApp({ "cmd", "alt" }, "r", "Ghostty", function(app)
   app:kill()
 
   hs.timer.doAfter(0.10, function()
-    app = hs.application.open(appName)
-      hs.eventtap.keyStroke({ "cmd", "ctrl" }, "f", 0, app)
+    local retries = 5
+    local delay = 0.10
+    while retries > 0 do
+      local reopenedApp = hs.application.open(appName)
+      if reopenedApp then
+        hs.eventtap.keyStroke({ "cmd", "ctrl" }, "f", 0, reopenedApp)
+        break
+      else
+        retries = retries - 1
+        hs.timer.usleep(delay * 1e6)
+      end
+    end
+
+    if retries == 0 then
+      hs.alert.show("Failed to reopen the app: " .. appName)
+    end
   end)
 end)
 
