@@ -8,5 +8,8 @@
 	email = ebozkurt93@gmail.com
 	name = Erdem Bozkurt
 
+[core]
+	excludesfile = ~/dotfiles/git/.gitignore
+
 [includeIf "gitdir:~/instabee/"]
 	path = ~/dotfiles/instabee/git/.gitconfig

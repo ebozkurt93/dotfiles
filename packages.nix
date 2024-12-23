@@ -28,6 +28,8 @@ with pkgs; [
   viu
   zsh
   zsh-autosuggestions
+  direnv
+  nix-direnv
 
   # lsp's, formatters etc
   nil # nix language server

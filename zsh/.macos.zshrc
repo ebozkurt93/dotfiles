@@ -42,6 +42,9 @@ bindkey '^ ' autosuggest-accept
 
 alias ss='echo $__sourced_states'
 
+eval "$(direnv hook zsh)"
+export DIRENV_LOG_FORMAT=""
+
 function nvim_remote_exec {
   local pc="$(nproc)"
   find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -P $pc -I {} nvim --server {} --remote-send "$1"
