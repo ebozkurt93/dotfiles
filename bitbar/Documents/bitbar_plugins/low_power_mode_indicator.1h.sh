@@ -2,9 +2,10 @@
 
 style="size=13"
 
-value=$(pmset -g | grep lowpowermode | awk -F' ' '{ print$2 }')
+os_major_version=$(sw_vers -productVersion | awk -F '.' '{print $1}')
+low_power_mode=$(pmset -g | grep lowpowermode | awk -F' ' '{print $2}')
 
-if [[ $value = '0' ]]; then
+if [[ $os_major_version -ge 15 || $low_power_mode = '0' ]]; then
 	exit
 fi
 
