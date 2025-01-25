@@ -164,4 +164,16 @@ elseif selected_theme == 'seoul256-dark' then
 elseif selected_theme == 'seoul256-light' then
 	vim.opt.background = 'light'
 	vim.cmd [[ colorscheme seoul256-light ]]
+elseif selected_theme == 'zenbones-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme zenbones ]]
+elseif selected_theme == 'zenbones-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme zenbones ]]
+elseif selected_theme == 'neobones-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme neobones ]]
+elseif selected_theme == 'neobones-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme neobones ]]
 end

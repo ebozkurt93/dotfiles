@@ -139,6 +139,8 @@ function __theme_helper() {
   'github-dark' 'github-light'
   'caret-dark' 'caret-light' 'miasma'
   'monet-light' 'monet-dark' 'neofusion' 'seoul256-dark' 'seoul256-light'
+  'zenbones-light' 'zenbones-dark'
+  'neobones-light' 'neobones-dark'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(
