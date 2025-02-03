@@ -120,6 +120,23 @@ function M.hotkeyScopedToApp(mods, key, appName, func)
   table.insert(_G.helpers_appWatchers, appWatcher)
 end
 
+function M.hotkeyExcludingApp(mods, key, appName, func)
+  local hotkey = hs.hotkey.new(mods, key, func)
+
+  local appWatcher = hs.application.watcher.new(function(appName_, eventType, app)
+    if appName_ == appName then
+      if eventType == hs.application.watcher.activated then
+        hotkey:disable()
+      elseif eventType == hs.application.watcher.deactivated then
+        hotkey:enable()
+      end
+    end
+  end)
+
+  appWatcher:start()
+  table.insert(_G.helpers_appWatchers, appWatcher)
+end
+
 function M.isCurrentTabUrlStartingWith(startsWith)
   local _, currentUrl =
     hs.osascript.applescript('tell application "Google Chrome" to return URL of active tab of front window')
@@ -202,22 +219,6 @@ function M.keystrokesScopedToApp(target, app, func)
   local keystrokeTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, handleKeystrokes)
   keystrokeTap:start()
   return keystrokeTap, keystrokeBuffer
-end
-
-function M.hotkeyExcludingApp(mods, key, appName, func)
-  local yourHotkey = hs.hotkey.new(mods, key, func)
-
-  local appFilter = hs.window.filter.new()
-  appFilter = appFilter:rejectApp(appName)
-  P(appFilter)
-
-  appFilter
-    :subscribe(hs.window.filter.windowFocused, function()
-      yourHotkey:enable()
-    end)
-    :subscribe(hs.window.filter.windowUnfocused, function()
-      yourHotkey:disable()
-    end)
 end
 
 function M.isCurrentWindowInFullScreen()
