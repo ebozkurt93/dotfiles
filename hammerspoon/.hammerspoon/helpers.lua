@@ -95,23 +95,29 @@ function M.findTableArrayItemByField(tableArray, key, value)
   return nil
 end
 
+-- Not ideal, but prevents appwatchers being garbage collected
+_G.helpers_appWatchers = _G.helpers_appWatchers or {}
+
 function M.hotkeyScopedToApp(mods, key, appName, func)
   local yourHotkey = hs.hotkey.new(mods, key, function()
     local app = hs.application.frontmostApplication()
-    if app then
+    if app and app:name() == appName then
       func(app)
     end
   end)
 
-  local appFilter = hs.window.filter.new(appName)
+  local appWatcher = hs.application.watcher.new(function(appName_, eventType, app)
+    if appName_ == appName then
+      if eventType == hs.application.watcher.activated then
+        yourHotkey:enable()
+      elseif eventType == hs.application.watcher.deactivated then
+        yourHotkey:disable()
+      end
+    end
+  end)
 
-  appFilter
-    :subscribe(hs.window.filter.windowFocused, function()
-      yourHotkey:enable()
-    end)
-    :subscribe(hs.window.filter.windowUnfocused, function()
-      yourHotkey:disable()
-    end)
+  appWatcher:start()
+  table.insert(_G.helpers_appWatchers, appWatcher)
 end
 
 function M.isCurrentTabUrlStartingWith(startsWith)
