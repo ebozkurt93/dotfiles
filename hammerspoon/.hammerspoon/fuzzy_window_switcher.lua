@@ -6,10 +6,11 @@ local _appFilter = nil
 local windows = {}
 
 local function updateChooserChoices()
-  windows = hs.fnutils.filter(hs.window.orderedWindows(), function(w)
-    return w:isStandard() -- Ensures the window has a titlebar
-  end)
+  local filter = hs.window.filter.new(true):setOverrideFilter({
+    hasTitlebar = true,
+  })
 
+  windows = filter:getWindows(hs.window.sortByFocusedLast)
   _fuzzyChoices = {}
   for i, w in pairs(windows) do
     local title = w:title()

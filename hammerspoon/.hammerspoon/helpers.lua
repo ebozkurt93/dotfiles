@@ -267,4 +267,17 @@ function M.queryChangedCallback(chooser, choices, key)
   end
 end
 
+-- This attempts to speed up/fix slowness in hs.window.filter
+-- https://github.com/Hammerspoon/hammerspoon/issues/2943#issuecomment-2105644391
+local function _wf_ignoreWebContent()
+    for _, app in pairs(hs.application.runningApplications()) do
+        local name = app:name()
+        if name and (name:match(" Web Content$") or app:bundleID() == "com.apple.WebKit.WebContent") then
+            hs.window.filter.ignoreAlways[name] = true
+        end
+    end
+end
+_G.window_filter_ignore_web_content_timer = hs.timer.doEvery(15, _wf_ignoreWebContent)
+_wf_ignoreWebContent()
+
 return M
