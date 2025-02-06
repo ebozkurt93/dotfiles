@@ -85,10 +85,7 @@ while read -r line; do updated_at+=("$line"); done <<<"$updated_at"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
 if [ "$1" = 'fzf' ]; then
-  for q in "${!pr_names[@]}"; do
-    if [[ $q = 0 ]]; then
-      continue
-    fi
+  for (( q=${#pr_names[@]}-1; q>0; q-- )); do
     # printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${created_at[$q]}" "${updated_at[$q]}" "${urls[$q]}"
     printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" \
   "$(if [ ${#pr_names[$q]} -gt 30 ]; then echo "${pr_names[$q]:0:27}..."; else echo "${pr_names[$q]}"; fi)" \
