@@ -72,6 +72,13 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.keymap.set('n', '<leader>y', function ()
+	-- vim.o.list = not vim.o.list
+    local new_value = not vim.wo.list
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        vim.api.nvim_win_set_option(win, 'list', new_value)
+    end
+end, { noremap = true })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'UfoInitialized',
 	callback = function()
