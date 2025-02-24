@@ -106,6 +106,9 @@ function pk() {
   __get_pid_for_port $1 | xargs kill
 }
 
+# https://stackoverflow.com/questions/11532157/remove-duplicate-lines-without-sorting
+alias unique="awk '!x[\$0]++'"
+
 function __execute_package_json_command() {
   local install_deps_command="install_deps"
   if [[ ! -f  "package.json" ]]; then
