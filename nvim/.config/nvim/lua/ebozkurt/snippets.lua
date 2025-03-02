@@ -55,6 +55,10 @@ local function load_snippets_from_dir(dir)
 
   -- Start scanning from the root directory
   scan_folder(dir)
+  table.sort(snippets, function(a, b)
+    return a.name < b.name
+  end)
+
   return snippets
 end
 
@@ -64,24 +68,22 @@ local dynamic_defaults = {
   end,
 }
 
-
 -- Expand snippet using LuaSnip
 local function expand_snippet(query)
-    if has_luasnip then
-        -- Prevent LuaSnip from interpreting `$` as a special character
-        local processed_query = query:gsub("($)(%a+)", "\\%1%2") -- Escapes $ so LuaSnip ignores it
+  if has_luasnip then
+    -- Prevent LuaSnip from interpreting `$` as a special character
+    local processed_query = query:gsub("($)(%a+)", "\\%1%2") -- Escapes $ so LuaSnip ignores it
 
-        -- Only replace `${1:T_DATE}` placeholders, ignore $ symbols
-        processed_query = processed_query:gsub("%${(%d+):([^}]+)}", function(index, placeholder)
-            local replacement = dynamic_defaults[placeholder] and dynamic_defaults[placeholder]() or placeholder
-            return string.format("${%s:%s}", index, replacement)
-        end)
+    -- Only replace `${1:T_DATE}` placeholders, ignore $ symbols
+    processed_query = processed_query:gsub("%${(%d+):([^}]+)}", function(index, placeholder)
+      local replacement = dynamic_defaults[placeholder] and dynamic_defaults[placeholder]() or placeholder
+      return string.format("${%s:%s}", index, replacement)
+    end)
 
-        -- Expand the snippet in LuaSnip
-        luasnip.snip_expand(luasnip.parser.parse_snippet("snippet", processed_query))
-    end
+    -- Expand the snippet in LuaSnip
+    luasnip.snip_expand(luasnip.parser.parse_snippet("snippet", processed_query))
+  end
 end
-
 
 -- Use Telescope for fuzzy snippet selection
 local function select_snippet_telescope(snippets)
@@ -111,60 +113,60 @@ local function select_snippet_telescope(snippets)
   end
 
   pickers
-    .new({}, {
-      prompt_title = "Snippets",
-      finder = finders.new_table({
-        results = picker_entries,
-        entry_maker = function(entry)
-          return {
-            value = entry.value,
-            display = entry.display,
-            ordinal = entry.ordinal,
-          }
-        end,
-      }),
-      sorter = sorters.get_generic_fuzzy_sorter({}),
-      previewer = previewers.new_buffer_previewer({
-        define_preview = function(self, entry, status)
-          local filetype = entry.value.filetype or "" -- Use defined filetype, else none
-          if filetype ~= "" then
-            vim.api.nvim_buf_set_option(self.state.bufnr, "filetype", filetype)
-          end
-          vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(entry.value.query, "\n"))
-        end,
-      }),
-      attach_mappings = function(_, map)
-        map("i", "<CR>", function(prompt_bufnr)
-          local entry = action_state.get_selected_entry()
-          actions.close(prompt_bufnr)
-
-          if entry then
-            local query = entry.value.query
-
-            -- Trim leading and trailing newlines
-            local lines = vim.split(query, "\n")
-
-            -- Remove empty lines from the start
-            while #lines > 0 and lines[1]:match("^%s*$") do
-              table.remove(lines, 1)
+      .new({}, {
+        prompt_title = "Snippets",
+        finder = finders.new_table({
+          results = picker_entries,
+          entry_maker = function(entry)
+            return {
+              value = entry.value,
+              display = entry.display,
+              ordinal = entry.ordinal,
+            }
+          end,
+        }),
+        sorter = sorters.get_generic_fuzzy_sorter({}),
+        previewer = previewers.new_buffer_previewer({
+          define_preview = function(self, entry, status)
+            local filetype = entry.value.filetype or "" -- Use defined filetype, else none
+            if filetype ~= "" then
+              vim.api.nvim_buf_set_option(self.state.bufnr, "filetype", filetype)
             end
+            vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(entry.value.query, "\n"))
+          end,
+        }),
+        attach_mappings = function(_, map)
+          map("i", "<CR>", function(prompt_bufnr)
+            local entry = action_state.get_selected_entry()
+            actions.close(prompt_bufnr)
 
-            -- Remove empty lines from the end
-            while #lines > 0 and lines[#lines]:match("^%s*$") do
-              table.remove(lines, #lines)
+            if entry then
+              local query = entry.value.query
+
+              -- Trim leading and trailing newlines
+              local lines = vim.split(query, "\n")
+
+              -- Remove empty lines from the start
+              while #lines > 0 and lines[1]:match("^%s*$") do
+                table.remove(lines, 1)
+              end
+
+              -- Remove empty lines from the end
+              while #lines > 0 and lines[#lines]:match("^%s*$") do
+                table.remove(lines, #lines)
+              end
+
+              -- Join trimmed query back into a string
+              query = table.concat(lines, "\n")
+
+              -- Expand with LuaSnip, keeping placeholders intact
+              expand_snippet(query)
             end
-
-            -- Join trimmed query back into a string
-            query = table.concat(lines, "\n")
-
-            -- Expand with LuaSnip, keeping placeholders intact
-            expand_snippet(query)
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+          end)
+          return true
+        end,
+      })
+      :find()
 end
 
 -- Command to search and paste a snippet using Telescope
