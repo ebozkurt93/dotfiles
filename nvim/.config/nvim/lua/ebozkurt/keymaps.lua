@@ -213,6 +213,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>fm', '<cmd>Telescope marks<cr>', {})
 		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
 		vim.keymap.set('n', '<leader>fc', builtin.commands, {})
+		vim.keymap.set('n', '<leader>fS', '<cmd>Snippets<cr>', {})
 	end
 })
 
