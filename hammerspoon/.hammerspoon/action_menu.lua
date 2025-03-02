@@ -40,6 +40,12 @@ local originalMenuItems = {
     end,
   },
   {
+    ["text"] = "Reset WiFi DNS",
+    ["action"] = function()
+      macos_helpers.resetWiFiDNS()
+    end,
+  },
+  {
     -- this doesn't really hide the cursor, but more moves to bottom right of the screen
     ["text"] = "Hide cursor/mouse",
     ["action"] = function()

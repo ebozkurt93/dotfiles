@@ -490,6 +490,14 @@ function M.isDarkMode()
   end
 end
 
+function M.resetWiFiDNS()
+  local commandString = [[
+pass=$(~/bin/helpers/pass.sh)
+echo "$pass" | sudo -S networksetup -setdnsservers Wi-Fi "empty"
+  ]]
+  helpers.runShellCommandInBackground(commandString)
+end
+
 -- attempts to toggle/update terminal theme if it can find correct variation based on names
 local function toggleTerminalTheme()
   local isDarkMode = M.isDarkMode()
