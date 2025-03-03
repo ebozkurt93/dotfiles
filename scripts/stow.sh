@@ -17,7 +17,9 @@ elif [ "$1" = "-D" ]; then
   # add -D flag to unstow
   echo "Unstowing directories: ${directories[@]}"
   stow -D $directories
+elif [ "$1" = "-A" ]; then
+  echo "Stowing directories with --adopt: ${directories[@]}"
+  stow $directories --adopt
 else
-  echo "Stowing directories: ${directories[@]}"
   stow $directories
 fi
