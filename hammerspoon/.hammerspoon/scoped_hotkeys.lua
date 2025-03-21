@@ -152,7 +152,28 @@ document.activeElement.blur();
   hs.timer.doAfter(0.1, function ()
     hs.eventtap.keyStroke({'shift'}, "space")
   end)
+local kasmMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", function()
+  if not helpers.isCurrentTabUrlStartingWith("http://home:3001") and
+      not helpers.isCurrentTabUrlStartingWith("https://u.local.erdem-bozkurt.com")
+  then
+    return
+  end
 
+  local jsCommand = [[
+document.querySelector('#audioButton').click()
+]]
+
+  helpers.runJsOnCurrentBrowserTab(jsCommand)
+
+  local title = hs.window.focusedWindow():title()
+  hs.notify
+      .new({
+        title = "Chrome(kasm) Mute Toggle",
+        informativeText = "Muting - " .. title,
+        autoWithdraw = true,
+        withdrawAfter = 2,
+      })
+      :send()
 end)
 
 helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
@@ -228,4 +249,4 @@ hs.hotkey.bind(globals.hyper, "k", function()
   hs.application.launchOrFocus("Ghostty")
 end)
 
-return { reddit }
+return { reddit, kasmMuteToggle }
