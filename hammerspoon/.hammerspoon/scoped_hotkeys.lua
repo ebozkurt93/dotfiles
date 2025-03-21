@@ -89,13 +89,13 @@ helpers.hotkeyScopedToApp({ "ctrl" }, "m", "Google Chrome", function(app)
   app:selectMenuItem({ "Tab", "Mute site" })
   local title = hs.window.focusedWindow():title()
   hs.notify
-    .new({
-      title = "Chrome Mute Toggle",
-      informativeText = "Muting - " .. title,
-      autoWithdraw = true,
-      withdrawAfter = 2,
-    })
-    :send()
+      .new({
+        title = "Chrome Mute Toggle",
+        informativeText = "Muting - " .. title,
+        autoWithdraw = true,
+        withdrawAfter = 2,
+      })
+      :send()
 end)
 
 helpers.hotkeyScopedToApp({ "cmd", "alt" }, "t", "Google Chrome", function()
@@ -122,11 +122,11 @@ end)
 
 -- move tab to left/right
 helpers.hotkeyScopedToApp({ "shift", "alt" }, "h", "Google Chrome", function()
-  hs.eventtap.keyStroke({'ctrl', 'shift'}, 'pageup', 0)
+  hs.eventtap.keyStroke({ 'ctrl', 'shift' }, 'pageup', 0)
 end)
 
 helpers.hotkeyScopedToApp({ "shift", "alt" }, "l", "Google Chrome", function()
-  hs.eventtap.keyStroke({'ctrl', 'shift'}, 'pagedown', 0)
+  hs.eventtap.keyStroke({ 'ctrl', 'shift' }, 'pagedown', 0)
 end)
 
 local reddit = helpers.keystrokesScopedToApp("bb ", "Google Chrome", function()
@@ -149,9 +149,11 @@ document.activeElement.blur();
 ]]
 
   helpers.runJsOnCurrentBrowserTab(jsCommand)
-  hs.timer.doAfter(0.1, function ()
-    hs.eventtap.keyStroke({'shift'}, "space")
+  hs.timer.doAfter(0.1, function()
+    hs.eventtap.keyStroke({ 'shift' }, "space")
   end)
+end)
+
 local kasmMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", function()
   if not helpers.isCurrentTabUrlStartingWith("http://home:3001") and
       not helpers.isCurrentTabUrlStartingWith("https://u.local.erdem-bozkurt.com")
