@@ -22,6 +22,9 @@ local keywords = {
   ["@@time"] = function()
     return os.date("%H:%M")
   end,
+  ["@@d"] = function()
+    return os.date("%Y-%m-%d")
+  end,
   ["@@hlepoch"] = function()
     return os.date("%y%m%d%H%M%S")
   end,
