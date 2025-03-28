@@ -246,19 +246,38 @@ bindkey "^k" clear-screen
 function __open_pr {
   local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
   local content="$(cat <(test ${#p[@]} -ne 0 && echo $p))"
+
   if [[ $1 == 'cmd' ]]; then
     echo "$content"
     return
   fi
+
   if [[ $1 == 'open' ]]; then
-    echo "$@" | awk '{print $NF}' | xargs open
+    shift
+    for pr in "$@"; do
+      echo "$pr" | awk '{print $NF}' | xargs open
+    done
     return
   fi
-  local selected="$(cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --bind \
-    'ctrl-f:reload(source ~/.zshrc; __open_pr cmd),ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep $GH_USERNAME || true),ctrl-p:execute((source ~/.zshrc; __open_pr open {}) &)')"
-  test -z $selected && return
-  echo $selected | awk '{print $NF}' | xargs open
-  zle reset-prompt
+
+  local selected_output="$(
+    cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --multi --expect=enter \
+      --bind 'ctrl-f:reload(source ~/.zshrc; __open_pr cmd)' \
+      --bind 'ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep \$GH_USERNAME || true)' \
+      --bind 'ctrl-p:execute((source ~/.zshrc; __open_pr open {+}) &)+deselect-all' \
+      --border=top --border-label=" GitHub PRs "
+  )"
+
+  local key selected
+  key=$(echo "$selected_output" | sed -n 1p)
+  selected=$(echo "$selected_output" | sed -n '2,$p')
+
+  [[ -z "$selected" ]] && return
+
+  if [[ "$key" == "enter" ]]; then
+    echo "$selected" | awk '{print $NF}' | xargs open
+    zle reset-prompt 2>/dev/null
+  fi
 }
 
 zle -N __open_pr
