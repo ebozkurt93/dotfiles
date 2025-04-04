@@ -87,12 +87,13 @@ while read -r line; do urls+=("$line"); done <<<"$urls"
 if [ "$1" = 'fzf' ]; then
   for (( q=${#pr_names[@]}-1; q>0; q-- )); do
     # printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" "${pr_names[$q]}" "${pr_titles[$q]}" "${authors[$q]}" "${created_at[$q]}" "${updated_at[$q]}" "${urls[$q]}"
-    printf "%-30s %-80s %-20s %-25s %-25s %-60s\n" \
+    printf "%-30s %-80s %-20s %-25s %-25s %-7s %-60s\n" \
   "$(if [ ${#pr_names[$q]} -gt 30 ]; then echo "${pr_names[$q]:0:27}..."; else echo "${pr_names[$q]}"; fi)" \
   "$(if [ ${#pr_titles[$q]} -gt 80 ]; then echo "${pr_titles[$q]:0:77}..."; else echo "${pr_titles[$q]}"; fi)" \
   "$(if [ ${#authors[$q]} -gt 20 ]; then echo "${authors[$q]:0:17}..."; else echo "${authors[$q]}"; fi)" \
   "$(if [ ${#created_at[$q]} -gt 25 ]; then echo "${created_at[$q]:0:22}..."; else echo "${created_at[$q]}"; fi)" \
   "$(if [ ${#updated_at[$q]} -gt 25 ]; then echo "${updated_at[$q]:0:22}..."; else echo "${updated_at[$q]}"; fi)" \
+  "${is_draft[$q]}" \
   "${urls[$q]}"
     done
   exit
