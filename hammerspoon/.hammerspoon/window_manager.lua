@@ -58,7 +58,9 @@ local function getTargetScreen(currentScreen, direction)
   end
 end
 
-local function moveToScreen(direction, keepRelativePosition)
+--- @param direction string Only supported values are "next" and "previous"
+--- @param _keepRelativePosition boolean Unused for now, might use again in the future
+local function moveMouseToScreen(direction, _keepRelativePosition)
   local currentScreen = hs.mouse.getCurrentScreen()
   local targetScreen = getTargetScreen(currentScreen, direction)
 
@@ -66,7 +68,7 @@ local function moveToScreen(direction, keepRelativePosition)
     local targetScreenFrame = targetScreen:fullFrame()
     local newPosX, newPosY
 
-    if keepRelativePosition then
+    if _keepRelativePosition then
       -- Calculate relative position if keepRelativePosition is true
       local currentScreenFrame = currentScreen:fullFrame()
       local mousePos = hs.mouse.absolutePosition()
@@ -87,18 +89,11 @@ local function moveToScreen(direction, keepRelativePosition)
   end
 end
 
-
-hs.hotkey.bind(globals.hyper, "m", function()
-  moveToScreen("next", true)
-end)
 hs.hotkey.bind({'shift', 'alt'}, "m", function()
-  moveToScreen("next", false)
-end)
-hs.hotkey.bind(globals.hyper, "n", function()
-  moveToScreen("previous", true)
+  moveMouseToScreen("next", false)
 end)
 hs.hotkey.bind({'shift', 'alt'}, "n", function()
-  moveToScreen("previous", false)
+  moveMouseToScreen("previous", false)
 end)
 
 
