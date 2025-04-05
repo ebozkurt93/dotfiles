@@ -221,6 +221,18 @@ local function switchKeyboardLayout()
   end
 end
 
+-- move all apps on current screen to next one
+hs.hotkey.bind(globals.hyper, "n", function()
+  local currentScreen = hs.screen.mainScreen()
+  local nextScreen = currentScreen:next()
+
+  for _, win in ipairs(hs.window.orderedWindows()) do
+    if win:screen() == currentScreen then
+      win:moveToScreen(nextScreen)
+    end
+  end
+end)
+
 hs.hotkey.bind({ "alt", "shift" }, "q", function()
   hs.execute("open ~/Desktop")
 end)
