@@ -46,6 +46,12 @@ local originalMenuItems = {
     end,
   },
   {
+    ["text"] = "Reset DNS Cache",
+    ["action"] = function()
+      macos_helpers.resetDNSCache()
+    end,
+  },
+  {
     -- this doesn't really hide the cursor, but more moves to bottom right of the screen
     ["text"] = "Hide cursor/mouse",
     ["action"] = function()

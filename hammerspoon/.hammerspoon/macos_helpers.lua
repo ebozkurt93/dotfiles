@@ -498,6 +498,15 @@ echo "$pass" | sudo -S networksetup -setdnsservers Wi-Fi "empty"
   helpers.runShellCommandInBackground(commandString)
 end
 
+function M.resetDNSCache()
+  local commandString = [[
+pass=$(~/bin/helpers/pass.sh)
+echo "pass" | sudo -S dscacheutil -flushcache
+echo "pass" | sudo -S killall -HUP mDNSResponder
+  ]]
+  helpers.runShellCommandInBackground(commandString)
+end
+
 -- attempts to toggle/update terminal theme if it can find correct variation based on names
 local function toggleTerminalTheme()
   local isDarkMode = M.isDarkMode()
