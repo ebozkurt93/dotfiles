@@ -97,6 +97,7 @@ function pandoc() {
   docker run --rm --volume "$(pwd):/data" $image_name "$@"
 }
 alias bw-unlock='export BW_SESSION=$(bw unlock --raw)'
+export SOPS_AGE_KEY_FILE=$HOME/sops/age/keys.txt
 
 function __get_pid_for_port() {
   echo "$(lsof -i:$1 -t)"
