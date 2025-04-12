@@ -33,6 +33,7 @@ function chpwd() {
 }
 
 alias code='open -a /Applications/Visual\ Studio\ Code.app/'
+alias tailscale='/Applications/Tailscale.app/Contents/MacOS/Tailscale'
 
 # mise
 eval "$(mise activate zsh)"
