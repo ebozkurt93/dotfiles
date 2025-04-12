@@ -59,6 +59,16 @@ rm -rf iosevka
 rm iosevka.zip
 echo "Installed Iosevka"
 
+echo "Installing Cascadia Code"
+curl -L https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip > cascadia-code.zip
+echo "e67a68ee3386db63f48b9054bd196ea752bc6a4ebb4df35adce6733da50c8474  cascadia-code.zip" | shasum -a 256 -c - \
+  || { echo "Mismatched SHA256 in cascadia-code.zip, exiting..."; exit; }
+unzip cascadia-code.zip -d cascadia-code
+cp -a cascadia-code/ttf/static/CascadiaCode-* ~/Library/Fonts
+rm -rf cascadia-code
+rm cascadia-code.zip
+echo "Installed Cascadia Code"
+
 echo "Installing Nerd Fonts Symbols"
 dsm_name="Symbols-2048-em Nerd Font Complete.ttf"
 curl -fLo "$dsm_name" https://github.com/ryanoasis/nerd-fonts/raw/v2.3.3/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf

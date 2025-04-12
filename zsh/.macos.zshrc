@@ -411,6 +411,7 @@ function __ghostty_font_changer() {
   'Noto Sans Mono'
   'Iosevka'
   'Berkeley Mono'
+  'Cascadia Code'
   )
 
   local selected_font=$(printf "%s\n" "${fonts[@]}" | sort | grep -v "$current_font" | \
