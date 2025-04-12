@@ -31,6 +31,9 @@ with pkgs; [
   direnv
   nix-direnv
 
+  age
+  sops
+
   # lsp's, formatters etc
   nil # nix language server
   nixd
