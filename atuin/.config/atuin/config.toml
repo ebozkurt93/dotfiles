@@ -1,3 +1,5 @@
 enter_accept = false
 sync_address = "https://atuin.local.erdem-bozkurt.com"
+[sync]
+records = true
 
