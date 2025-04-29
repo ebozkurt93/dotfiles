@@ -169,18 +169,25 @@ zle -N __execute_package_json_command
 bindkey "^p" __execute_package_json_command
 
 function __execute_makefile_command() {
-  local file="Makefile"
+  local file=""
+  local cmd=""
 
-  if [[ ! -f  "$file" ]]; then
-    echo "No Makefile found"
+  if [[ -f "Makefile" ]]; then
+    file="Makefile"
+    cmd="make"
+  elif [[ -f "justfile" ]]; then
+    file="justfile"
+    cmd="just"
+  else
+    echo "No Makefile or justfile found"
     zle send-break
     return
   fi
 
   local selection=$(awk -F: '/^[a-zA-Z0-9_-]+:/ { print $1 }' $file | sort -u | fzf --tiebreak='begin,chunk')
   [[ -z $selection ]] && return
-  echo "${BOLD}${BRIGHT_BLUE}make $selection${RESET}"
-  make $selection </dev/tty
+  echo "${BOLD}${BRIGHT_BLUE}$cmd $selection${RESET}"
+  $cmd $selection </dev/tty
   zle send-break
 }
 
