@@ -116,10 +116,13 @@ color15 ${color15}
 	vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/current-theme.conf")
 	if not blank_name then
 		vim.fn.system("echo '" .. kitty .. "' > ~/dotfiles/kitty/.config/kitty/themes/" .. name .. ".conf")
-		print('Generated and stored theme ' .. name)
+		vim.notify('Generated and stored theme ' .. name)
 	else
-		print('Generated theme')
+		vim.notify('Generated theme')
 	end
+	vim.defer_fn(function()
+		vim.notify("")
+	end, 3000)
 	return kitty
 end
 
