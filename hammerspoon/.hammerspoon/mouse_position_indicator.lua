@@ -101,7 +101,7 @@ local function startEvents()
     eventtapEvents:start()
 end
 
-hs.hotkey.bind(globals.hyper, "M", function()
+hs.hotkey.bind(globals.hyper, "m", function()
     if isIndicatorActive then return end
     isIndicatorActive = true
 
