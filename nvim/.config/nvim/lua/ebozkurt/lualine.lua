@@ -16,6 +16,18 @@ local function window_nr()
 	return vim.api.nvim_win_get_number(0)
 end
 
+-- Theoretically possible to read this info as env variable however sometimes
+-- I update these values and reload nvim config without restarting nvim.
+local function tmux_env(var)
+	local handle = io.popen("tmux show-environment -g " .. var)
+	if not handle then return nil end
+	local result = handle:read("*a")
+	handle:close()
+	-- Extract value safely and trim whitespace/null bytes
+	local value = result:match("^" .. var .. "=(.-)%s*$")
+	return value and value:gsub("%z", "") or nil
+end
+
 require('lualine').setup {
 	options = {
 		icons_enabled = true,
@@ -24,7 +36,12 @@ require('lualine').setup {
 		-- section_separators = { left = '', right = '' },
 		-- rounded mode
 		component_separators = { left = '', right = '' },
-		section_separators = { left = '', right = '' },
+		-- section_separators = { left = '', right = '' },
+		section_separators = {
+			left = tmux_env("TMUX_BORDER_RIGHT") or "",
+			right = tmux_env("TMUX_BORDER_LEFT") or ""
+		},
+		-- section_separators = { left = '', right = '' },
 
 		disabled_filetypes = {
 			statusline = {},
