@@ -178,6 +178,28 @@ document.querySelector('#audioButton').click()
       :send()
 end)
 
+local nekoMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", function()
+  if not helpers.isCurrentTabUrlStartingWith("http://home:8083") then
+    return
+  end
+
+  local jsCommand = [[
+document.querySelector('.volume').firstChild.click()
+]]
+
+  helpers.runJsOnCurrentBrowserTab(jsCommand)
+
+  local title = hs.window.focusedWindow():title()
+  hs.notify
+      .new({
+        title = "Chrome(n.eko) Mute Toggle",
+        informativeText = "Muting - " .. title,
+        autoWithdraw = true,
+        withdrawAfter = 2,
+      })
+      :send()
+end)
+
 helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
   app:selectMenuItem({ "Edit", "Copy" })
   local cmd = [[
@@ -263,4 +285,4 @@ hs.hotkey.bind(globals.hyper, "k", function()
   hs.application.launchOrFocus("Ghostty")
 end)
 
-return { reddit, kasmMuteToggle }
+return { reddit, kasmMuteToggle, nekoMuteToggle }
