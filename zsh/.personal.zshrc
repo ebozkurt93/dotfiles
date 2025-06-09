@@ -12,6 +12,11 @@ function mcd
 # enables vi mode for zsh
 bindkey -v
 
+# edit prompt in $EDITOR with Alt+e
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey -M vicmd '^[e' edit-command-line  # Alt+e in normal mode
+
 bracketed-paste() {
   zle .$WIDGET && LBUFFER=${LBUFFER%$'\n'}
 }
