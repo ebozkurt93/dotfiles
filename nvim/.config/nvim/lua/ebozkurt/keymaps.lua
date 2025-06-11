@@ -288,8 +288,11 @@ vim.api.nvim_create_autocmd('User', {
 	pattern = 'gitsigns',
 	callback = function(event)
 		local gs = require('gitsigns')
+		local gsa = require('gitsigns.actions')
 		vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end, {})
 		vim.keymap.set('n', '<leader>gd', function () gs.diffthis() end, {})
+		vim.keymap.set('n', '[c', function () gsa.nav_hunk('prev', { wrap = true }) end, {})
+		vim.keymap.set('n', ']c', function () gsa.nav_hunk('next', { wrap = true }) end, {})
 		vim.keymap.set('n', '<leader>G', function()
 			local default_branch = vim.fn.trim(vim.fn.system(
 				"git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'"
