@@ -4,9 +4,10 @@ function M.find_colors()
 	local normal = vim.api.nvim_get_hl_by_name("Normal", true)
 	if normal == nil or normal.background == nil or normal.foreground == nil then
 		-- this at least happens if the transparency in neovim is enabled
-		vim.notify('Normal theme background or foreground is nil. normal object: ' .. vim.inspect(normal), vim.log.levels.ERROR)
-		vim.notify('Turning transparency off could help resolve the issue', vim.log.levels.WARN)
-		error('theme-gen: find_colors failed')
+		-- instead of throwing an error, lets try to temporarily toggle transparency handle this by ourselves
+		vim.cmd [[ TransparentToggle ]]
+		normal = vim.api.nvim_get_hl_by_name("Normal", true)
+		vim.cmd [[ TransparentToggle ]]
 	end
 	local normal_bg = ("#%06x"):format(normal.background)
 	local normal_fg = ("#%06x"):format(normal.foreground)
