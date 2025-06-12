@@ -265,9 +265,15 @@ vim.api.nvim_create_autocmd('User', {
 	pattern = 'lsplines',
 	callback = function(event)
 		vim.keymap.set('n', '<leader>l', function()
-			local lsplines_enabled = event.data.enabled
-			vim.diagnostic.config({ virtual_lines = not lsplines_enabled, virtual_text = lsplines_enabled })
-			event.data.enabled = not event.data.enabled
+			local value = event.data.value or 0
+			if value == 0 then
+				vim.diagnostic.config({ virtual_lines = true, virtual_text = false })
+			elseif value == 1 then
+				vim.diagnostic.config({ virtual_lines = false, virtual_text = true })
+			else
+				vim.diagnostic.config({ virtual_lines = false, virtual_text = false })
+			end
+			event.data.value = (value + 1) % 3
 		end, {})
 	end
 })
