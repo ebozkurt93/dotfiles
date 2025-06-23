@@ -297,6 +297,8 @@ vim.api.nvim_create_autocmd('User', {
 		local gsa = require('gitsigns.actions')
 		vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end, {})
 		vim.keymap.set('n', '<leader>gd', function () gs.diffthis() end, {})
+		vim.keymap.set('n', '<leader>gp', function () gs.preview_hunk_inline() end, {})
+		vim.keymap.set('n', '<leader>gk', function () gs.preview_hunk() end, {})
 		vim.keymap.set('n', '[c', function () gsa.nav_hunk('prev', { wrap = true }) end, {})
 		vim.keymap.set('n', ']c', function () gsa.nav_hunk('next', { wrap = true }) end, {})
 		vim.keymap.set('n', '<leader>G', function()
