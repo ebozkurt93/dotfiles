@@ -250,7 +250,6 @@ vim.api.nvim_create_autocmd('User', {
 vim.keymap.set('n', '<leader>fs', function()
 	vim.lsp.buf.format({ timeout_ms = 5000 })
 end)
-vim.keymap.set('n', '<leader>ls', '<cmd>:LspRestart all<cr>', { noremap = true })
 vim.keymap.set('n', '<leader>TC', function()
 	require('ebozkurt.theme-gen').generate() end,
 {noremap = true})
