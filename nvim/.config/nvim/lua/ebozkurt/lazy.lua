@@ -176,7 +176,6 @@ require("lazy").setup({
   "haydenmeade/neotest-jest",
 
   "RRethy/vim-illuminate",
-  { url = "https://gitlab.com/HiPhish/rainbow-delimiters.nvim" },
   "mbbill/undotree",
 
   { "kevinhwang91/nvim-bqf" },
