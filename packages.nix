@@ -43,4 +43,5 @@ with pkgs; [
   lua-language-server
   vscode-langservers-extracted # only using vscode-json-language-server
   shfmt
+  postgresql_16 # for psql
 ]
