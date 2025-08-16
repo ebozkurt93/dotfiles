@@ -1,14 +1,3 @@
--- these are coming from 'rainbow-delimiters.nvim'
-local highlight = {
-	"RainbowDelimiterRed",
-	"RainbowDelimiterYellow",
-	"RainbowDelimiterBlue",
-	"RainbowDelimiterOrange",
-	"RainbowDelimiterGreen",
-	"RainbowDelimiterViolet",
-	"RainbowDelimiterCyan",
-}
-
 -- local c = "▕"
 local c = "┊"
 require("ibl").setup({
@@ -17,9 +6,8 @@ require("ibl").setup({
 		char = c,
 		tab_char = c,
 		smart_indent_cap = false,
-		highlight = highlight,
 	},
-	scope = { enabled = true, highlight = highlight },
+	scope = { enabled = true },
 })
 
 local hooks = require "ibl.hooks"
