@@ -265,6 +265,7 @@ function __open_pr {
     cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --multi --expect=enter \
       --bind 'ctrl-f:reload(source ~/.zshrc; __open_pr cmd)' \
       --bind 'ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep \$GH_USERNAME || true)' \
+      --bind 'alt-f:reload(source ~/.zshrc; __open_pr cmd | grep -v app/dependabot || true)' \
       --bind 'ctrl-p:execute((source ~/.zshrc; __open_pr open {+}) &)+deselect-all' \
       --border=top --border-label=" GitHub PRs "
   )"

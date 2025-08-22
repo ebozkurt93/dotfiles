@@ -54,11 +54,16 @@ ls.add_snippets('python', {
 	s("pd", fmt("print('Debug - {}:', {})", { f(copy, 1), i(1) })),
 	s("todo", fmt("# todo: {}", { i(1) })),
 })
-ls.add_snippets('javascript', {
+
+local jsts_snip = {
 	s("clg", fmt("console.log({})", { i(1) })),
 	s("clgd", fmt("console.log('Debug - {}:', {})", { f(copy, 1), i(1) })),
 	s("todo", fmt("// todo: {}", { i(1) })),
-})
+	s("todo-eb", fmt("// todo(eb): {}", { i(1) })),
+	s("fix-eb", fmt("// fix(eb): {}", { i(1) })),
+}
+ls.add_snippets('javascript', jsts_snip)
+ls.add_snippets('typescript', jsts_snip)
 
 local date = function()
     return os.date("%Y-%m-%d")
