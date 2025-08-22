@@ -1,0 +1,8 @@
+# vi: ft=gitignore
+lima/.lima/_config/
+
+# themes
+ghostty/.config/ghostty/overrides
+kitty/.config/kitty/current-theme.conf
+nvim/.config/nvim/lua/ebozkurt/themes.lua
+

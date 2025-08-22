@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  git silence on  [paths...]     # add entries to .git/info/exclude
+  git silence off [paths...]     # remove entries from .git/info/exclude
+  git silence status [paths...]  # list tracked & untracked files affected by excludes
+Notes:
+  - Reads .git-local-overrides at repo root (supports # comments and blank lines)
+  - paths (optional) narrow which overrides are applied
+USAGE
+  exit 1
+}
+
+action="${1:-}"; shift || true
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not inside a git repo" >&2; exit 1; }
+cd "$ROOT"
+
+OVR="$ROOT/.git-local-overrides"
+EXCLUDE_FILE="$ROOT/.git/info/exclude"
+
+# Load overrides
+ALL=()
+if [ -f "$OVR" ]; then
+  while IFS= read -r line; do
+    line="${line%%#*}"                       # strip inline comments
+    line="${line%"${line##*[![:space:]]}"}"  # rtrim
+    line="${line#"${line%%[![:space:]]*}"}"  # ltrim
+    [[ -z "$line" ]] && continue
+    ALL+=("$line")
+  done < "$OVR"
+fi
+
+filter_entries() {
+  if [ $# -eq 0 ]; then
+    printf '%s\n' "${ALL[@]}"
+  else
+    for entry in "${ALL[@]}"; do
+      for a in "$@"; do
+        if [[ "$entry" == "$a"* ]]; then
+          printf '%s\n' "$entry"
+          break
+        fi
+      done
+    done | sort -u
+  fi
+}
+
+do_on() {
+  mkdir -p "$(dirname "$EXCLUDE_FILE")"
+  touch "$EXCLUDE_FILE"
+  sel=$(filter_entries "$@") || true
+  while IFS= read -r e; do
+    [[ -z "$e" ]] && continue
+    grep -qxF "$e" "$EXCLUDE_FILE" || echo "$e" >>"$EXCLUDE_FILE"
+  done <<<"$sel"
+}
+
+do_off() {
+  [ -f "$EXCLUDE_FILE" ] || return 0
+  sel=$(filter_entries "$@") || true
+
+  tmp="$EXCLUDE_FILE.tmp.$$"
+  tmpsel="$EXCLUDE_FILE.sel.$$"
+
+  printf '%s\n' "$sel" | awk 'NF' | sort -u >"$tmpsel"
+  if [ -s "$tmpsel" ]; then
+    grep -vxF -f "$tmpsel" "$EXCLUDE_FILE" >"$tmp" || true
+    mv "$tmp" "$EXCLUDE_FILE"
+  fi
+  rm -f "$tmpsel"
+}
+
+do_status() {
+  [ -f "$EXCLUDE_FILE" ] || { echo "No exclude file."; return 0; }
+
+  # read patterns from .git/info/exclude, preserving order
+  pats=()
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    pats+=("$line")
+  done < "$EXCLUDE_FILE"
+
+  # narrow by prefixes, preserving order
+  if [ $# -gt 0 ] && [ ${#pats[@]} -gt 0 ]; then
+    narrowed=()
+    for p in "${pats[@]}"; do
+      for a in "$@"; do
+        [[ "$p" == "$a"* ]] && { narrowed+=("$p"); break; }
+      done
+    done
+    pats=("${narrowed[@]}")
+  fi
+
+  if [ ${#pats[@]} -eq 0 ]; then
+    echo "No matching exclude patterns."
+    return 0
+  fi
+
+  tmppats="$(mktemp -t silence.pats.XXXXXX)"
+  A_FILE="$(mktemp -t silence.a.XXXXXX)"
+  B_FILE="$(mktemp -t silence.b.XXXXXX)"
+  trap 'rm -f "$tmppats" "$A_FILE" "$B_FILE"' EXIT
+  printf '%s\n' "${pats[@]}" >"$tmppats"
+
+  echo "Tracked & excluded:"
+  git -c core.excludesFile=/dev/null ls-files -ci \
+      --exclude-from="$tmppats" \
+      --exclude-per-directory=.gitignore-does-not-exist | sort -u
+
+  echo
+  echo "Untracked & excluded (not already .gitignored):"
+  # A: untracked excluded by our selected patterns (ignore global excludes)
+  git -c core.excludesFile=/dev/null ls-files -oi \
+      --exclude-from="$tmppats" \
+      --exclude-per-directory=.gitignore-does-not-exist \
+      | LC_ALL=C sort -u >"$A_FILE"
+
+  # B: untracked ignored by .gitignore only (ignore info/exclude & globals)
+  git -c core.excludesFile=/dev/null ls-files -oi \
+      --exclude-per-directory=.gitignore \
+      | LC_ALL=C sort -u >"$B_FILE"
+
+  # A \ B -> excluded by our patterns but not already ignored by .gitignore
+  grep -Fvx -f "$B_FILE" "$A_FILE" || true
+}
+
+case "${action}" in
+  on)     do_on "$@" ;;
+  off)    do_off "$@" ;;
+  status) do_status "$@" ;;
+  *)      usage ;;
+esac
+
