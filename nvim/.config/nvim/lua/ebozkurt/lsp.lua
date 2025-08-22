@@ -25,7 +25,7 @@ require("mason-lspconfig").setup_handlers({
 	-- and will be called for each installed server that doesn't have
 	-- a dedicated handler.
 	function(server_name) -- default handler (optional)
-		local custom_configured_servers = { "tsserver", "eslint", "gopls" }
+		local custom_configured_servers = { "tsserver", "gopls" }
 		if vim.tbl_contains(custom_configured_servers, server_name) then
 			return
 		end
@@ -151,10 +151,28 @@ require("lspconfig").lua_ls.setup({
 	} },
 })
 
-require'lspconfig'.bashls.setup{}
+-- require'lspconfig'.bashls.setup{}
 require'lspconfig'.jsonls.setup{}
+-- require'lspconfig'.java_language_server.setup({
+-- 	cmd = { "java-language-server" },
+-- 	capabilities = capabilities,
+-- 	on_attach = my_on_attach,
+-- 	-- https://github.com/georgewfraser/java-language-server/issues/267#issuecomment-2002482054
+-- 	handlers = {
+-- 		['client/registerCapability'] = function(err, result, ctx, config)
+-- 			local registration = {
+-- 			  registrations = { result },
+-- 			}
+-- 			return vim.lsp.handlers['client/registerCapability'](err, registration, ctx, config)
+-- 		end
+--     },
+-- })
 
--- require 'lspconfig'.eslint.setup {}
+require'lspconfig'.jdtls.setup({
+	capabilities = capabilities,
+	on_attach = my_on_attach,
+})
+require 'lspconfig'.eslint.setup {}
 
 -- Set up nvim-cmp.
 local cmp = require("cmp")
@@ -266,3 +284,12 @@ vim.api.nvim_create_autocmd("FileType", {
 -- Turn on lsp status information
 -- window/blend 0 is needed for transparency
 require("fidget").setup({ window = { blend = 0 } })
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.server_capabilities.semanticTokensProvider then
+      client.server_capabilities.semanticTokensProvider = nil
+    end
+  end,
+})
+
