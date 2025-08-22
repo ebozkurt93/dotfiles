@@ -1,28 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+### UI / Colors ###############################################################
+_use_color() {
+  [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]
+}
+if _use_color && command -v tput >/dev/null 2>&1; then
+  BOLD=$(tput bold); DIM=$(tput dim); NC=$(tput sgr0)
+  RED=$(tput setaf 1); GREEN=$(tput setaf 2); YELLOW=$(tput setaf 3); BLUE=$(tput setaf 4)
+else
+  BOLD=""; DIM=""; NC=""; RED=""; GREEN=""; YELLOW=""; BLUE=""
+fi
+checkmark="✓"; cross="✗"; bullet="•"; arrow="→"
+
+say()       { printf "%b%s%b\n" "$1" "${*:2}" "$NC"; }
+section()   { printf "\n%b%s%b\n" "${BOLD}${BLUE}" "$*" "$NC"; }
+ok()        { printf "%b%s%b\n" "${GREEN}${checkmark} " "$*" "$NC"; }
+warn()      { printf "%b%s%b\n" "${YELLOW}! " "$*" "$NC"; }
+err()       { printf "%b%s%b\n" "${RED}${cross} " "$*" "$NC"; }
+
+### Usage #####################################################################
 usage() {
   cat <<'USAGE'
 Usage:
   git silence on [paths...]       # add entries to .git/info/exclude and mark matching tracked files skip-worktree
   git silence off [paths...]      # remove entries from .git/info/exclude and clear skip-worktree for matching tracked files
   git silence status [paths...]   # list tracked & untracked files affected by excludes
-  git silence reset               # clear skip-worktree on all files in repo
+  git silence clear               # ONLY clear skip-worktree on all files (non-destructive)
+  git silence reset               # clear skip-worktree on ALL files AND remove all override patterns from excludes
 Notes:
   - Reads .git-local-overrides at repo root (supports # comments and blank lines)
-  - paths (optional) narrow which overrides are applied
+  - paths (optional) narrow which overrides are applied for on/off/status
 USAGE
   exit 1
 }
 
+### Init ######################################################################
 action="${1:-}"; shift || true
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not inside a git repo" >&2; exit 1; }
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { err "Not inside a git repo"; exit 1; }
 cd "$ROOT"
 
 OVR="$ROOT/.git-local-overrides"
 EXCLUDE_FILE="$ROOT/.git/info/exclude"
 
-# Load overrides
+### Load overrides ############################################################
 ALL=()
 if [ -f "$OVR" ]; then
   while IFS= read -r line; do
@@ -49,7 +70,7 @@ filter_entries() {
   fi
 }
 
-# Given a list of gitignore patterns on stdin, print NUL-delimited tracked files that match them
+# Given patterns on stdin, print NUL-delimited tracked files matching them
 tracked_matching_from_stdin() {
   local tmppats
   tmppats="$(mktemp -t silence.pats.XXXXXX)"
@@ -63,59 +84,103 @@ tracked_matching_from_stdin() {
   rm -f "$tmppats"
 }
 
+### Actions ###################################################################
 do_on() {
   mkdir -p "$(dirname "$EXCLUDE_FILE")"
   touch "$EXCLUDE_FILE"
+  local sel added=0
+
   sel=$(filter_entries "$@") || true
 
-  # Update exclude file
+  section "Updating excludes"
   while IFS= read -r e; do
     [[ -z "$e" ]] && continue
-    grep -qxF "$e" "$EXCLUDE_FILE" || echo "$e" >>"$EXCLUDE_FILE"
+    if ! grep -qxF "$e" "$EXCLUDE_FILE"; then
+      echo "$e" >>"$EXCLUDE_FILE"
+      ok "Added exclude: ${BOLD}$e${NC}"
+      added=$((added+1))
+    else
+      warn "Already present: ${DIM}$e${NC}"
+    fi
   done <<<"$sel"
+  [[ $added -eq 0 ]] && warn "No new entries added."
 
-  # Mark matching tracked files as skip-worktree
+  section "Marking tracked files skip-worktree"
   if [[ -n "${sel:-}" ]]; then
-    printf '%s\n' "$sel" \
-      | tracked_matching_from_stdin \
-      | xargs -0 -r -n100 git update-index --skip-worktree -- || true
+    local tmppaths
+    tmppaths="$(mktemp -t silence.paths.XXXXXX)"
+    printf '%s\n' "$sel" | tracked_matching_from_stdin >"$tmppaths" || true
+
+    if [[ -s "$tmppaths" ]]; then
+      tr '\0' '\n' <"$tmppaths" | while IFS= read -r f; do
+        ok "skip-worktree ${arrow} ${BOLD}$f${NC}"
+      done
+      xargs -0 -r -n100 git update-index --skip-worktree -- <"$tmppaths" || true
+    else
+      warn "No tracked files matched the patterns."
+    fi
+    rm -f "$tmppaths"
+  else
+    warn "No patterns selected."
   fi
 }
 
 do_off() {
-  [ -f "$EXCLUDE_FILE" ] || return 0
+  [ -f "$EXCLUDE_FILE" ] || { warn "Exclude file does not exist."; return 0; }
+  local sel
   sel=$(filter_entries "$@") || true
 
+  local tmp tmpsel
   tmp="$EXCLUDE_FILE.tmp.$$"
   tmpsel="$EXCLUDE_FILE.sel.$$"
 
   printf '%s\n' "$sel" | awk 'NF' | sort -u >"$tmpsel"
+
+  section "Removing excludes"
   if [ -s "$tmpsel" ]; then
+    if grep -xFf "$tmpsel" "$EXCLUDE_FILE" >/dev/null 2>&1; then
+      grep -xFf "$tmpsel" "$EXCLUDE_FILE" | while IFS= read -r e; do
+        ok "Removed exclude: ${BOLD}$e${NC}"
+      done
+    else
+      warn "No matching entries to remove."
+    fi
     grep -vxF -f "$tmpsel" "$EXCLUDE_FILE" >"$tmp" || true
     mv "$tmp" "$EXCLUDE_FILE"
+  else
+    warn "No patterns selected."
   fi
   rm -f "$tmpsel"
 
-  # Clear skip-worktree on matching tracked files
+  section "Clearing skip-worktree on matching tracked files"
   if [[ -n "${sel:-}" ]]; then
-    printf '%s\n' "$sel" \
-      | tracked_matching_from_stdin \
-      | xargs -0 -r -n100 git update-index --no-skip-worktree -- || true
+    local tmppaths
+    tmppaths="$(mktemp -t silence.paths.XXXXXX)"
+    printf '%s\n' "$sel" | tracked_matching_from_stdin >"$tmppaths" || true
+    if [[ -s "$tmppaths" ]]; then
+      tr '\0' '\n' <"$tmppaths" | while IFS= read -r f; do
+        ok "no-skip-worktree ${arrow} ${BOLD}$f${NC}"
+      done
+      xargs -0 -r -n100 git update-index --no-skip-worktree -- <"$tmppaths" || true
+    else
+      warn "No tracked files matched the patterns."
+    fi
+    rm -f "$tmppaths"
+  else
+    warn "No patterns selected."
   fi
 }
 
 do_status() {
-  [ -f "$EXCLUDE_FILE" ] || { echo "No exclude file."; return 0; }
+  [ -f "$EXCLUDE_FILE" ] || { say "$DIM" "No exclude file."; return 0; }
 
-  # read patterns from .git/info/exclude, preserving order
   pats=()
   while IFS= read -r line; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     pats+=("$line")
   done < "$EXCLUDE_FILE"
 
-  # narrow by prefixes, preserving order
-  if [ $# -gt 0 ] && [ ${#pats[@]} -gt 0 ]; then
+  if [ $# -gt 0 ] && [ ${#pats[@]} > 0 ]; then
     narrowed=()
     for p in "${pats[@]}"; do
       for a in "$@"; do
@@ -126,7 +191,7 @@ do_status() {
   fi
 
   if [ ${#pats[@]} -eq 0 ]; then
-    echo "No matching exclude patterns."
+    warn "No matching exclude patterns."
     return 0
   fi
 
@@ -136,43 +201,75 @@ do_status() {
   trap 'rm -f "$tmppats" "$A_FILE" "$B_FILE"' EXIT
   printf '%s\n' "${pats[@]}" >"$tmppats"
 
-  echo "Tracked & excluded:"
+  section "Tracked & excluded"
   git -c core.excludesFile=/dev/null ls-files -ci \
       --exclude-from="$tmppats" \
       --exclude-per-directory=.gitignore-does-not-exist | sort -u
 
   echo
-  echo "Untracked & excluded (not already .gitignored):"
-  # A: untracked excluded by our selected patterns (ignore global excludes)
+  section "Untracked & excluded (not already .gitignored)"
   git -c core.excludesFile=/dev/null ls-files -oi \
       --exclude-from="$tmppats" \
       --exclude-per-directory=.gitignore-does-not-exist \
       | LC_ALL=C sort -u >"$A_FILE"
 
-  # B: untracked ignored by .gitignore only (ignore info/exclude & globals)
   git -c core.excludesFile=/dev/null ls-files -oi \
       --exclude-per-directory=.gitignore \
       | LC_ALL=C sort -u >"$B_FILE"
 
-  # A \ B -> excluded by our patterns but not already ignored by .gitignore
   grep -Fvx -f "$B_FILE" "$A_FILE" || true
 
   echo
-  echo "Files currently marked skip-worktree:"
+  section "Files currently marked skip-worktree"
   git ls-files -v | awk '/^S /{print substr($0,3)}' | sort -u
 }
 
-do_reset() {
+do_clear() {
+  section "Clearing all skip-worktree flags"
+  cleared=0
   git ls-files -v | grep '^S ' | cut -c3- | while IFS= read -r file; do
-    git update-index --no-skip-worktree -- "$file" 2>/dev/null || true
-    printf '  Cleared skip-worktree: %s\n' "$file"
+    if git update-index --no-skip-worktree -- "$file" 2>/dev/null; then
+      ok "Cleared skip-worktree: ${BOLD}$file${NC}"
+      cleared=$((cleared+1)) || true
+    fi
   done
+  [[ ${cleared:-0} -eq 0 ]] && warn "No files had skip-worktree set."
 }
 
+do_reset() {
+  section "Resetting repository silence state"
+  do_clear
+  if [ -f "$EXCLUDE_FILE" ]; then
+    section "Removing all override patterns from excludes"
+    if [ ${#ALL[@]} -gt 0 ]; then
+      # Build temp list of override patterns to remove
+      tmpsel="$EXCLUDE_FILE.sel.$$"
+      printf '%s\n' "${ALL[@]}" | awk 'NF' | sort -u >"$tmpsel"
+      if grep -xFf "$tmpsel" "$EXCLUDE_FILE" >/dev/null 2>&1; then
+        grep -xFf "$tmpsel" "$EXCLUDE_FILE" | while IFS= read -r e; do
+          ok "Removed exclude: ${BOLD}$e${NC}"
+        done
+      else
+        warn "No override patterns present in exclude."
+      fi
+      grep -vxF -f "$tmpsel" "$EXCLUDE_FILE" >"$EXCLUDE_FILE.tmp.$$" || true
+      mv "$EXCLUDE_FILE.tmp.$$" "$EXCLUDE_FILE"
+      rm -f "$tmpsel"
+    else
+      warn "No .git-local-overrides file or it is empty; nothing to remove."
+    fi
+  else
+    warn "Exclude file does not exist."
+  fi
+  section "Done"
+}
+
+### Dispatch ##################################################################
 case "${action}" in
   on)     do_on "$@" ;;
   off)    do_off "$@" ;;
   status) do_status "$@" ;;
+  clear)  do_clear ;;
   reset)  do_reset ;;
   *)      usage ;;
 esac
