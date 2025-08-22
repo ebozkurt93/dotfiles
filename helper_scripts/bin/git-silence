@@ -4,9 +4,10 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  git silence on  [paths...]     # add entries to .git/info/exclude
-  git silence off [paths...]     # remove entries from .git/info/exclude
-  git silence status [paths...]  # list tracked & untracked files affected by excludes
+  git silence on [paths...]       # add entries to .git/info/exclude and mark matching tracked files skip-worktree
+  git silence off [paths...]      # remove entries from .git/info/exclude and clear skip-worktree for matching tracked files
+  git silence status [paths...]   # list tracked & untracked files affected by excludes
+  git silence reset               # clear skip-worktree on all files in repo
 Notes:
   - Reads .git-local-overrides at repo root (supports # comments and blank lines)
   - paths (optional) narrow which overrides are applied
@@ -48,14 +49,37 @@ filter_entries() {
   fi
 }
 
+# Given a list of gitignore patterns on stdin, print NUL-delimited tracked files that match them
+tracked_matching_from_stdin() {
+  local tmppats
+  tmppats="$(mktemp -t silence.pats.XXXXXX)"
+  cat >"$tmppats"
+
+  git -c core.excludesFile=/dev/null ls-files -z -ci \
+    --exclude-from="$tmppats" \
+    --exclude-per-directory=.gitignore-does-not-exist \
+    .
+
+  rm -f "$tmppats"
+}
+
 do_on() {
   mkdir -p "$(dirname "$EXCLUDE_FILE")"
   touch "$EXCLUDE_FILE"
   sel=$(filter_entries "$@") || true
+
+  # Update exclude file
   while IFS= read -r e; do
     [[ -z "$e" ]] && continue
     grep -qxF "$e" "$EXCLUDE_FILE" || echo "$e" >>"$EXCLUDE_FILE"
   done <<<"$sel"
+
+  # Mark matching tracked files as skip-worktree
+  if [[ -n "${sel:-}" ]]; then
+    printf '%s\n' "$sel" \
+      | tracked_matching_from_stdin \
+      | xargs -0 -r -n100 git update-index --skip-worktree -- || true
+  fi
 }
 
 do_off() {
@@ -71,6 +95,13 @@ do_off() {
     mv "$tmp" "$EXCLUDE_FILE"
   fi
   rm -f "$tmpsel"
+
+  # Clear skip-worktree on matching tracked files
+  if [[ -n "${sel:-}" ]]; then
+    printf '%s\n' "$sel" \
+      | tracked_matching_from_stdin \
+      | xargs -0 -r -n100 git update-index --no-skip-worktree -- || true
+  fi
 }
 
 do_status() {
@@ -125,12 +156,23 @@ do_status() {
 
   # A \ B -> excluded by our patterns but not already ignored by .gitignore
   grep -Fvx -f "$B_FILE" "$A_FILE" || true
+
+  echo
+  echo "Files currently marked skip-worktree:"
+  git ls-files -v | awk '/^S /{print substr($0,3)}' | sort -u
+}
+
+do_reset() {
+  git ls-files -v | grep '^S ' | cut -c3- | while IFS= read -r file; do
+    git update-index --no-skip-worktree -- "$file" 2>/dev/null || true
+    printf '  Cleared skip-worktree: %s\n' "$file"
+  done
 }
 
 case "${action}" in
   on)     do_on "$@" ;;
   off)    do_off "$@" ;;
   status) do_status "$@" ;;
+  reset)  do_reset ;;
   *)      usage ;;
 esac
-
