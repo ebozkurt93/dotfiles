@@ -11,7 +11,7 @@ if _use_color && command -v tput >/dev/null 2>&1; then
 else
   BOLD=""; DIM=""; NC=""; RED=""; GREEN=""; YELLOW=""; BLUE=""
 fi
-checkmark="✓"; cross="✗"; bullet="•"; arrow="→"
+checkmark="✓"; cross="✗"; arrow="→"
 
 say()       { printf "%b%s%b\n" "$1" "${*:2}" "$NC"; }
 section()   { printf "\n%b%s%b\n" "${BOLD}${BLUE}" "$*" "$NC"; }
@@ -174,14 +174,14 @@ do_off() {
 do_status() {
   [ -f "$EXCLUDE_FILE" ] || { say "$DIM" "No exclude file."; return 0; }
 
-  pats=()
+  local pats=() tmppats= A_FILE= B_FILE=
   while IFS= read -r line; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     pats+=("$line")
   done < "$EXCLUDE_FILE"
 
-  if [ $# -gt 0 ] && [ ${#pats[@]} > 0 ]; then
-    narrowed=()
+  if [ $# -gt 0 ] && [ ${#pats[@]} -gt 0 ]; then
+    local narrowed=()
     for p in "${pats[@]}"; do
       for a in "$@"; do
         [[ "$p" == "$a"* ]] && { narrowed+=("$p"); break; }
@@ -198,7 +198,7 @@ do_status() {
   tmppats="$(mktemp -t silence.pats.XXXXXX)"
   A_FILE="$(mktemp -t silence.a.XXXXXX)"
   B_FILE="$(mktemp -t silence.b.XXXXXX)"
-  trap 'rm -f "$tmppats" "$A_FILE" "$B_FILE"' EXIT
+  trap 'rm -f "$tmppats" "$A_FILE" "$B_FILE"' RETURN
   printf '%s\n' "${pats[@]}" >"$tmppats"
 
   section "Tracked & excluded"
@@ -226,14 +226,14 @@ do_status() {
 
 do_clear() {
   section "Clearing all skip-worktree flags"
-  cleared=0
-  git ls-files -v | grep '^S ' | cut -c3- | while IFS= read -r file; do
+  local cleared=0
+  while IFS= read -r file; do
     if git update-index --no-skip-worktree -- "$file" 2>/dev/null; then
       ok "Cleared skip-worktree: ${BOLD}$file${NC}"
-      cleared=$((cleared+1)) || true
+      cleared=$((cleared+1))
     fi
-  done
-  [[ ${cleared:-0} -eq 0 ]] && warn "No files had skip-worktree set."
+  done < <(git ls-files -v | awk '/^S /{print substr($0,3)}')
+  [[ $cleared -eq 0 ]] && warn "No files had skip-worktree set."
 }
 
 do_reset() {
@@ -242,21 +242,26 @@ do_reset() {
   if [ -f "$EXCLUDE_FILE" ]; then
     section "Removing all override patterns from excludes"
     if [ ${#ALL[@]} -gt 0 ]; then
-      # Build temp list of override patterns to remove
+      local tmpsel tmpfile
       tmpsel="$EXCLUDE_FILE.sel.$$"
+      tmpfile="$EXCLUDE_FILE.tmp.$$"
       printf '%s\n' "${ALL[@]}" | awk 'NF' | sort -u >"$tmpsel"
-      if grep -xFf "$tmpsel" "$EXCLUDE_FILE" >/dev/null 2>&1; then
-        grep -xFf "$tmpsel" "$EXCLUDE_FILE" | while IFS= read -r e; do
-          ok "Removed exclude: ${BOLD}$e${NC}"
-        done
-      else
-        warn "No override patterns present in exclude."
-      fi
-      grep -vxF -f "$tmpsel" "$EXCLUDE_FILE" >"$EXCLUDE_FILE.tmp.$$" || true
-      mv "$EXCLUDE_FILE.tmp.$$" "$EXCLUDE_FILE"
+
+      grep -vxF -f "$tmpsel" "$EXCLUDE_FILE" >"$tmpfile" || true
+      mv "$tmpfile" "$EXCLUDE_FILE"
       rm -f "$tmpsel"
     else
       warn "No .git-local-overrides file or it is empty; nothing to remove."
+    fi
+
+    section "Remaining entries in $EXCLUDE_FILE"
+    if grep -vE '^[[:space:]]*(#|$)' "$EXCLUDE_FILE" >/dev/null 2>&1; then
+      grep -vE '^[[:space:]]*(#|$)' "$EXCLUDE_FILE" | while IFS= read -r e; do
+        say "$DIM" "• $e"
+      done
+      warn "These entries remain in $EXCLUDE_FILE. Remove manually if undesired."
+    else
+      ok "No remaining non-comment entries in $EXCLUDE_FILE."
     fi
   else
     warn "Exclude file does not exist."
