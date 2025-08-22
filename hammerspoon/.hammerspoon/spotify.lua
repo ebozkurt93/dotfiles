@@ -1,6 +1,6 @@
 -- menubar enable/disable
 local enabled = false
-local commandString = "~/bin/helpers/show_private_menu_items.sh"
+local commandString = "~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify"
 
 local shell = "/bin/bash"
 local arguments = {"-c", commandString}

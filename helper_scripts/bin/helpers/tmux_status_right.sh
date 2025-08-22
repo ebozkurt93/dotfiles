@@ -1,5 +1,5 @@
 function spotify {
-    if [[ "$(~/bin/helpers/show_private_menu_items.sh)" == "true" ]] && ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
+    if ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
         echo "$(~/bin/helpers/spotify.applescript | xargs -0 echo)"
     fi
     return 0
