@@ -20,7 +20,6 @@ null_ls.setup({
 		null_ls.builtins.formatting.prettier,
 		-- python
 		-- null_ls.builtins.diagnostics.pylint,
-		-- null_ls.builtins.formatting.black,
 		null_ls.builtins.formatting.black.with({
 			extra_args = { "--skip-string-normalization" },
 		}),
