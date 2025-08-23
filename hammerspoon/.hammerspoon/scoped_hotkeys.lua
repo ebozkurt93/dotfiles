@@ -179,7 +179,8 @@ document.querySelector('#audioButton').click()
 end)
 
 local nekoMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", function()
-  if not helpers.isCurrentTabUrlStartingWith("http://home:8083") then
+  if not (helpers.isCurrentTabUrlStartingWith("http://home:8083") or
+      helpers.isCurrentTabUrlStartingWith("http://home:8084")) then
     return
   end
 
