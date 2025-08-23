@@ -30,6 +30,7 @@ apps=(
 "/Applications/Google Chrome.app"
 "/Applications/Spotify.app"
 "/Applications/Pocket Casts.app"
+"$HOME/Applications/Chrome Apps.localized/Audiobookshelf.app"
 # "{'tile-type'='small-spacer-tile';}"
 "/Applications/Ghostty.app"
 "/Applications/Slack.app"
