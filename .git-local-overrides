@@ -4,5 +4,9 @@ lima/.lima/_config/
 # themes
 ghostty/.config/ghostty/overrides
 kitty/.config/kitty/current-theme.conf
+kitty/.config/kitty/toggled-settings.conf
 nvim/.config/nvim/lua/ebozkurt/themes.lua
+wezterm/.config/wezterm/overrides.lua
+
+.tmux.conf
 
