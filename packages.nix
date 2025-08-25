@@ -20,6 +20,7 @@ with pkgs; [
   lazydocker
   lazygit
   mise
+  moreutils
   ripgrep
   starship
   stow
