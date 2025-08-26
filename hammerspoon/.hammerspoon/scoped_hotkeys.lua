@@ -209,20 +209,44 @@ pbpaste | sed -E -e 's/^[ ]?[0-9]* //g' | sed -E -e 's/“[ ]?[0-9]?[ ]?//g' | s
   hs.execute(cmd, true)
 end)
 
-hs.hotkey.bind({ "alt" }, "c", function()
+local settingsKey = "mediaControlsEnabled"
+local mediaControlsEnabled = hs.settings.get(settingsKey)
+if mediaControlsEnabled == nil then mediaControlsEnabled = true end
+
+local hotkeys = {}
+
+hotkeys.next = hs.hotkey.bind({ "alt" }, "c", function()
   hs.eventtap.event.newSystemKeyEvent("NEXT", true):post()
   hs.eventtap.event.newSystemKeyEvent("NEXT", false):post()
 end)
 
-hs.hotkey.bind({ "alt" }, "x", function()
+hotkeys.play = hs.hotkey.bind({ "alt" }, "x", function()
   hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
   hs.eventtap.event.newSystemKeyEvent("PLAY", false):post()
 end)
 
-hs.hotkey.bind({ "alt" }, "z", function()
+hotkeys.prev = hs.hotkey.bind({ "alt" }, "z", function()
   hs.eventtap.event.newSystemKeyEvent("PREVIOUS", true):post()
   hs.eventtap.event.newSystemKeyEvent("PREVIOUS", false):post()
 end)
+
+local function applyMediaState(state, silent)
+  for _, hk in pairs(hotkeys) do
+    if state then hk:enable() else hk:disable() end
+  end
+  hs.settings.set(settingsKey, state)
+  if not silent then
+    hs.alert.show("Media controls " .. (state and "enabled" or "disabled"))
+  end
+end
+
+applyMediaState(mediaControlsEnabled, true)
+
+hs.hotkey.bind(globals.hyper, "p", function()
+  mediaControlsEnabled = not mediaControlsEnabled
+  applyMediaState(mediaControlsEnabled, false)
+end)
+
 
 local function switchKeyboardLayout()
   local layouts = { "U.S.", "Swedish", "Turkish Q" }
