@@ -335,7 +335,17 @@ function __reload_wezterm_config {
 }
 
 function __reload_ghostty_config {
-  osascript -e 'tell application "Ghostty" to activate' -e 'tell application "System Events" to keystroke "," using {command down, shift down}'
+  osascript <<'APPLESCRIPT'
+tell application "Ghostty" to activate
+tell application "System Events" to keystroke "," using {command down, shift down}
+
+# doing this so that `mouse-hide-while-typing` works
+# without toggling focused application manually
+ignoring application responses
+  tell application "Finder" to activate
+  tell application "Ghostty" to activate
+end ignoring
+APPLESCRIPT
 }
 
 function __wezterm_change_font() {
