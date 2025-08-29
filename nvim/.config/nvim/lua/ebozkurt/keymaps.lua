@@ -142,6 +142,16 @@ vim.keymap.set('n', 'tn', '<cmd>:tabnext<cr>', { noremap = true })
 vim.keymap.set('n', 'tp', '<cmd>:tabprev<cr>', { noremap = true })
 vim.keymap.set('n', 'th', '<cmd>:-tabmove<cr>', { noremap = true })
 vim.keymap.set('n', 'tl', '<cmd>:+tabmove<cr>', { noremap = true })
+vim.keymap.set("n", "<leader>tb", function()
+  local oldwin = vim.api.nvim_get_current_win()
+  vim.cmd("tab split")
+  local newtab = vim.api.nvim_get_current_tabpage()
+  if vim.api.nvim_win_is_valid(oldwin) then
+    vim.api.nvim_set_current_win(oldwin)
+    pcall(vim.cmd, "close")
+  end
+  pcall(vim.api.nvim_set_current_tabpage, newtab)
+end, { desc = "Break current pane into a new tab and stay there" })
 
 -- jump to tab
 for j = 1, 8 do
