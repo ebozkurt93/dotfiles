@@ -20,7 +20,27 @@ spoon.ShiftIt:bindHotkeys({
   resizeOut = { globals.ctrl_alt, '=' },
   resizeIn = { globals.ctrl_alt, '-' }
 })
-spoon.ShiftIt:setWindowCyclingSizes({ 50, 33, 67 }, { 50 })
+
+local function hasWidescreen()
+  for _, s in ipairs(hs.screen.allScreens()) do
+    local m = s:currentMode()
+    if m and (m.w / m.h) > (16 / 9) then return true end
+  end
+  return false
+end
+
+local function applyShiftItSizes()
+  if hasWidescreen() then
+    spoon.ShiftIt:setWindowCyclingSizes({ 50, 25, 75 }, { 50 })
+  else
+    spoon.ShiftIt:setWindowCyclingSizes({ 50, 33, 67 }, { 50 })
+  end
+end
+
+local screenWatcher = hs.screen.watcher.new(applyShiftItSizes)
+screenWatcher:start()
+
+applyShiftItSizes()
 
 hs.hotkey.bind(globals.ctrl_alt, "c", function()
     local win = hs.window.focusedWindow()
@@ -96,6 +116,7 @@ hs.hotkey.bind({'shift', 'alt'}, "n", function()
   moveMouseToScreen("previous", false)
 end)
 
+return { screenWatcher }
 
 -- hs.hotkey.bind({ "cmd", "alt", "ctrl" }, "i", function()
 --   hs.spaces.addSpaceToScreen()
