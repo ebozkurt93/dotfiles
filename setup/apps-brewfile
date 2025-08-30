@@ -1,9 +1,5 @@
 # vi: ft=ruby
 
-# Development
-cask "docker"
-# cask "visual-studio-code"
-
 # work apps
 # cask "zoom"
 cask "slack"
@@ -17,7 +13,6 @@ cask "bitbar"
 cask "vlc"
 cask "obsidian"
 cask "macpass"
-cask "authy"
 cask "signal"
 
 # other
@@ -27,7 +22,7 @@ cask "hammerspoon"
 cask "raycast"
 cask "maccy"
 cask "nordvpn"
-cask "calendar-366"
+# cask "calendar-366"
 cask "karabiner-elements"
 cask "monitorcontrol"
 cask "utm"
