@@ -1,6 +1,6 @@
 -- menubar enable/disable
 local enabled = false
-local commandString = "~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify"
+local commandString = "~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify && [ \"$(~/bin/helpers/macos-now-playing.js | jq -r .appName)\" == \"Spotify\" ]"
 
 local shell = "/bin/bash"
 local arguments = {"-c", commandString}

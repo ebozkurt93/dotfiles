@@ -1,12 +1,25 @@
-function spotify {
-    if ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
-        echo "$(~/bin/helpers/spotify.applescript | xargs -0 echo)"
+media() {
+  if ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
+    json="$(~/bin/helpers/macos-now-playing.js)"
+    if [ "$(jq -r '.appName // ""' <<<"$json")" = "Spotify" ]; then
+      ~/bin/helpers/spotify.applescript
+    else
+      jq -r '
+        if (.title?) then
+          ( (if .isPlaying then "" else "󰏤 " end)
+            + (if (.artist? and .artist != "" and .artist != "Unknown") then (.artist + " - ") else " " end)
+            + .title )
+        else
+          ""
+        end
+      ' <<<"$json"
     fi
-    return 0
+  fi
+  return 0
 }
 
 paths=(
-spotify
+media
 ~/bin/helpers/tmux_state.sh
 ~/bin/helpers/tmux_focus_mode.sh
 # ~/bin/helpers/tmux_cpu_mem.sh
