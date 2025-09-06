@@ -54,5 +54,56 @@ end
 -- Run every second
 local timer = hs.timer.doEvery(1, updateNowPlaying):start()
 
+local function findAppName()
+  local handle = io.popen(command)
+  local output = handle:read("*a")
+  handle:close()
+
+  local decoded = hs.json.decode(output)
+  return decoded.appName
+end
+
+nowPlayingMenu:setMenu({
+  {
+    title = "Play/Pause",
+    fn = function()
+      hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
+      hs.eventtap.event.newSystemKeyEvent("PLAY", false):post()
+    end
+  },
+  {
+    title = "Next",
+    fn = function()
+      hs.eventtap.event.newSystemKeyEvent("NEXT", true):post()
+      hs.eventtap.event.newSystemKeyEvent("NEXT", false):post()
+    end
+  },
+  {
+    title = "Previous",
+    fn = function()
+      hs.eventtap.event.newSystemKeyEvent("PREVIOUS", true):post()
+      hs.eventtap.event.newSystemKeyEvent("PREVIOUS", false):post()
+    end
+  },
+  {
+    title = "Open app",
+    fn = function()
+      local app = hs.application.get(findAppName())
+      if app then
+        app:activate()
+      end
+    end,
+  },
+  {
+    title = "Kill app",
+    fn = function()
+      local app = hs.application.get(findAppName())
+      if app then
+        app:kill()
+      end
+    end,
+  },
+})
+
 -- Return for reusability
 return { timer, menubar = nowPlayingMenu, enabled, taskTimer }
