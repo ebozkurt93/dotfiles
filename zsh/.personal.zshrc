@@ -251,6 +251,15 @@ function __find_and_run_executable {
 zle -N __find_and_run_executable
 bindkey "^[r" __find_and_run_executable
 
+function withenv {
+  [ $# -lt 2 ] && { echo "Usage: withenv ENVFILE COMMAND [ARGS...]" >&2; return 1; }
+
+  local envfile=$(realpath "$1" 2>/dev/null) || { echo "withenv: env file '$1' not found" >&2; return 1; }
+  shift
+
+  (set -a; . "$envfile"; exec "${SHELL:-/bin/sh}" -c "$*")
+}
+
 if is_macos; then
   source $HOME/.macos.zshrc
 fi
