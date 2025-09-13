@@ -134,7 +134,7 @@ function __theme_helper() {
   'mellow' 'ayu-dark' 'ayu-light' 'everforest-dark' 'everforest-light' 'oxocarbon'
   'tokyonight-storm' 'oh-lucy' 'oh-lucy-evening' 'nord'
   'nightfox' 'dawnfox' 'duskfox' 'terafox' 'carbonfox'
-  'melange-light' 'melange-dark' 'kanagawa'
+  'melange-light' 'melange-dark' 'kanagawa' 'kanagawa-dragon' 'kanagawa-lotus'
   'catppuccin-latte' 'catppuccin-frappe' 'catppuccin-mocha' 'catppuccin-macchiato'
   'night-owl' 'nordic' 'poimandres' 'moonbow'
   'github-dark' 'github-light'

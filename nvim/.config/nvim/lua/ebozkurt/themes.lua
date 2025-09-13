@@ -112,6 +112,12 @@ elseif selected_theme == 'melange-light' then
 elseif selected_theme == 'kanagawa' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme kanagawa ]]
+elseif selected_theme == 'kanagawa-dragon' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme kanagawa-dragon ]]
+elseif selected_theme == 'kanagawa-lotus' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme kanagawa-lotus ]]
 elseif selected_theme == 'catppuccin-latte' then
 	vim.cmd [[ colorscheme catppuccin-latte ]]
 elseif selected_theme == 'catppuccin-frappe' then
