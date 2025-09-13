@@ -111,9 +111,11 @@ elseif selected_theme == 'melange-light' then
 	vim.cmd [[ colorscheme melange ]]
 elseif selected_theme == 'kanagawa' then
 	vim.opt.background = 'dark'
+	require('kanagawa').setup({ background = { dark = "wave" } })
 	vim.cmd [[ colorscheme kanagawa ]]
 elseif selected_theme == 'kanagawa-dragon' then
 	vim.opt.background = 'dark'
+	require('kanagawa').setup({ background = { dark = "dragon" } })
 	vim.cmd [[ colorscheme kanagawa-dragon ]]
 elseif selected_theme == 'kanagawa-lotus' then
 	vim.opt.background = 'light'
