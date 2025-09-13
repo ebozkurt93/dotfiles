@@ -176,4 +176,13 @@ elseif selected_theme == 'neobones-light' then
 elseif selected_theme == 'neobones-dark' then
 	vim.opt.background = 'dark'
 	vim.cmd [[ colorscheme neobones ]]
+elseif selected_theme == 'kanso-zen' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme kanso-zen ]]
+elseif selected_theme == 'kanso-ink' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme kanso-ink ]]
+elseif selected_theme == 'kanso-pearl' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme kanso-pearl ]]
 end

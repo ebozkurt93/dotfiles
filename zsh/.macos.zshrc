@@ -142,6 +142,7 @@ function __theme_helper() {
   'monet-light' 'monet-dark' 'neofusion' 'seoul256-dark' 'seoul256-light'
   'zenbones-light' 'zenbones-dark'
   'neobones-light' 'neobones-dark'
+  'kanso-zen' 'kanso-ink' 'kanso-pearl'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(
