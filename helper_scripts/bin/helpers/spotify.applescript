@@ -12,7 +12,7 @@ tell application "Spotify"
         set playing_icon to "󰏤 "
       end if
 
-      if artist_name > 0
+      if artist_name is not "" then
         # If the track has an artist set and is therefore most likely a song rather than an advert
         " " & playing_icon & artist_name & " - " & track_name
       else
