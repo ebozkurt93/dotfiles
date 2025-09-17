@@ -3,8 +3,6 @@ font-family = "Fira Code"
 font-family = "Symbols Nerd Font"
 font-size = 13
 
-theme = GruvboxDark
-
 cursor-opacity = 0.5
 # background-opacity = 1
 # background-blur-radius = 0
