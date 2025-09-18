@@ -95,10 +95,12 @@ paths=(
   ~/bin/helpers/tmux_amphetamine.sh
 )
 
-res=""
+res=()
 for p in "${paths[@]}"; do
-  out="$($p 2>/dev/null)"
-  [[ -n $out ]] && res+=" $out"
+  out="$("$p" 2>/dev/null | tr '\n' ' ')"
+  out="$(printf '%s' "$out" | sed -E 's/[[:space:]]+/ /g; s/^ | $//g')"
+  [[ -n $out ]] && res+=("$out")
 done
 
-printf '%s\n' "${res# }"
+printf '%s\n' "${res[*]}"
+
