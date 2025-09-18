@@ -28,6 +28,7 @@ vim.cmd [[
 	autocmd BufNewFile,BufRead *.zshrc set filetype=zsh
 	autocmd BufNewFile,BufRead *.tfvars set filetype=hcl
 	autocmd BufNewFile,BufRead *.jsonl set filetype=json
+	autocmd BufNewFile,BufRead *.env.* set filetype=sh
 ]]
 
 -- search
