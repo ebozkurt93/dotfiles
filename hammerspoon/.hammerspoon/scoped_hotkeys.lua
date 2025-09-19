@@ -247,6 +247,13 @@ hs.hotkey.bind(globals.hyper, "p", function()
   applyMediaState(mediaControlsEnabled, false)
 end)
 
+-- Paste clipboard contents by simulating typing
+hs.hotkey.bind(globals.hyper, "v", function()
+    local text = hs.pasteboard.getContents()
+    if text then
+        hs.eventtap.keyStrokes(text)
+    end
+end)
 
 local function switchKeyboardLayout()
   local layouts = { "U.S.", "Swedish", "Turkish Q" }
