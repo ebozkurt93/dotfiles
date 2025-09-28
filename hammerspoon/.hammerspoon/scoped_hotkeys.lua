@@ -27,6 +27,10 @@ helpers.hotkeyScopedToApp({ "cmd" }, "f", "Pocket Casts", function(app)
   end
 end)
 
+helpers.hotkeyScopedToApp({ "cmd", "ctrl"}, "f", "FreeCAD", function(app)
+    app:selectMenuItem({ "View", "Fullscreen" })
+end)
+
 helpers.hotkeyScopedToApp({ "cmd", "alt" }, "f", "VLC", function(app)
   app:selectMenuItem({ "Video", "Float on Top" })
 end)
@@ -315,6 +319,10 @@ end)
 
 hs.hotkey.bind(globals.hyper, "k", function()
   hs.application.launchOrFocus("Ghostty")
+end)
+
+hs.hotkey.bind(globals.hyper, "f", function()
+  hs.application.launchOrFocus("FreeCAD")
 end)
 
 return { reddit, kasmMuteToggle, nekoMuteToggle }
