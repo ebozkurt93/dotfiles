@@ -24,7 +24,9 @@ local function isCopilotEnabled()
 end
 
 --- startup and add configure plugins
-require("lazy").setup({
+require("lazy").setup({ 
+  opts = { rocks = {enabled = false }},
+  spec = {
   {
     'prochri/telescope-all-recent.nvim',
     dependencies = {
