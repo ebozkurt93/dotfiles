@@ -255,7 +255,9 @@ end)
 hs.hotkey.bind(globals.hyper, "v", function()
     local text = hs.pasteboard.getContents()
     if text then
+      hs.timer.doAfter(0.2, function()
         hs.eventtap.keyStrokes(text)
+      end)
     end
 end)
 
