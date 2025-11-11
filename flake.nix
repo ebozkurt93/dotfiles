@@ -61,6 +61,7 @@
                     (pkgs.writeShellScriptBin "openscad" ''
                       exec "${pkgs.openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
                     '')
+                    pkgs.syncthing
                   ];
                 };
               })
