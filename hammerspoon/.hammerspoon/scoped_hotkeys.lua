@@ -327,7 +327,7 @@ hs.hotkey.bind(globals.hyper, "f", function()
   hs.application.launchOrFocus("FreeCAD")
 end)
 
--- FreeCAD and Bambu Studio have cmd + I as their "import" keybinding
+-- Software such as FreeCAD/Bambu Studio have cmd + I as their "import" keybinding
 -- Since Amphetamine also uses cmd + I for toggling session, we monitor for
 -- cmd + I and send it to the current app if applicable.
 local importSupportingApps = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
@@ -337,7 +337,7 @@ local importSupportingApps = hs.eventtap.new({hs.eventtap.event.types.keyDown}, 
 
   -- check for Cmd+I
   if keyCode == hs.keycodes.map["i"] and flags.cmd then
-    local apps = { 'FreeCAD', 'Bambu Studio'}
+    local apps = { 'FreeCAD', 'Bambu Studio', 'OrcaSlicer'}
     if app and hs.fnutils.contains(apps, app:name()) then
       hs.eventtap.keyStroke({"cmd"}, "i", 0, app)
       return true -- stop original event (don’t pass through)
