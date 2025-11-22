@@ -3,19 +3,20 @@
 media() {
   if ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
     json="$(~/bin/helpers/macos-now-playing.js)"
-    if [ "$(jq -r '.appName // ""' <<<"$json")" = "Spotify" ]; then
-      ~/bin/helpers/spotify.applescript
-    else
-      jq -r '
-        if (.title?) then
-          ( (if .isPlaying then "" else "󰏤 " end)
-            + (if (.artist? and .artist != "" and .artist != "Unknown") then (.artist + " - ") else " " end)
-            + .title )
-        else
-          ""
-        end
-      ' <<<"$json"
-    fi
+    app_name="$(jq -r '.appName // ""' <<<"$json")"
+    icon=""
+    [ "$app_name" = "Spotify" ] && icon=" "
+
+    jq -r --arg icon "$icon" '
+      if (.title?) then
+        ($icon
+         + (if .isPlaying then "" else "󰏤 " end)
+         + (if (.artist? and .artist != "" and .artist != "Unknown") then (.artist + " - ") else " " end)
+         + .title)
+      else
+        ""
+      end
+    ' <<<"$json"
   fi
   return 0
 }
