@@ -1,0 +1,168 @@
+#!/usr/bin/swift
+
+import Foundation
+import CoreBluetooth
+
+let BATTERY_SERVICE_UUID  = "0x180F"
+let BATTERY_LEVEL_UUID    = "0x2A19"
+
+class BatteryReader: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+    var manager: CBCentralManager!
+    let filter: String
+    let timeout: TimeInterval
+
+    var readings: [CBPeripheral: [Int]] = [:]
+    var peripherals: [CBPeripheral] = []
+    var finished = false
+
+    init(filter: String, timeout: TimeInterval) {
+        self.filter = filter.lowercased()
+        self.timeout = timeout
+        super.init()
+        manager = CBCentralManager(delegate: self, queue: nil)
+    }
+
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        guard central.state == .poweredOn else {
+            finish()
+            return
+        }
+
+        let svcUUID = CBUUID(string: BATTERY_SERVICE_UUID)
+        let connected = manager.retrieveConnectedPeripherals(withServices: [svcUUID])
+
+        let matched = connected.filter { p in
+            if filter.isEmpty { return true }
+            return p.name?.lowercased().contains(filter) ?? false
+        }
+
+        peripherals = matched
+        if peripherals.isEmpty {
+            finish()
+            return
+        }
+
+        for p in peripherals {
+            readings[p] = []
+            p.delegate = self
+            manager.connect(p, options: nil)
+        }
+
+        // fallback timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+            self.finish()
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager,
+                        didConnect peripheral: CBPeripheral) {
+        let svcUUID = CBUUID(string: BATTERY_SERVICE_UUID)
+        peripheral.discoverServices([svcUUID])
+    }
+
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverServices error: Error?) {
+        guard let services = peripheral.services else { return }
+        let svcUUID = CBUUID(string: BATTERY_SERVICE_UUID)
+
+        for s in services where s.uuid == svcUUID {
+            let charUUID = CBUUID(string: BATTERY_LEVEL_UUID)
+            peripheral.discoverCharacteristics([charUUID], for: s)
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverCharacteristicsFor service: CBService,
+                    error: Error?) {
+        guard let chars = service.characteristics else { return }
+        let charUUID = CBUUID(string: BATTERY_LEVEL_UUID)
+
+        for c in chars where c.uuid == charUUID {
+            peripheral.readValue(for: c)
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral,
+                    didUpdateValueFor characteristic: CBCharacteristic,
+                    error: Error?) {
+
+        guard characteristic.uuid == CBUUID(string: BATTERY_LEVEL_UUID),
+              let data = characteristic.value,
+              data.count >= 1 else { return }
+
+        let lvl = Int(data[0])
+        readings[peripheral, default: []].append(lvl)
+
+        if allPeripheralsHaveTwoDistinctReadings() {
+            finish()
+        }
+    }
+
+    private func allPeripheralsHaveTwoDistinctReadings() -> Bool {
+        guard !peripherals.isEmpty else { return false }
+        for p in peripherals {
+            let vals = readings[p] ?? []
+            var uniq: [Int] = []
+            for v in vals where !uniq.contains(v) {
+                uniq.append(v)
+            }
+            if uniq.count < 2 {
+                return false
+            }
+        }
+        return true
+    }
+
+    func finish() {
+        if finished { return }
+        finished = true
+
+        manager.stopScan()
+        for p in peripherals {
+            manager.cancelPeripheralConnection(p)
+        }
+
+        var result: [String: Any] = [:]
+
+        for p in peripherals {
+            let name = p.name ?? "unknown"
+            let vals = readings[p] ?? []
+
+            var uniq: [Int] = []
+            for v in vals where !uniq.contains(v) {
+                uniq.append(v)
+            }
+
+            var obj: [String: Any] = [
+                "left": NSNull(),
+                "right": NSNull()
+            ]
+
+            if uniq.count >= 1 {
+                obj["left"] = uniq[0]
+            }
+            if uniq.count >= 2 {
+                obj["right"] = uniq[1]
+            }
+
+            result[name] = obj
+        }
+
+        let data = (try? JSONSerialization.data(withJSONObject: result, options: [])) ?? Data("{}".utf8)
+        print(String(data: data, encoding: .utf8) ?? "{}")
+
+        CFRunLoopStop(CFRunLoopGetMain())
+    }
+}
+
+guard CommandLine.arguments.count >= 2 else {
+    fputs("Usage: ble_battery <filter> [timeout_seconds]\n", stderr)
+    exit(1)
+}
+
+let filterArg = CommandLine.arguments[1]
+let timeoutArg = CommandLine.arguments.count >= 3 ? CommandLine.arguments[2] : nil
+let timeoutVal = timeoutArg.flatMap { TimeInterval($0) } ?? 2.5
+
+let reader = BatteryReader(filter: filterArg, timeout: timeoutVal)
+CFRunLoopRun()
