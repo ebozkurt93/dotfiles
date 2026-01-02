@@ -3,6 +3,11 @@ export EDITOR=nvim
 export GH_USERNAME=ebozkurt93
 export COPILOT_ENABLED=false
 export COPILOT_ENABLED_PATH=""
+
+unset LC_ALL
+export LANG="en_GB.UTF-8"
+export LC_TIME="en_GB.UTF-8"
+
 # Functions
 function mcd
 {
