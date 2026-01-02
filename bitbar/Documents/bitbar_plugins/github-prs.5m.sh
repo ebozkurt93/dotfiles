@@ -51,9 +51,10 @@ fi
 
 content=$(cat $prs_file | jq -s 'add' | jq -r unique_by\(.id\) | jq -r sort_by\(.updatedAt\))
 length="$(echo $content | jq -r length)"
+non_dependabot_length="$(echo "$content" | jq '[.[] | select(.author.login != "app/dependabot")] | length')"
 
 if [ "$1" = 'count' ]; then
-  echo $length
+  echo "$length ($non_dependabot_length)"
   exit
 fi
 
@@ -100,7 +101,7 @@ if [ "$1" = 'fzf' ]; then
 fi
 
 
-echo "PRs: $(echo $content | jq -r length)| dropdown=true $style"
+echo "PRs: $length ($non_dependabot_length)| dropdown=true $style"
 echo "---"
 if [ $length != 0 ]; then
   for q in "${!pr_names[@]}"; do
