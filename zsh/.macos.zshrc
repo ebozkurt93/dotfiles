@@ -51,6 +51,13 @@ function nvim_remote_exec {
   find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -P $pc -I {} nvim --server {} --remote-send "$1"
 }
 
+# Attempts to find and kill nvim instances that are not connected to a tty
+# Any instance which has a parent connected to tty should not be killed
+function nvim_kill_non_tty {
+  awk 'NR==FNR{pc[$1]=$2;next} $3=="nvim" && $0 ~ /--embed|--headless|--server/ && pc[$2]!="nvim"{print $1}' <(ps -axo pid=,comm=) <(ps -axo pid=,ppid=,comm=,args=) | xargs -n1 kill -9
+}
+
+
 # given a file pattern and commands, this function will rerun commands whenever files change
 function res {
   find . -name "$1" | entr ${@:2}
