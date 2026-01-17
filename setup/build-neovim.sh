@@ -3,6 +3,8 @@
 #! nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/2dcd9c55e8914017226f5948ac22c53872a13ee2.tar.gz
 #! nix-shell -p ninja cmake gettext curl libiconv-darwin
 
+set -euo pipefail
+
 if [[ $(uname -s) != "Darwin" ]]; then
     echo "This script is only intended to run on macOS."
     exit 1
@@ -31,7 +33,8 @@ git checkout $selected_tag
 remove_neovim
 
 echo 'Building neovim'
-rm -rf build 
+rm -rf build
+rm -rf .deps
 make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=$HOME/bin/helpers/nvim-macos/
 make install
 echo 'Built neovim'
