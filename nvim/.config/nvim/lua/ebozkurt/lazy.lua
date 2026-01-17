@@ -257,5 +257,11 @@ require("lazy").setup({
       lazy = false,
       priority = 1000,
     },
+    {
+      "serhez/teide.nvim",
+      lazy = false,
+      priority = 1000,
+      opts = {},
+    }
   },
 })

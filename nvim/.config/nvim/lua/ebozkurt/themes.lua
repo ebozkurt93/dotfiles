@@ -193,4 +193,16 @@ elseif selected_theme == 'kanso-ink' then
 elseif selected_theme == 'kanso-pearl' then
 	vim.opt.background = 'light'
 	vim.cmd [[ colorscheme kanso-pearl ]]
+elseif selected_theme == 'teide-darker' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme teide-darker ]]
+elseif selected_theme == 'teide-dark' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme teide-dark ]]
+elseif selected_theme == 'teide-dimmed' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme teide-dimmed ]]
+elseif selected_theme == 'teide-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme teide-light ]]
 end
