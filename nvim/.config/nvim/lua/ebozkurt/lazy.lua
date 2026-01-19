@@ -213,7 +213,17 @@ require("lazy").setup({
       ---@module 'render-markdown'
       ---@type render.md.UserConfig
       opts = {
-        heading = { sign = false, icons = false, }
+        heading = {
+          enabled = false,
+        },
+        code = {
+          sign = false,
+          border = "none",
+          language_border = " ",
+          highlight_border = false,
+          conceal_delimiters = false,
+          disable_background = true,
+        },
       },
     },
 
