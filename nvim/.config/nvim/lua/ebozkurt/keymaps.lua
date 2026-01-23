@@ -82,16 +82,35 @@ end, { noremap = true })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'UfoInitialized',
 	callback = function()
-		vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
-		vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
-		vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds)
-		vim.keymap.set('n', 'zm', require('ufo').closeFoldsWith)
-		vim.keymap.set('n', 'K', function()
-			local winid = require('ufo').peekFoldedLinesUnderCursor()
-			if not winid then
-				vim.lsp.buf.hover()
-			end
-		end)
+	  local ufo = require("ufo")
+
+	  vim.keymap.set("n", "zR", ufo.openAllFolds)
+	  vim.keymap.set("n", "zM", ufo.closeAllFolds)
+
+	  -- zr: no count -> ufo behavior; with count -> native repeat (2zr, 3zr, ...)
+	  vim.keymap.set("n", "zr", function()
+	    if vim.v.count == 0 then
+	      ufo.openFoldsExceptKinds()
+	    else
+	      vim.cmd.normal({ args = { tostring(vim.v.count) .. "zr" }, bang = true })
+	    end
+	  end)
+
+	  -- zm: no count -> ufo default; with count -> fold to that depth (2zm, 3zm, ...)
+	  vim.keymap.set("n", "zm", function()
+	    if vim.v.count == 0 then
+	      ufo.closeFoldsWith()
+	    else
+	      ufo.closeFoldsWith(vim.v.count)
+	    end
+	  end)
+
+	  vim.keymap.set("n", "K", function()
+	    local winid = ufo.peekFoldedLinesUnderCursor()
+	    if not winid then
+	      vim.lsp.buf.hover()
+	    end
+	  end)
 	end
 })
 
