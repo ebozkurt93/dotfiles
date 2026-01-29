@@ -47,6 +47,7 @@ macos-secure-input-indication = true
 
 # Changing this value at runtime works after a small delay.
 auto-update = check
+auto-update-channel = tip
 
 config-file = ?theme
 config-file = ?overrides
