@@ -30,7 +30,7 @@ prs_file=~/Documents/bitbar_plugins/tmp/prs.txt
 if [ "$1" = 'refetch-prs' ]; then
   all_pr_ids=""
   for q in "${queries[@]}"; do
-    prs=$(`echo gh search prs "$q" --json "$search_json_format" | xargs`)
+    prs=$(`echo gh search prs $q --json "$search_json_format" | xargs`)
     pr_ids=$(echo "$prs" | jq -r '.[] | "\(.url)"' | xargs)
     all_pr_ids+=" $pr_ids"
   done
