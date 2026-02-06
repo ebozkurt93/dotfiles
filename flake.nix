@@ -56,7 +56,6 @@
                   homeDirectory = "/Users/erdembozkurt";
                   packages = [
                     bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
-                    pkgs.openscad
                     # openscad is provided as macos app, not executable binary
                     (pkgs.writeShellScriptBin "openscad" ''
                       exec "${pkgs.openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
