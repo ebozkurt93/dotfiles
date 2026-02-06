@@ -1,11 +1,20 @@
 #!/bin/sh
 
+UNPAIR_ONLY=0
+
+while getopts "u" opt; do
+	case "$opt" in
+		u) UNPAIR_ONLY=1 ;;
+	esac
+done
+
 if [[ "$(blueutil --power)" == "0" ]]; then
 	blueutil --power 1
 fi
 
 # trackpad
 blueutil --unpair 'a0-78-17-e2-cf-57'
+[[ "$UNPAIR_ONLY" -eq 1 ]] && exit 0
 sleep 2
 blueutil --connect 'a0-78-17-e2-cf-57'
 # keyboard
