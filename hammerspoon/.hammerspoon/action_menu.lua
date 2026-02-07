@@ -22,6 +22,12 @@ local originalMenuItems = {
     end,
   },
   {
+    ["text"] = "Disconnect From Trackpad",
+    ["action"] = function()
+      os.execute("~/bin/btt -u &")
+    end,
+  },
+  {
     ["text"] = "Restart Bartender 5",
     ["action"] = function()
       hs.execute("killall 'Bartender 5'; sleep 1; open -gj -a '/Applications/Bartender 5.app'")
