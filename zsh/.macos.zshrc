@@ -46,9 +46,44 @@ alias ss='echo $__sourced_states'
 eval "$(direnv hook zsh)"
 export DIRENV_LOG_FORMAT=""
 
-function nvim_remote_exec {
-  local pc="$(nproc)"
-  find /var/folders -name '*nvim*' 2>/dev/null | tail -n +2 | xargs -P $pc -I {} nvim --server {} --remote-send "$1"
+function nvim_remote_exec() {
+  local msg="$1"
+  local pc="${pc:-$(sysctl -n hw.ncpu 2>/dev/null || echo 4)}"
+
+  setopt local_options null_glob
+
+  local base
+  base="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)"
+  [[ -z "$base" ]] && base="${TMPDIR:-/tmp}"
+  base="${base%/}"
+
+  local -a candidates
+  candidates=(
+    # no nix shell
+    "$base"/nvim.*/*/nvim.*.0
+    "$base"/nvim.*/*/*/nvim.*.0
+
+    # nix shell inserts an extra dir level like nix-shell.*
+    "$base"/nix-shell.*/nvim.*/*/nvim.*.0
+    "$base"/nix-shell.*/nvim.*/*/*/nvim.*.0
+
+    # (optional) flakes sometimes use other nix temp prefixes
+    "$base"/nix-*/nvim.*/*/nvim.*.0
+    "$base"/nix-*/nvim.*/*/*/nvim.*.0
+  )
+
+  local -a live
+  live=()
+  local a
+  for a in "${candidates[@]}"; do
+    [[ -S "$a" || -p "$a" ]] || continue
+    nvim --server "$a" --remote-expr "1" >/dev/null 2>&1 && live+=("$a")
+  done
+
+  (( ${#live[@]} == 0 )) && return 0
+
+  printf '%s\n' "${live[@]}" | xargs -n 1 -P "$pc" -I {} \
+    nvim --server {} --remote-send "$msg" >/dev/null 2>&1
 }
 
 # Attempts to find and kill nvim instances that are not connected to a tty
