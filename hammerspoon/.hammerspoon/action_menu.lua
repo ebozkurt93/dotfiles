@@ -18,13 +18,13 @@ local originalMenuItems = {
   {
     ["text"] = "Connect To Trackpad",
     ["action"] = function()
-      os.execute("~/bin/btt &")
+      hs.execute("~/bin/btt &", true)
     end,
   },
   {
     ["text"] = "Disconnect From Trackpad",
     ["action"] = function()
-      os.execute("~/bin/btt -u &")
+      hs.execute("~/bin/btt -u &", true)
     end,
   },
   {
