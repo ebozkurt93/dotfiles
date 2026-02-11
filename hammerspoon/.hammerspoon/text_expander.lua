@@ -35,8 +35,27 @@ local keywords = {
 
 keywords = helpers.merge(keywords, personalKeywords)
 
-local function getLastXCharacters(str, x)
-  return #str <= x and str or string.sub(str, -x)
+-- Precompute trigger lengths and maximum trigger length (byte-based; triggers are ASCII)
+local triggerLengths = {}
+local maxTriggerLen = 0
+do
+  local seen = {}
+  for k, _ in pairs(keywords) do
+    local n = #k
+    if not seen[n] then
+      seen[n] = true
+      table.insert(triggerLengths, n)
+    end
+    if n > maxTriggerLen then
+      maxTriggerLen = n
+    end
+  end
+  table.sort(triggerLengths, function(a, b) return a > b end)
+end
+
+local function lastBytes(s, n)
+  if #s <= n then return s end
+  return string.sub(s, -n)
 end
 
 local expander = (function()
@@ -44,44 +63,70 @@ local expander = (function()
   local keyMap = require("hs.keycodes").map
   local DEBUG = false
 
+  -- Prevent our own injected keystrokes from being re-processed.
+  local injecting = false
+  local function withInjection(fn)
+    injecting = true
+    fn()
+    -- Drop the guard on the next runloop tick.
+    hs.timer.doAfter(0, function() injecting = false end)
+  end
+
   local keyWatcher = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(ev)
-    if ev:getFlags().cmd or ev:getFlags().ctrl or ev:getFlags().alt then
+    if injecting then
+      return false
+    end
+
+    local flags = ev:getFlags()
+    if flags.cmd or flags.ctrl or flags.alt then
       return false
     end
 
     local keyCode = ev:getKeyCode()
-    local char = ev:getCharacters()
+    local char = ev:getCharacters() or ""
 
     if keyCode == keyMap["delete"] then
-      word = #word > 0 and string.sub(word, 1, -2) or ""
+      word = (#word > 0) and string.sub(word, 1, -2) or ""
       return false
     end
 
-    word = getLastXCharacters(word .. char, 20)
-    local found = false
-
-    for i = #word, 1, -1 do
-      local substring = string.sub(word, i)
-      if keywords[substring] then
-        word = substring
-        found = true
-        break
-      end
+    if char ~= "" then
+      word = lastBytes(word .. char, maxTriggerLen)
+    else
+      word = lastBytes(word, maxTriggerLen)
     end
 
+    -- Reset on separators / navigation keys (same behavior as before)
     if keyCode == keyMap["return"] or keyCode == keyMap["space"] or keyCode == keyMap["up"]
         or keyCode == keyMap["down"] or keyCode == keyMap["left"] or keyCode == keyMap["right"]
         or keyCode == keyMap["tab"] then
       word = ""
+      return false
     end
 
-    if found then
-      for _ = 1, utf8.len(word) do
-        hs.eventtap.keyStroke({}, "delete", 0)
+    -- Only check suffixes that can possibly match a trigger.
+    local matched = nil
+    for _, n in ipairs(triggerLengths) do
+      if #word >= n then
+        local suffix = string.sub(word, -n)
+        if keywords[suffix] then
+          matched = suffix
+          break
+        end
       end
+    end
 
-      local replacement = keywords[word]
-      hs.eventtap.keyStrokes(type(replacement) == "function" and replacement() or replacement)
+    if matched then
+      local replacement = keywords[matched]
+      local out = type(replacement) == "function" and replacement() or replacement
+
+      withInjection(function()
+        for _ = 1, #matched do
+          hs.eventtap.keyStroke({}, "delete", 0)
+        end
+        hs.eventtap.keyStrokes(out)
+      end)
+
       word = ""
     end
 
