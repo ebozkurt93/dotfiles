@@ -243,6 +243,8 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
 		vim.keymap.set('n', '<leader>fc', builtin.commands, {})
 		vim.keymap.set('n', '<leader>fS', '<cmd>Snippets<cr>', {})
+		vim.keymap.set("n", "<leader>mr", "<cmd>MacroPicker<cr>")
+		vim.keymap.set("x", "<leader>mr", ":'<,'>MacroPicker<cr>")
 	end
 })
 
