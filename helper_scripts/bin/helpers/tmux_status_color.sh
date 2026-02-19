@@ -1,9 +1,14 @@
+#!/usr/bin/env bash
+
 # Setting tmux status bar colors based on kitty theme colors.
-# AFAIK it is not possible to set dynamic status bar colors from tmux directly,
-# therefore adding them via this script
+# This script is optimized to be fast and not source .zshrc
 
-p=$(zsh -c "source ~/.zshrc; __theme_helper get_current_kitty_theme_path")
+theme_file="$HOME/.config/kitty/current-theme.conf"
 
-tmux set -g status-bg $(echo $p | xargs cat | grep '^background' | cut -c 12-)
-tmux set -g status-fg $(echo $p | xargs cat | grep '^foreground' | cut -c 12-)
-
+if [[ -f "$theme_file" ]]; then
+  bg=$(grep '^background' "$theme_file" | awk '{print $2}')
+  fg=$(grep '^foreground' "$theme_file" | awk '{print $2}')
+  
+  [[ -n "$bg" ]] && tmux set -g status-bg "$bg"
+  [[ -n "$fg" ]] && tmux set -g status-fg "$fg"
+fi
