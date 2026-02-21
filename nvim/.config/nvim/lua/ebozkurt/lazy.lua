@@ -50,6 +50,7 @@ require("lazy").setup({
     -- lsp and autocompletion
     "neovim/nvim-lspconfig",
     { "saghen/blink.cmp", version = "1.*" },
+    { "saghen/blink.compat", version = "2.*", lazy = true, opts = {} }, -- used for obsidian-nvim
     { "giuxtaposition/blink-cmp-copilot", enabled = isCopilotEnabled, dependencies = "zbirenbaum/copilot.lua" },
     "rafamadriz/friendly-snippets",
     --use 'tjdevries/nlua.nvim'
@@ -141,7 +142,7 @@ require("lazy").setup({
       end,
     },
 
-    { "epwalsh/obsidian.nvim", dependencies = "nvim-lua/plenary.nvim" },
+    { "obsidian-nvim/obsidian.nvim", version = "*", lazy = false, dependencies = "nvim-lua/plenary.nvim" },
 
     -- debugging
     "mfussenegger/nvim-dap",

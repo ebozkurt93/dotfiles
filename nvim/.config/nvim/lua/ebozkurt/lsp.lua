@@ -185,6 +185,9 @@ local sources_providers = {
 	lsp = { async = true, timeout_ms = 200 },
 	snippets = { score_offset = 8 },
 	dadbod = { module = "vim_dadbod_completion.blink" },
+	obsidian = { name = "obsidian", module = "blink.compat.source" },
+	obsidian_new = { name = "obsidian_new", module = "blink.compat.source" },
+	obsidian_tags = { name = "obsidian_tags", module = "blink.compat.source" },
 }
 
 if copilot_ok then
@@ -223,6 +226,7 @@ blink.setup({
 	sources = {
 		default = sources_default,
 		per_filetype = {
+			markdown = { inherit_defaults = true, "obsidian", "obsidian_new", "obsidian_tags" },
 			sql = { inherit_defaults = true, "dadbod" },
 			mysql = { inherit_defaults = true, "dadbod" },
 			plsql = { inherit_defaults = true, "dadbod" },
@@ -255,4 +259,3 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end
   end,
 })
-
