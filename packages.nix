@@ -46,4 +46,7 @@ with pkgs; [
   vscode-langservers-extracted # only using vscode-json-language-server
   shfmt
   postgresql_16 # for psql
+
+  # ai
+  opencode
 ]
