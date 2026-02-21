@@ -219,6 +219,8 @@ blink.setup({
 		["<C-f>"] = { "scroll_documentation_down", "fallback" },
 		["<C-j>"] = { "select_next", "fallback" },
 		["<C-k>"] = { "select_prev", "fallback" },
+		["<Down>"] = { "select_next", "fallback" },
+		["<Up>"] = { "select_prev", "fallback" },
 		["<C-Space>"] = { "show", "fallback" },
 		["<C-e>"] = { "hide", "fallback" },
 		["<CR>"] = { "select_and_accept", "fallback" },
