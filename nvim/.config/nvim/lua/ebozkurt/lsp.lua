@@ -180,10 +180,82 @@ local copilot_ok = pcall(require, "copilot.api")
 
 require("nvim-autopairs").setup({})
 
-local sources_default = { "snippets", "lsp", "path", "buffer" }
+local function filter_gitignored(items)
+	local cwd = vim.fn.getcwd()
+	local git_dir = vim.fs.find(".git", { upward = true, path = cwd })[1]
+	if not git_dir then
+		return items
+	end
+
+	local git_root = vim.fs.dirname(git_dir)
+	local relative_paths = {}
+	for _, item in ipairs(items) do
+		local full_path = item.data and item.data.full_path or nil
+		if full_path and vim.startswith(full_path, git_root .. "/") then
+			local relative_path = full_path:sub(#git_root + 2)
+			relative_paths[#relative_paths + 1] = relative_path
+		end
+	end
+
+	if #relative_paths == 0 then
+		return items
+	end
+
+	local input = table.concat(relative_paths, "\n") .. "\n"
+	local output = vim.fn.system({ "git", "-C", git_root, "check-ignore", "-z", "--stdin" }, input)
+	if vim.v.shell_error ~= 0 or output == "" then
+		return items
+	end
+
+	local ignored = {}
+	for _, path in ipairs(vim.split(output, "\0", { trimempty = true })) do
+		ignored[path] = true
+	end
+
+	local filtered = {}
+	for _, item in ipairs(items) do
+		local full_path = item.data and item.data.full_path or nil
+		if not full_path or not vim.startswith(full_path, git_root .. "/") then
+			filtered[#filtered + 1] = item
+		else
+			local relative_path = full_path:sub(#git_root + 2)
+			if not ignored[relative_path] then
+				filtered[#filtered + 1] = item
+			end
+		end
+	end
+
+	return filtered
+end
+
+local sources_default = { "snippets", "lsp", "at_path", "path", "buffer" }
 local sources_providers = {
 	lsp = { async = true, timeout_ms = 200 },
 	snippets = { score_offset = 8 },
+	-- @path: triggers on "@" (non-word), lists repo/cwd files via git ls-files
+	-- (includes untracked) or rg --files fallback, cached per root, hidden files
+	-- enabled by default and capped by max_entries.
+	at_path = {
+		name = "@path",
+		module = "ebozkurt.blink_at_path",
+		opts = {
+			show_hidden_files_by_default = true,
+			get_cwd = function()
+				return vim.fn.getcwd()
+			end,
+		},
+	},
+	path = {
+		opts = {
+			show_hidden_files_by_default = true,
+			get_cwd = function()
+				return vim.fn.getcwd()
+			end,
+		},
+		transform_items = function(_, items)
+			return filter_gitignored(items)
+		end,
+	},
 	dadbod = { module = "vim_dadbod_completion.blink" },
 	obsidian = { name = "obsidian", module = "blink.compat.source" },
 	obsidian_new = { name = "obsidian_new", module = "blink.compat.source" },
