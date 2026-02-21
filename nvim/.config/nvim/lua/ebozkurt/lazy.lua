@@ -49,13 +49,8 @@ require("lazy").setup({
 
     -- lsp and autocompletion
     "neovim/nvim-lspconfig",
-    "hrsh7th/nvim-cmp",
-    "hrsh7th/cmp-nvim-lsp",
-    "hrsh7th/cmp-nvim-lua",
-    "hrsh7th/cmp-path",
-    "hrsh7th/cmp-buffer",
-    "hrsh7th/cmp-cmdline",
-    "saadparwaiz1/cmp_luasnip",
+    { "saghen/blink.cmp", version = "1.*" },
+    { "giuxtaposition/blink-cmp-copilot", enabled = isCopilotEnabled, dependencies = "zbirenbaum/copilot.lua" },
     "rafamadriz/friendly-snippets",
     --use 'tjdevries/nlua.nvim'
     "nvim-lua/completion-nvim",
@@ -82,13 +77,6 @@ require("lazy").setup({
           suggestion = { enabled = false },
           panel = { enabled = false },
         })
-      end,
-    },
-    {
-      "zbirenbaum/copilot-cmp",
-      enabled = isCopilotEnabled,
-      config = function()
-        require("copilot_cmp").setup()
       end,
     },
     {

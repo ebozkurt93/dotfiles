@@ -12,7 +12,7 @@ require("mason-lspconfig").setup({
 })
 
 -- Set up lspconfig.
-local capabilities = require("cmp_nvim_lsp").default_capabilities()
+local capabilities = require("blink.cmp").get_lsp_capabilities()
 --local bufopts = { noremap = true, silent = true, buffer = 0 }
 local my_on_attach = function(client, bufnr)
 	if vim.lsp.inlay_hint then
@@ -174,111 +174,74 @@ require'lspconfig'.jdtls.setup({
 })
 require 'lspconfig'.eslint.setup {}
 
--- Set up nvim-cmp.
-local cmp = require("cmp")
-local lspkind = require("lspkind")
-lspkind.init({
-	mode = "symbol",
-	symbol_map = {
-		Copilot = "",
-	},
-})
+-- Set up blink.cmp.
+local blink = require("blink.cmp")
+local copilot_ok = pcall(require, "copilot.api")
 
 require("nvim-autopairs").setup({})
-local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 
-cmp.setup({
-	snippet = {
-		-- REQUIRED - you must specify a snippet engine
-		expand = function(args)
-			--vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
-			require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
+local sources_default = { "snippets", "lsp", "path", "buffer" }
+local sources_providers = {
+	lsp = { async = true, timeout_ms = 200 },
+	snippets = { score_offset = 8 },
+	dadbod = { module = "vim_dadbod_completion.blink" },
+}
+
+if copilot_ok then
+	table.insert(sources_default, 1, "copilot")
+	sources_providers.copilot = {
+		name = "copilot",
+		module = "blink-cmp-copilot",
+		score_offset = 100,
+		async = true,
+	}
+end
+
+blink.setup({
+	snippets = { preset = "luasnip" },
+	completion = {
+		menu = {
+			auto_show = true,
+			auto_show_delay_ms = 0,
+		},
+		trigger = {
+			show_on_keyword = true,
+			show_on_insert = true,
+			prefetch_on_insert = true,
+		},
+	},
+	keymap = {
+		preset = "none",
+		["<C-b>"] = { "scroll_documentation_up", "fallback" },
+		["<C-f>"] = { "scroll_documentation_down", "fallback" },
+		["<C-j>"] = { "select_next", "fallback" },
+		["<C-k>"] = { "select_prev", "fallback" },
+		["<C-Space>"] = { "show", "fallback" },
+		["<C-e>"] = { "hide", "fallback" },
+		["<CR>"] = { "select_and_accept", "fallback" },
+	},
+	sources = {
+		default = sources_default,
+		per_filetype = {
+			sql = { inherit_defaults = true, "dadbod" },
+			mysql = { inherit_defaults = true, "dadbod" },
+			plsql = { inherit_defaults = true, "dadbod" },
+		},
+		providers = sources_providers,
+	},
+	cmdline = {
+		keymap = { preset = "cmdline" },
+		sources = function()
+			local cmd_type = vim.fn.getcmdtype()
+			if cmd_type == "/" or cmd_type == "?" then
+				return { "buffer" }
+			end
+			if cmd_type == ":" or cmd_type == "@" then
+				return { "path", "cmdline" }
+			end
+			return {}
 		end,
 	},
-	window = {
-		completion = cmp.config.window.bordered(),
-		documentation = cmp.config.window.bordered(),
-	},
-	mapping = cmp.mapping.preset.insert({
-		["<C-b>"] = cmp.mapping.scroll_docs(-4),
-		["<C-f>"] = cmp.mapping.scroll_docs(4),
-		["<C-j>"] = cmp.mapping.select_next_item(),
-		["<C-k>"] = cmp.mapping.select_prev_item(),
-		["<C-Space>"] = cmp.mapping.complete(),
-		["<C-e>"] = cmp.mapping.abort(),
-		["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-	}),
-
-	sources = cmp.config.sources({
-		{ name = "copilot" },
-		{ name = "nvim_lua" },
-		{ name = "nvim_lsp" },
-		{ name = "luasnip" }, -- For luasnip users.
-	}, {
-		{ name = "buffer" },
-	}),
-	formatting = {
-		format = lspkind.cmp_format({
-			with_text = true,
-			menu = {
-				copilot = "[LSP]",
-				buffer = "[buf]",
-				nvim_lsp = "[LSP]",
-				nvim_lua = "[api]",
-				path = "[path]",
-				luasnip = "[snip]",
-			},
-		}),
-	},
-	experimental = {
-		ghost_text = {},
-	},
-})
-
-cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-
---[[
--- Set configuration for specific filetype.
-cmp.setup.filetype('gitcommit', {
-  sources = cmp.config.sources({
-    { name = 'cmp_git' }, -- You can specify the `cmp_git` source if you were installed it.
-  }, {
-    { name = 'buffer' },
-  })
-})
-]]
---
-
--- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-cmp.setup.cmdline({ "/", "?" }, {
-	mapping = cmp.mapping.preset.cmdline(),
-	sources = {
-		{ name = "buffer" },
-	},
-})
-
--- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
-cmp.setup.cmdline(":", {
-	mapping = cmp.mapping.preset.cmdline(),
-	sources = cmp.config.sources({
-		{ name = "path" },
-	}, {
-		{ name = "cmdline" },
-	}),
-})
-
-local dadbod_autocomplete_group = vim.api.nvim_create_augroup("dadbod_autocomplete", { clear = true })
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "sql", "mysql", "plsql" },
-	callback = function()
-		cmp.setup.buffer({
-			sources = {
-				{ name = "vim-dadbod-completion" },
-				{ name = "buffer" },
-			},
-		})
-	end,
-	group = dadbod_autocomplete_group,
 })
 
 -- Turn on lsp status information
