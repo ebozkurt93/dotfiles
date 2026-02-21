@@ -5,6 +5,7 @@ with pkgs; [
   blueutil
   coreutils
   colima
+  lima
   docker
   docker-compose
   entr
