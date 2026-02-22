@@ -39,6 +39,21 @@ end, { noremap = true, silent = false })
 
 vim.keymap.set('n', '<leader>st', '<cmd>lua ReloadTheme()<cr>', { noremap = true, silent = false })
 
+-- treesitter textobjects
+local function ts_textobj(query)
+	return function()
+		require("nvim-treesitter-textobjects.select").select_textobject(query, "textobjects")
+	end
+end
+vim.keymap.set({ "x", "o" }, "af", ts_textobj("@function.outer"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "if", ts_textobj("@function.inner"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ac", ts_textobj("@class.outer"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ic", ts_textobj("@class.inner"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ab", ts_textobj("@block.outer"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ib", ts_textobj("@block.inner"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ap", ts_textobj("@parameter.outer"), { noremap = true })
+vim.keymap.set({ "x", "o" }, "ip", ts_textobj("@parameter.inner"), { noremap = true })
+
 -- center things after jump
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
@@ -240,6 +255,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.keymap.set('n', '<leader>f/', helpers.live_grep_nvim_config, {})
 		vim.keymap.set('n', '<leader>ft', '<cmd>Telescope file_browser<cr>', {})
 		vim.keymap.set('n', '<leader>fm', '<cmd>Telescope marks<cr>', {})
+		vim.keymap.set('n', '<leader>fn', '<cmd>Telescope notify<cr>', {})
 		vim.keymap.set('n', '<leader>fa', builtin.treesitter, {})
 		vim.keymap.set('n', '<leader>fc', builtin.commands, {})
 		vim.keymap.set('n', '<leader>fS', '<cmd>Snippets<cr>', {})
@@ -267,8 +283,7 @@ vim.api.nvim_create_autocmd('User', {
 				vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 			end, { desc = 'Toggle Inlay Hints' })
 		end
-		vim.keymap.set('n', 'ca', '<cmd>Lspsaga code_action<cr>', bufopts)
-		vim.keymap.set('v', 'ca', '<cmd>Lspsaga code_action<cr>', bufopts)
+		vim.keymap.set({ 'n', 'v' }, 'ca', vim.lsp.buf.code_action, bufopts)
 		vim.keymap.set('n', 'co', '<cmd>LSoutlineToggle<cr>', bufopts)
 		--vim.keymap.set('n', 'gcr', vim.lsp.buf.clear_references, bufopts)
 		vim.keymap.set('n', '<leader>dj', '<cmd>Lspsaga diagnostic_jump_prev<cr>', bufopts)

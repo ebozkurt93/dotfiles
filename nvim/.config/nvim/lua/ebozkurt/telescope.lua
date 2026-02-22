@@ -71,6 +71,9 @@ require('telescope').setup {
 	},
 	extensions = {
 		fzf = {},
+		["ui-select"] = {
+			require("telescope.themes").get_dropdown({}),
+		},
 		file_browser = {
 			theme = 'ivy',
 			hijack_netrw = true,
@@ -87,7 +90,8 @@ require('telescope').setup {
 	}
 }
 
-require('telescope').load_extension('fzf')
-require('telescope').load_extension('file_browser')
+	require('telescope').load_extension('fzf')
+	require('telescope').load_extension('file_browser')
+	require('telescope').load_extension('ui-select')
 
 vim.api.nvim_exec_autocmds('User', { pattern = 'Telescope' })

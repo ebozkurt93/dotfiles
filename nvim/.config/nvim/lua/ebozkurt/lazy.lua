@@ -34,8 +34,13 @@ require("lazy").setup({
         "kkharji/sqlite.lua",
       },
       opts = {},
+      lazy = false,
+      config = function(_, opts)
+        require("telescope-all-recent").setup(opts)
+      end,
     },
     { "nvim-telescope/telescope.nvim", dependencies = { { "nvim-lua/plenary.nvim" } } },
+    { "nvim-telescope/telescope-ui-select.nvim" },
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
     { "nvim-telescope/telescope-file-browser.nvim" },
     "L3MON4D3/LuaSnip",
@@ -44,6 +49,7 @@ require("lazy").setup({
       "nvim-treesitter/nvim-treesitter",
       build = ":TSUpdate",
     },
+    "nvim-treesitter/nvim-treesitter-textobjects",
     { "nvim-treesitter/playground" },
     "nvim-treesitter/nvim-treesitter-context",
 
@@ -124,6 +130,7 @@ require("lazy").setup({
 
     { "folke/trouble.nvim", dependencies = "kyazdani42/nvim-web-devicons" },
     { "folke/which-key.nvim", opts = { delay = 1500 } },
+    { "rcarriga/nvim-notify", lazy = false },
 
     { "folke/todo-comments.nvim", dependencies = "nvim-lua/plenary.nvim" },
     { "folke/neodev.nvim", opts = {} },

@@ -20,26 +20,41 @@ local my_on_attach = function(client, bufnr)
 	end
 	vim.api.nvim_exec_autocmds("User", { pattern = "LspAttached" })
 end
-require("mason-lspconfig").setup_handlers({
-	-- The first entry (without a key) will be the default handler
-	-- and will be called for each installed server that doesn't have
-	-- a dedicated handler.
-	function(server_name) -- default handler (optional)
-		local custom_configured_servers = { "tsserver", "gopls" }
-		if vim.tbl_contains(custom_configured_servers, server_name) then
-			return
+local mason_lspconfig = require("mason-lspconfig")
+local custom_configured_servers = { "tsserver", "gopls" }
+
+-- mason-lspconfig removed setup_handlers in newer versions; keep a fallback
+-- so installed servers still get configured when that API is missing.
+if mason_lspconfig.setup_handlers then
+	mason_lspconfig.setup_handlers({
+		-- The first entry (without a key) will be the default handler
+		-- and will be called for each installed server that doesn't have
+		-- a dedicated handler.
+		function(server_name) -- default handler (optional)
+			if vim.tbl_contains(custom_configured_servers, server_name) then
+				return
+			end
+			require("lspconfig")[server_name].setup({
+				capabilities = capabilities,
+				on_attach = my_on_attach,
+			})
+		end,
+		-- Next, you can provide a dedicated handler for specific servers.
+		-- For example, a handler override for the `rust_analyzer`:
+		-- ["rust_analyzer"] = function()
+		-- 	require("rust-tools").setup {}
+		-- end
+	})
+else
+	for _, server_name in ipairs(mason_lspconfig.get_installed_servers()) do
+		if not vim.tbl_contains(custom_configured_servers, server_name) then
+			require("lspconfig")[server_name].setup({
+				capabilities = capabilities,
+				on_attach = my_on_attach,
+			})
 		end
-		require("lspconfig")[server_name].setup({
-			capabilities = capabilities,
-			on_attach = my_on_attach,
-		})
-	end,
-	-- Next, you can provide a dedicated handler for specific servers.
-	-- For example, a handler override for the `rust_analyzer`:
-	-- ["rust_analyzer"] = function()
-	-- 	require("rust-tools").setup {}
-	-- end
-})
+	end
+end
 
 require("lspconfig").ts_ls.setup({
 	capabilities = capabilities,
