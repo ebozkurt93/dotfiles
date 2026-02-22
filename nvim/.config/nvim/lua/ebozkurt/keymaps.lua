@@ -335,13 +335,50 @@ vim.keymap.set('n', '<leader>CC', function()
 	end
 end, {})
 
+local function open_diffview_with_base()
+	local base = vim.g.review_diff_base
+	if base and base ~= "" then
+		vim.cmd("DiffviewOpen " .. base)
+	else
+		vim.cmd("DiffviewOpen")
+	end
+end
+
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'gitsigns',
 	callback = function(event)
 		local gs = require('gitsigns')
 		local gsa = require('gitsigns.actions')
 		vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end, {})
-		vim.keymap.set('n', '<leader>gd', function () gs.diffthis() end, {})
+		vim.keymap.set('n', '<leader>gd', function ()
+			local name = vim.api.nvim_buf_get_name(0)
+			if name:match("^diffview://") then
+				return
+			end
+			if name:match("^gitsigns://") then
+				for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+					if vim.wo[win].diff then
+						pcall(vim.api.nvim_win_close, win, true)
+					end
+				end
+				vim.cmd('diffoff')
+				return
+			end
+			if vim.bo.buftype ~= "" then
+				return
+			end
+			if vim.wo.diff then
+				local current_win = vim.api.nvim_get_current_win()
+				for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+					if win ~= current_win and vim.wo[win].diff then
+						pcall(vim.api.nvim_win_close, win, true)
+					end
+				end
+				vim.cmd('diffoff')
+			else
+				gs.diffthis()
+			end
+		end, {})
 		vim.keymap.set('n', '<leader>gp', function () gs.preview_hunk_inline() end, {})
 		vim.keymap.set('n', '<leader>gk', function () gs.preview_hunk() end, {})
 		vim.keymap.set('n', '[c', function () gsa.nav_hunk('prev', { wrap = true }) end, {})
@@ -359,18 +396,26 @@ vim.api.nvim_create_autocmd('User', {
 			local value = event.data.value
 			if value == 0 then
 				gs.change_base(common_ancestor, true)
+				vim.g.review_diff_base = common_ancestor
 				print('Changed gitsigns base to common ancestor node ' .. common_ancestor)
 			elseif value == 1 then
 				gs.change_base(default_branch, true)
+				vim.g.review_diff_base = default_branch
 				print('Changed gitsigns base to ' .. default_branch)
 			else
 				gs.change_base(nil, true)
+				vim.g.review_diff_base = nil
 				print('Resetted gitsigns base')
 			end
 			event.data.value = (event.data.value + 1) % 3
 		end, {})
 	end
 })
+
+-- diffview 
+vim.keymap.set('n', '<leader>gD', open_diffview_with_base, { noremap = true })
+vim.keymap.set('n', '<leader>gH', '<cmd>DiffviewFileHistory<cr>', { noremap = true })
+vim.keymap.set('n', '<leader>gc', '<cmd>DiffviewClose<cr>', { noremap = true })
 
 -- fugitive
 vim.keymap.set('n', '<leader>gB', '<cmd>:G blame<cr>', {})
