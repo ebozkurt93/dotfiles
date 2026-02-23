@@ -1,0 +1,43 @@
+images:
+  - location: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+cpus: 4
+memory: "8GiB"
+disk: "40GiB"
+
+# Critical: no host mounts
+mounts: []
+
+# Critical: don't import host SSH keys
+ssh:
+  loadDotSSHPubKeys: false
+
+provision:
+  # Base system deps + Docker
+  - mode: system
+    script: |
+      set -eux
+      export DEBIAN_FRONTEND=noninteractive
+
+      apt-get update
+      apt-get install -y \
+        ca-certificates curl git rsync xz-utils \
+        docker.io
+
+      systemctl enable --now docker
+      usermod -aG docker "$USER"
+
+  # Nix + flakes (single-user, no-daemon)
+  - mode: user
+    script: |
+      set -eux
+
+      if ! command -v nix >/dev/null 2>&1; then
+        curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
+      fi
+
+      mkdir -p ~/.config/nix
+      if ! grep -q "experimental-features" ~/.config/nix/nix.conf 2>/dev/null; then
+        echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+      fi

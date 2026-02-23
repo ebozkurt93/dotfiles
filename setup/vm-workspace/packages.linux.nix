@@ -2,10 +2,8 @@
 with pkgs; [
   atuin
   bat
-  blueutil
   coreutils
-  colima
-  lima
+  curl
   docker
   docker-compose
   entr
@@ -17,6 +15,7 @@ with pkgs; [
   gh
   gnupg
   gnugrep
+  gnutar
   jq
   yq
   lazydocker
@@ -47,6 +46,17 @@ with pkgs; [
   vscode-langservers-extracted # only using vscode-json-language-server
   shfmt
   postgresql_16 # for psql
+  tree-sitter
+  sqlite
+
+  # build tools for native plugins (e.g., telescope-fzf-native.nvim)
+  gcc
+  gnumake
+  cmake
+  pkg-config
+
+  # editors
+  neovim
 
   # ai
   opencode

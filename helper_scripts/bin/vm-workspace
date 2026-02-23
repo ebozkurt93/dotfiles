@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VM_NAME="${VM_NAME:-}"
+LIMA_YAML="${LIMA_YAML:-$HOME/.lima/ai-locked.yaml}"
+TEMPLATE_NAME=""
+
+OVERRIDE_CPUS=""
+OVERRIDE_MEMORY=""
+OVERRIDE_DISK=""
+SETUP_SCRIPT=""
+WORKSPACE_SCRIPT=""
+
+ACTION="ensure"   # ensure | delete | stop | status | shell | template-create | template-use
+
+usage() {
+  cat <<EOF
+Usage: vm-workspace [options]
+
+Options:
+  --name NAME        VM name (default: auto)
+  --cpus N           Override CPU count (requires yq)
+  --memory SIZE      Override memory (e.g., 8GiB, requires yq)
+  --disk SIZE        Override disk (e.g., 80GiB, requires yq)
+  --setup-script PATH      Host script to run after boot
+  --workspace-script PATH  Host script to run after setup
+  --template-create NAME  Create/update template VM, then stop it
+  --template-use NAME     Clone from template VM, then start it
+  --delete           Delete VM
+  --stop             Stop VM
+  --status           Show status
+  --shell            Open shell
+  -h, --help         Show help
+
+Default behavior:
+  Ensure VM exists (created with --plain), start it,
+  verify no host-share mounts, run optional scripts.
+EOF
+}
+
+die() {
+  echo "error: $*" >&2
+  usage >&2
+  exit 1
+}
+need_cmd() { command -v "$1" >/dev/null 2>&1 || die "missing command: $1"; }
+limactl_ni() { limactl --tty=false "$@"; }
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == --*=* ]]; then
+    die "use \"--flag value\" (space) instead of \"--flag=value\""
+  fi
+  case "$1" in
+    --name) VM_NAME="$2"; shift 2;;
+    --cpus) OVERRIDE_CPUS="$2"; shift 2;;
+    --memory) OVERRIDE_MEMORY="$2"; shift 2;;
+    --disk) OVERRIDE_DISK="$2"; shift 2;;
+    --setup-script) SETUP_SCRIPT="$2"; shift 2;;
+    --workspace-script) WORKSPACE_SCRIPT="$2"; shift 2;;
+    --template-create) ACTION="template-create"; TEMPLATE_NAME="$2"; shift 2;;
+    --template-use) ACTION="template-use"; TEMPLATE_NAME="$2"; shift 2;;
+    --delete) ACTION="delete"; shift;;
+    --stop) ACTION="stop"; shift;;
+    --status) ACTION="status"; shift;;
+    --shell) ACTION="shell"; shift;;
+    -h|--help) usage; exit 0;;
+    *) die "unknown argument: $1";;
+  esac
+done
+
+need_cmd limactl
+need_cmd awk
+need_cmd grep
+
+RESOLVED_CONFIG=""
+
+cleanup() {
+  if [[ -n "$RESOLVED_CONFIG" && "$RESOLVED_CONFIG" != "$LIMA_YAML" ]]; then
+    rm -f "$RESOLVED_CONFIG"
+  fi
+}
+
+trap cleanup EXIT
+
+random_id() {
+  LC_ALL=C hexdump -n 3 -v -e '/1 "%02x"' /dev/urandom
+}
+
+parse_gib() {
+  local val="$1"
+  if [[ "$val" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    printf "%s" "$val"
+    return 0
+  fi
+  if [[ "$val" =~ ^([0-9]+([.][0-9]+)?)(GiB|Gi|G|GB|gib|g|gb)$ ]]; then
+    printf "%s" "${BASH_REMATCH[1]}"
+    return 0
+  fi
+  return 1
+}
+
+resolve_vm_name() {
+  if [[ -n "$VM_NAME" ]]; then
+    return 0
+  fi
+  VM_NAME="vm-$(random_id)"
+}
+
+build_resolved_config() {
+  if [[ -z "$OVERRIDE_CPUS" && -z "$OVERRIDE_MEMORY" && -z "$OVERRIDE_DISK" ]]; then
+    RESOLVED_CONFIG="$LIMA_YAML"
+    return 0
+  fi
+
+  need_cmd yq
+  RESOLVED_CONFIG="$(mktemp)"
+  cp "$LIMA_YAML" "$RESOLVED_CONFIG"
+
+  if [[ -n "$OVERRIDE_CPUS" ]]; then
+    [[ "$OVERRIDE_CPUS" =~ ^[0-9]+$ ]] || die "--cpus must be a number"
+    yq -y -i ".cpus = ${OVERRIDE_CPUS}" "$RESOLVED_CONFIG"
+  fi
+  if [[ -n "$OVERRIDE_MEMORY" ]]; then
+    yq -y -i ".memory = \"${OVERRIDE_MEMORY}\"" "$RESOLVED_CONFIG"
+  fi
+  if [[ -n "$OVERRIDE_DISK" ]]; then
+    yq -y -i ".disk = \"${OVERRIDE_DISK}\"" "$RESOLVED_CONFIG"
+  fi
+  yq -y -i '.mounts = []' "$RESOLVED_CONFIG"
+  yq -y -i '.ssh.loadDotSSHPubKeys = false' "$RESOLVED_CONFIG"
+}
+
+instance_exists() {
+  local name="${1:-$VM_NAME}"
+  limactl_ni list | awk 'NR>1 {print $1}' | grep -qx "$name"
+}
+
+instance_status() {
+  local name="${1:-$VM_NAME}"
+  limactl_ni list | awk -v target="$name" 'NR>1 && $1==target {print $2}'
+}
+
+ensure_instance() {
+  local config_path="$1"
+  if instance_exists "$VM_NAME"; then
+    return 0
+  fi
+  [[ -f "$config_path" ]] || die "missing lima config: $config_path"
+  limactl_ni create --name "$VM_NAME" --plain "$config_path"
+}
+
+delete_instance() {
+  if instance_exists "$VM_NAME"; then
+    limactl_ni stop "$VM_NAME" >/dev/null 2>&1 || true
+    limactl_ni delete --force "$VM_NAME" >/dev/null 2>&1 || true
+  fi
+}
+
+stop_instance() {
+  instance_exists "$VM_NAME" && limactl_ni stop "$VM_NAME" >/dev/null 2>&1 || true
+}
+
+start_instance() {
+  limactl_ni start "$VM_NAME" >/dev/null
+}
+
+wait_shell() {
+  for _ in $(seq 1 90); do
+    if limactl_ni shell --start "$VM_NAME" -- true >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  die "vm not reachable"
+}
+
+ensure_no_host_share_mounts() {
+  local out
+  out="$(limactl_ni shell --start "$VM_NAME" -- bash -lc '
+    if command -v findmnt >/dev/null 2>&1; then
+      findmnt -rn -o TARGET,FSTYPE
+    else
+      mount
+    fi
+  ' 2>/dev/null || true)"
+
+  if echo "$out" | grep -Eq '(9p|virtiofs|fuse\.sshfs|sshfs|fuse\.osxfs)'; then
+    echo "error: host-share mount detected inside VM:" >&2
+    echo "$out" | grep -E '(9p|virtiofs|fuse\.sshfs|sshfs|fuse\.osxfs)' >&2
+    exit 1
+  fi
+}
+
+template_hint() {
+  echo "hint: for faster startup, create a template with --template-create and use --template-use"
+}
+
+run_host_script() {
+  local script_path="$1"
+  local label="$2"
+  [[ -n "$script_path" ]] || return 0
+  [[ -f "$script_path" ]] || die "missing $label script: $script_path"
+  AI_VM_NAME="$VM_NAME" HOOK_VM_NAME="$VM_NAME" bash "$script_path"
+}
+
+clone_instance() {
+  instance_exists "$TEMPLATE_NAME" || die "template source does not exist: $TEMPLATE_NAME"
+  if instance_exists "$VM_NAME"; then
+    die "target VM already exists: $VM_NAME"
+  fi
+  limactl_ni clone "$TEMPLATE_NAME" "$VM_NAME"
+}
+
+apply_instance_overrides() {
+  local args=()
+  local mem_gib
+  local disk_gib
+
+  if [[ -n "$OVERRIDE_CPUS" ]]; then
+    [[ "$OVERRIDE_CPUS" =~ ^[0-9]+$ ]] || die "--cpus must be a number"
+    args+=(--cpus "$OVERRIDE_CPUS")
+  fi
+
+  if [[ -n "$OVERRIDE_MEMORY" ]]; then
+    mem_gib="$(parse_gib "$OVERRIDE_MEMORY")" || die "--memory must be a number or GiB"
+    args+=(--memory "$mem_gib")
+  fi
+
+  if [[ -n "$OVERRIDE_DISK" ]]; then
+    disk_gib="$(parse_gib "$OVERRIDE_DISK")" || die "--disk must be a number or GiB"
+    args+=(--disk "$disk_gib")
+  fi
+
+  if [[ ${#args[@]} -gt 0 ]]; then
+    if [[ "$(instance_status "$VM_NAME")" == "Running" ]]; then
+      limactl_ni stop "$VM_NAME"
+    fi
+    limactl_ni edit "$VM_NAME" "${args[@]}" </dev/null
+  fi
+}
+
+if [[ "$ACTION" == "delete" || "$ACTION" == "stop" ]]; then
+  if [[ -z "$VM_NAME" ]]; then
+    die "vm name required for $ACTION"
+  fi
+fi
+
+if [[ "$ACTION" == "template-create" || "$ACTION" == "template-use" ]]; then
+  if [[ -z "$TEMPLATE_NAME" ]]; then
+    die "template name required: use --template-create NAME or --template-use NAME"
+  fi
+fi
+
+# ---- action dispatcher ----
+
+case "$ACTION" in
+  delete)
+    instance_exists "$VM_NAME" || die "VM does not exist"
+    if [[ "$(instance_status "$VM_NAME")" == "Running" ]]; then
+      limactl_ni stop "$VM_NAME"
+    fi
+    limactl_ni delete --force "$VM_NAME"
+    echo "Deleted: $VM_NAME"
+    exit 0
+    ;;
+  stop)
+    instance_exists "$VM_NAME" || die "VM does not exist"
+    if [[ "$(instance_status "$VM_NAME")" != "Running" ]]; then
+      die "VM is not running: $VM_NAME"
+    fi
+    limactl_ni stop "$VM_NAME"
+    echo "Stopped: $VM_NAME"
+    exit 0
+    ;;
+  status)
+    status_out="$(limactl_ni list)"
+    echo "$status_out"
+    if ! echo "$status_out" | awk 'NR>1 {found=1} END{exit !found}'; then
+      echo "No Lima instances found. Run: vm-workspace"
+    fi
+    exit 0
+    ;;
+  shell)
+    resolve_vm_name
+    if instance_exists "$VM_NAME"; then
+      if [[ "$(instance_status "$VM_NAME")" != "Running" ]]; then
+        start_instance
+      fi
+      limactl_ni shell "$VM_NAME"
+      exit 0
+    fi
+
+    build_resolved_config
+    ensure_instance "$RESOLVED_CONFIG"
+    start_instance
+    wait_shell
+  ensure_no_host_share_mounts
+  run_host_script "$SETUP_SCRIPT" "setup"
+  run_host_script "$WORKSPACE_SCRIPT" "workspace"
+  template_hint
+  limactl_ni shell "$VM_NAME"
+  exit 0
+    ;;
+  template-create)
+    ;;
+  template-use)
+    ;;
+  ensure)
+    ;;
+esac
+
+if [[ "$ACTION" == "template-create" ]]; then
+  VM_NAME="$TEMPLATE_NAME"
+  build_resolved_config
+  ensure_instance "$RESOLVED_CONFIG"
+  start_instance
+  wait_shell
+  ensure_no_host_share_mounts
+  run_host_script "$SETUP_SCRIPT" "setup"
+  run_host_script "$WORKSPACE_SCRIPT" "workspace"
+  stop_instance
+  echo "OK: template ready: $VM_NAME"
+  exit 0
+fi
+
+if [[ "$ACTION" == "template-use" ]]; then
+  resolve_vm_name
+  clone_instance
+  apply_instance_overrides
+  if [[ "$(instance_status "$VM_NAME")" != "Running" ]]; then
+    start_instance
+  fi
+  wait_shell
+  ensure_no_host_share_mounts
+  run_host_script "$SETUP_SCRIPT" "setup"
+  run_host_script "$WORKSPACE_SCRIPT" "workspace"
+  echo "OK: $VM_NAME ready (from template)"
+  limactl_ni shell "$VM_NAME"
+  exit 0
+fi
+
+resolve_vm_name
+build_resolved_config
+ensure_instance "$RESOLVED_CONFIG"
+start_instance
+wait_shell
+ensure_no_host_share_mounts
+run_host_script "$SETUP_SCRIPT" "setup"
+run_host_script "$WORKSPACE_SCRIPT" "workspace"
+
+template_hint
+echo "OK: $VM_NAME ready"
