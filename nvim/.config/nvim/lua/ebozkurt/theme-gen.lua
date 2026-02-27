@@ -121,9 +121,6 @@ color15 ${color15}
 	else
 		vim.notify('Generated theme')
 	end
-	vim.defer_fn(function()
-		vim.notify("")
-	end, 3000)
 	return kitty
 end
 
