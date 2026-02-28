@@ -36,6 +36,7 @@
                   })
                   {
                     installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
+                    installTmuxMover = lib.mkAfter scripts.installTmuxMover;
                   }
                 ];
             };

@@ -304,7 +304,7 @@ func loadPreviewCmd(paneID string) tea.Cmd {
 }
 
 func stateTickCmd() tea.Cmd {
-	return tea.Tick(1*time.Second, func(time.Time) tea.Msg {
+	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
 		return stateTickMsg{}
 	})
 }

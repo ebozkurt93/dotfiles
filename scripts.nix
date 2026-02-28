@@ -22,4 +22,10 @@
       cd $HOME/dotfiles/bitbar/Documents/bitbar_plugins/source/state-switcher
       nix develop -c make all
     '';
+  installTmuxMover =
+    # sh
+    ''
+      cd $HOME/dotfiles/tmux/tmux-mover
+      nix develop -c make install
+    '';
 }
