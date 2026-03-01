@@ -51,20 +51,26 @@
           modules =
             self.darwinBase.modules
             ++ [
-              ({pkgs, ...}: {
-                home = {
-                  username = "erdembozkurt";
-                  homeDirectory = "/Users/erdembozkurt";
-                  packages = [
-                    bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
-                    # openscad is provided as macos app, not executable binary
-                    (pkgs.writeShellScriptBin "openscad" ''
-                      exec "${pkgs.openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
-                    '')
-                    pkgs.syncthing
-                  ];
-                };
-              })
+              ({pkgs, ...}:
+                let
+                  openscad = pkgs.openscad.overrideAttrs (_: {
+                    doCheck = false;
+                    doInstallCheck = false;
+                  });
+                in {
+                  home = {
+                    username = "erdembozkurt";
+                    homeDirectory = "/Users/erdembozkurt";
+                    packages = [
+                      bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
+                      # openscad is provided as macos app, not executable binary
+                      (pkgs.writeShellScriptBin "openscad" ''
+                        exec "${openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
+                      '')
+                      pkgs.syncthing
+                    ];
+                  };
+                })
             ];
         });
     };
