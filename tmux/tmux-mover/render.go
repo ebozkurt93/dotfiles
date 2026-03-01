@@ -24,12 +24,7 @@ func (m model) View() string {
 	list := renderMainPanel(m, listWidth, listHeight)
 	previewText := m.preview
 	previewErr := m.previewErr
-	preview := ""
-	if effectiveSelectedPaneID(activeOrder(m), m.selectedPaneID, m.lastSelectedID, m.selectedIndex) == m.selfPaneID {
-		preview = renderPreviewSelf(previewWidth, previewHeight)
-	} else {
-		preview = renderPreview(previewText, previewErr, previewWidth, previewHeight)
-	}
+	preview := renderPreview(previewText, previewErr, previewWidth, previewHeight)
 	keyBar := renderKeyBar(m.keys, availableWidth, keyBarHeight, m.filterInput, m.filtering, m.status)
 	var body string
 	if vertical {
@@ -420,19 +415,6 @@ func renderPreview(text string, err error, width int, height int) string {
 	content := truncatePreview(text, max(1, width-2), max(1, height-2))
 	separator := mutedSeparator(max(1, width-2))
 	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, headerStyle.Render("Preview"), separator, style.Render(content)))
-}
-
-func renderPreviewSelf(width int, height int) string {
-	headerStyle := lipgloss.NewStyle().Bold(true)
-	separator := mutedSeparator(max(1, width-2))
-	label := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("6")).
-		Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"}).
-		Padding(0, 1).
-		Render("tmux-mover active")
-	content := lipgloss.NewStyle().Width(max(1, width-2)).Render(label)
-	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, headerStyle.Render("Preview"), separator, content))
 }
 
 func renderKeyBar(keys Keymap, width int, height int, filterInput string, filtering bool, status string) string {

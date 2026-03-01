@@ -56,11 +56,25 @@ func TestRenderKeyBarShowsStatusAndFilter(t *testing.T) {
 	}
 }
 
-func TestRenderPreviewSelfShowsBadge(t *testing.T) {
-	panel := renderPreviewSelf(40, 6)
-	clean := ansi.Strip(panel)
-	if !strings.Contains(clean, "tmux-mover active") {
-		t.Fatalf("expected self preview badge")
+func TestViewSelfPaneShowsPreviewText(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w0"}},
+		Panes:    []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "bash", Path: "~/p"}},
+	}
+	m := model{
+		state:          state,
+		paneOrder:      []string{"%1"},
+		selectedPaneID: "%1",
+		selfPaneID:     "%1",
+		preview:        "line from selected pane",
+		width:          80,
+		height:         24,
+		keys:           defaultKeymap(),
+	}
+	clean := ansi.Strip(m.View())
+	if !strings.Contains(clean, "line from selected pane") {
+		t.Fatalf("expected preview text for self pane")
 	}
 }
 
