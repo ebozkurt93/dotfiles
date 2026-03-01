@@ -428,8 +428,7 @@ func renderPreviewSelf(width int, height int) string {
 	label := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("6")).
-		Foreground(lipgloss.Color("7")).
-		Background(lipgloss.Color("237")).
+		Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"}).
 		Padding(0, 1).
 		Render("tmux-mover active")
 	content := lipgloss.NewStyle().Width(max(1, width-2)).Render(label)
