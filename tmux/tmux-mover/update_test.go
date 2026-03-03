@@ -73,6 +73,93 @@ func TestUpdateConfirmDeleteYesDeletes(t *testing.T) {
 	}
 }
 
+func TestUpdateConfirmDeleteSwitchesAwayBeforeDeletingCurrentSession(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$1", IndexNum: 0, Name: "w1"},
+		},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0},
+			{ID: "%2", WindowID: "@1", SessionID: "$0", IndexNum: 1},
+			{ID: "%3", WindowID: "@2", SessionID: "$1", IndexNum: 0},
+		},
+	}
+
+	m := model{
+		state:          state,
+		mode:           ModeConfirmDelete,
+		selectedPanes:  map[string]bool{"%1": true, "%2": true},
+		paneOrder:      []string{"%1", "%2", "%3"},
+		selfSessionID:  "$0",
+		selfClientID:   "c0",
+		selectedPaneID: "%1",
+		keys:           defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	next := updated.(model)
+	if next.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", next.mode)
+	}
+	if next.status != "Switched to b, deleted 2 pane(s)" {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+	if len(fake.calls) != 3 {
+		t.Fatalf("expected 3 tmux calls, got %d", len(fake.calls))
+	}
+	if strings.Join(fake.calls[0], " ") != "switch-client -c c0 -t $1" {
+		t.Fatalf("unexpected tmux call 1: %s", strings.Join(fake.calls[0], " "))
+	}
+	if strings.Join(fake.calls[1], " ") != "kill-pane -t %1" {
+		t.Fatalf("unexpected tmux call 2: %s", strings.Join(fake.calls[1], " "))
+	}
+	if strings.Join(fake.calls[2], " ") != "kill-pane -t %2" {
+		t.Fatalf("unexpected tmux call 3: %s", strings.Join(fake.calls[2], " "))
+	}
+}
+
+func TestUpdateConfirmDeletePreventsDeleteWhenNoFallbackSession(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"}},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0},
+		},
+	}
+
+	m := model{
+		state:          state,
+		mode:           ModeConfirmDelete,
+		selectedPaneID: "%1",
+		selfSessionID:  "$0",
+		keys:           defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	next := updated.(model)
+	if next.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", next.mode)
+	}
+	if next.status != "Cannot delete all panes in active session" {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+	if len(fake.calls) != 0 {
+		t.Fatalf("expected no tmux calls, got %d", len(fake.calls))
+	}
+}
+
 func TestUpdateNewSessionInputAndCreate(t *testing.T) {
 	fake := &fakeRunner{}
 	prev := tmuxRunner

@@ -601,6 +601,21 @@ func confirmDeletePanes(m model) (tea.Model, tea.Cmd) {
 		m.status = "No pane selected"
 		return m, nil
 	}
+	switchedSessionID := ""
+	if targetSession, needed := fallbackSessionBeforeDelete(m, selected); needed {
+		if targetSession == "" {
+			m.mode = ModeList
+			m.status = "Cannot delete all panes in active session"
+			return m, nil
+		}
+		if err := switchClientToSession(targetSession, m.selfClientID); err != nil {
+			m.mode = ModeList
+			m.status = fmt.Sprintf("Error: %s", err)
+			return m, nil
+		}
+		m.selfSessionID = targetSession
+		switchedSessionID = targetSession
+	}
 	deleted := 0
 	for _, paneID := range selected {
 		if err := applyPaneKill(paneID); err != nil {
@@ -612,6 +627,70 @@ func confirmDeletePanes(m model) (tea.Model, tea.Cmd) {
 	}
 	m.mode = ModeList
 	m.selectedPanes = map[string]bool{}
-	m.status = fmt.Sprintf("Deleted %d pane(s)", deleted)
+	if switchedSessionID != "" {
+		switchedSessionName := sessionNameByID(m.state, switchedSessionID)
+		if switchedSessionName == "" {
+			switchedSessionName = switchedSessionID
+		}
+		m.status = fmt.Sprintf("Switched to %s, deleted %d pane(s)", switchedSessionName, deleted)
+	} else {
+		m.status = fmt.Sprintf("Deleted %d pane(s)", deleted)
+	}
 	return m, loadStateCmd()
+}
+
+func sessionNameByID(state TmuxState, sessionID string) string {
+	for _, session := range state.Sessions {
+		if session.ID == sessionID {
+			return session.Name
+		}
+	}
+	return ""
+}
+
+func fallbackSessionBeforeDelete(m model, selected []string) (string, bool) {
+	if m.selfSessionID == "" || len(selected) == 0 {
+		return "", false
+	}
+	selectedSet := map[string]bool{}
+	for _, paneID := range selected {
+		selectedSet[paneID] = true
+	}
+	remainingInSelf := 0
+	for _, pane := range m.state.Panes {
+		if pane.SessionID == m.selfSessionID && !selectedSet[pane.ID] {
+			remainingInSelf++
+		}
+	}
+	if remainingInSelf > 0 {
+		return "", false
+	}
+	sessionHasRemainingPanes := map[string]bool{}
+	for _, pane := range m.state.Panes {
+		if !selectedSet[pane.ID] {
+			sessionHasRemainingPanes[pane.SessionID] = true
+		}
+	}
+	sessions := orderedSessions(m.state)
+	selfIndex := -1
+	for i, session := range sessions {
+		if session.ID == m.selfSessionID {
+			selfIndex = i
+			break
+		}
+	}
+	if selfIndex >= 0 {
+		for i := selfIndex - 1; i >= 0; i-- {
+			sessionID := sessions[i].ID
+			if sessionHasRemainingPanes[sessionID] {
+				return sessionID, true
+			}
+		}
+	}
+	for _, session := range sessions {
+		if session.ID != m.selfSessionID && sessionHasRemainingPanes[session.ID] {
+			return session.ID, true
+		}
+	}
+	return "", true
 }

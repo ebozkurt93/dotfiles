@@ -163,6 +163,18 @@ func currentTmuxWindowPopup() (bool, error) {
 	return strings.TrimSpace(out) == "1", nil
 }
 
+func switchClientToSession(sessionID string, clientID string) error {
+	if sessionID == "" {
+		return fmt.Errorf("missing session")
+	}
+	if clientID != "" {
+		_, err := tmuxOutput("switch-client", "-c", clientID, "-t", sessionID)
+		return err
+	}
+	_, err := tmuxOutput("switch-client", "-t", sessionID)
+	return err
+}
+
 func applyPaneMove(action StagedAction) error {
 	if action.SourceID == "" || action.TargetID == "" {
 		return fmt.Errorf("missing pane or window target")

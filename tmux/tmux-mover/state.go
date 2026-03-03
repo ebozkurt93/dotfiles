@@ -190,40 +190,55 @@ func filterState(state TmuxState, query string) TmuxState {
 	match := func(s string) bool {
 		return strings.Contains(strings.ToLower(s), query)
 	}
-	panes := []Pane{}
-	windowHasPane := map[string]bool{}
-	for _, pane := range state.Panes {
-		if match(pane.ID) || match(pane.Command) || match(pane.Path) || match(pane.Title) {
-			panes = append(panes, pane)
-			windowHasPane[pane.WindowID] = true
+	directSessionSet := map[string]bool{}
+	for _, session := range state.Sessions {
+		if match(session.ID) || match(session.Name) {
+			directSessionSet[session.ID] = true
 		}
 	}
-	windows := []Window{}
+
 	windowSet := map[string]bool{}
 	for _, window := range state.Windows {
-		if windowHasPane[window.ID] || match(window.Name) || match(window.Index) {
-			windows = append(windows, window)
+		if directSessionSet[window.SessionID] || match(window.ID) || match(window.Name) || match(window.Index) {
 			windowSet[window.ID] = true
 		}
 	}
-	sessionHasWindow := map[string]bool{}
-	for _, window := range windows {
-		sessionHasWindow[window.SessionID] = true
+
+	paneSet := map[string]bool{}
+	for _, pane := range state.Panes {
+		if windowSet[pane.WindowID] || directSessionSet[pane.SessionID] || match(pane.ID) || match(pane.Command) || match(pane.Path) || match(pane.Title) {
+			paneSet[pane.ID] = true
+			windowSet[pane.WindowID] = true
+		}
 	}
+
+	windows := []Window{}
+	sessionSet := map[string]bool{}
+	for _, window := range state.Windows {
+		if windowSet[window.ID] {
+			windows = append(windows, window)
+			sessionSet[window.SessionID] = true
+		}
+	}
+	for sessionID := range directSessionSet {
+		sessionSet[sessionID] = true
+	}
+
 	sessions := []Session{}
 	for _, session := range state.Sessions {
-		if sessionHasWindow[session.ID] || match(session.Name) {
+		if sessionSet[session.ID] {
 			sessions = append(sessions, session)
 		}
 	}
-	// Keep panes whose window is still present
-	filteredPanes := []Pane{}
-	for _, pane := range panes {
-		if windowSet[pane.WindowID] {
-			filteredPanes = append(filteredPanes, pane)
+
+	panes := []Pane{}
+	for _, pane := range state.Panes {
+		if paneSet[pane.ID] && windowSet[pane.WindowID] {
+			panes = append(panes, pane)
 		}
 	}
-	return TmuxState{Sessions: sessions, Windows: windows, Panes: filteredPanes}
+
+	return TmuxState{Sessions: sessions, Windows: windows, Panes: panes}
 }
 
 func ensureSelectionMaps(m model) model {

@@ -138,6 +138,53 @@ func TestFilterStateMatchesPaneFields(t *testing.T) {
 	}
 }
 
+func TestFilterStateSessionMatchIncludesSessionPanes(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}, {ID: "$1", Name: "ops"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "editor"},
+			{ID: "@2", SessionID: "$1", Index: "0", IndexNum: 0, Name: "shell"},
+		},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", Command: "nvim"},
+			{ID: "%2", WindowID: "@2", SessionID: "$1", Command: "bash"},
+		},
+	}
+
+	filtered := filterState(state, "work")
+	if len(filtered.Sessions) != 1 || filtered.Sessions[0].ID != "$0" {
+		t.Fatalf("expected only session $0, got %+v", filtered.Sessions)
+	}
+	if len(filtered.Windows) != 1 || filtered.Windows[0].ID != "@1" {
+		t.Fatalf("expected only window @1, got %+v", filtered.Windows)
+	}
+	if len(filtered.Panes) != 1 || filtered.Panes[0].ID != "%1" {
+		t.Fatalf("expected only pane %%1, got %+v", filtered.Panes)
+	}
+}
+
+func TestFilterStateWindowMatchIncludesWindowPanes(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "editor"},
+			{ID: "@2", SessionID: "$0", Index: "1", IndexNum: 1, Name: "logs"},
+		},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", Command: "nvim"},
+			{ID: "%2", WindowID: "@2", SessionID: "$0", Command: "tail"},
+		},
+	}
+
+	filtered := filterState(state, "editor")
+	if len(filtered.Windows) != 1 || filtered.Windows[0].ID != "@1" {
+		t.Fatalf("expected only window @1, got %+v", filtered.Windows)
+	}
+	if len(filtered.Panes) != 1 || filtered.Panes[0].ID != "%1" {
+		t.Fatalf("expected pane %%1 to be included, got %+v", filtered.Panes)
+	}
+}
+
 func TestFilterPopupState(t *testing.T) {
 	state := TmuxState{
 		Sessions: []Session{{ID: "$0", Name: "work"}},
