@@ -305,12 +305,13 @@ function __open_pr {
     return
   fi
 
+  local _gh_pr_script=~/Documents/bitbar_plugins/github-prs.5m.sh
   local selected_output="$(
     cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --multi --expect=enter \
-      --bind 'ctrl-f:reload(source ~/.zshrc; __open_pr cmd)' \
-      --bind 'ctrl-e:reload(source ~/.zshrc; __open_pr cmd | grep \$GH_USERNAME || true)' \
-      --bind 'alt-f:reload(source ~/.zshrc; __open_pr cmd | grep -v app/dependabot || true)' \
-      --bind 'ctrl-p:execute((source ~/.zshrc; __open_pr open {+}) &)+deselect-all' \
+      --bind "ctrl-f:reload($_gh_pr_script fzf)" \
+      --bind "ctrl-e:reload($_gh_pr_script fzf | grep $GH_USERNAME || true)" \
+      --bind "alt-f:reload($_gh_pr_script fzf | grep -v app/dependabot || true)" \
+      --bind "ctrl-p:execute((echo {+} | tr ' ' '\n' | awk '{print \$NF}' | xargs open) &)+deselect-all" \
       --border=top --border-label=" GitHub PRs "
   )"
 
