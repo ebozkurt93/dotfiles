@@ -36,4 +36,5 @@ require("ebozkurt.obsidian")
 require("ebozkurt.themes")
 require("ebozkurt.transparent")
 require("ebozkurt.theme-gen")
+require("ebozkurt.bigfile").setup()
 
