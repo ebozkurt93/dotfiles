@@ -8,6 +8,10 @@ unset LC_ALL
 export LANG="en_GB.UTF-8"
 export LC_TIME="en_GB.UTF-8"
 
+# claude code fails to run shell commands without this addition
+# This also works: `[[ -o interactive ]] || return`
+[[ "$SNAPSHOT_FILE" == */.claude/shell-snapshots/* ]] && return
+
 # Functions
 function mcd
 {
