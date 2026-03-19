@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(ls*)",
+      "Bash(pwd)",
+      "Bash(whoami)",
+      "Bash(rg*)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Glob(**/.env)",
+      "Glob(**/.env.*)"
+    ]
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true
+  }
+}
