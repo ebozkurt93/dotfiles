@@ -25,7 +25,7 @@ local criticalCommand = [[
   [ to_entries[]
     | select(.value | type == "object")
     | .value | to_entries[]
-    | select((.value | num) != null and (.value | num) <= 10)
+    | select((.value | num) != null and (.value | num) <= 20)
   ] | length
 '
 ]]
