@@ -1,5 +1,5 @@
 local helpers = require("helpers")
-M = {}
+local M = {}
 
 function M.restartSystemEvents()
   hs.execute(
