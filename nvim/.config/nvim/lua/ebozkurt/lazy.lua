@@ -86,12 +86,7 @@ require("lazy").setup({
         })
       end,
     },
-    {
-      "numToStr/Comment.nvim",
-      config = function()
-        require("Comment").setup()
-      end,
-    },
+    "numToStr/Comment.nvim",
     "JoosepAlviste/nvim-ts-context-commentstring",
 
     --use { 'nvim-lualine/lualine.nvim', dependencies = { 'kyazdani42/nvim-web-devicons', opt = true }}
