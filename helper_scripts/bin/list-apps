@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Fast but dependent on Spotlight
+echo "--- Spotlight Indexed Apps ---"
+mdfind "kMDItemContentType == 'com.apple.application-bundle'" | sort
+
+echo -e "\n--- Common Application Directories ---"
+find /Applications /Users/*/Applications -maxdepth 2 -name "*.app" -prune | sort
+
+# Slower but most comprehensive (uncomment to use)
+# echo -e "\n--- System Profiler (Comprehensive) ---"
+# system_profiler SPApplicationsDataType | grep "Location:" | sed 's/Location: //' | sort
