@@ -23,19 +23,15 @@ taskTimer:start()
 
 -- Config
 local expandedPath = os.getenv("HOME") .. "/dotfiles/helper_scripts/bin/helpers/macos-now-playing.js"
-local command = "/usr/bin/osascript " .. expandedPath
 
 -- Menubar item
 local nowPlayingMenu = hs.menubar.new()
 
--- Update function
-local function updateNowPlaying()
-  local handle = io.popen(command)
-  local output = handle:read("*a")
-  handle:close()
+-- Cache of last decoded result, reused by menu item callbacks
+local lastDecoded = nil
 
-  local decoded = hs.json.decode(output)
-
+local function applyNowPlaying(decoded)
+  lastDecoded = decoded
   if enabled and decoded and decoded.title and decoded.appName ~= "Spotify" then
     local isPlaying = decoded.isPlaying and "" or "󰏤 "
     local title = decoded.title
@@ -51,16 +47,20 @@ local function updateNowPlaying()
   end
 end
 
+-- Non-blocking update: runs osascript as a background task
+local function updateNowPlaying()
+  hs.task.new("/usr/bin/osascript", function(exitCode, stdOut, _)
+    if exitCode == 0 then
+      applyNowPlaying(hs.json.decode(stdOut or ""))
+    end
+  end, { expandedPath }):start()
+end
+
 -- Run every second
 local timer = hs.timer.doEvery(1, updateNowPlaying):start()
 
 local function findAppName()
-  local handle = io.popen(command)
-  local output = handle:read("*a")
-  handle:close()
-
-  local decoded = hs.json.decode(output)
-  return decoded.appName
+  return lastDecoded and lastDecoded.appName
 end
 
 nowPlayingMenu:setMenu({

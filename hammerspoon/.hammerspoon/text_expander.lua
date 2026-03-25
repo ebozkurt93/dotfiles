@@ -65,14 +65,8 @@ local expander = (function()
 
   -- Prevent our own injected keystrokes from being re-processed.
   local injecting = false
-  local function withInjection(fn)
-    injecting = true
-    fn()
-    -- Drop the guard on the next runloop tick.
-    hs.timer.doAfter(0, function() injecting = false end)
-  end
 
-  local keyWatcher = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(ev)
+  local keyWatcher = helpers.registerKeyDownHandler(function(ev)
     if injecting then
       return false
     end
@@ -117,21 +111,31 @@ local expander = (function()
     end
 
     if matched then
+      local trigger = matched
       local replacement = keywords[matched]
-      local out = type(replacement) == "function" and replacement() or replacement
+      word = ""
 
-      withInjection(function()
-        for _ = 1, #matched do
+      -- Defer out of the eventtap callback so it returns immediately (blocking
+      -- calls like hs.http.get or long keyStrokes would otherwise freeze input).
+      -- Uses pasteboard+paste instead of keyStrokes: one cmd+v regardless of length.
+      hs.timer.doAfter(0, function()
+        local out = type(replacement) == "function" and replacement() or replacement
+        local prev = hs.pasteboard.getContents()
+        injecting = true
+        for _ = 1, #trigger do
           hs.eventtap.keyStroke({}, "delete", 0)
         end
-        hs.eventtap.keyStrokes(out)
+        hs.pasteboard.setContents(out)
+        hs.eventtap.keyStroke({"cmd"}, "v", 0)
+        hs.timer.doAfter(0.5, function()
+          hs.pasteboard.setContents(prev or "")
+          injecting = false
+        end)
       end)
-
-      word = ""
     end
 
     return false
-  end):start()
+  end)
 
   return keyWatcher
 end)()

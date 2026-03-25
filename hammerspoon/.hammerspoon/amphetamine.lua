@@ -26,8 +26,7 @@ local function runScript(args)
   return hs.execute(command, true)
 end
 
-local function getStatus()
-  local output, success = runScript({ "status" })
+local function parseStatus(output, success)
   if not success then
     return { active = false, remaining = nil, flags = nil }
   end
@@ -55,6 +54,13 @@ local function getStatus()
   end
 
   return status
+end
+
+-- Non-blocking status check — runs the script as a background task
+local function getStatusAsync(callback)
+  hs.task.new("/bin/bash", function(exitCode, stdOut, _)
+    callback(parseStatus(stdOut, exitCode == 0))
+  end, { "-c", shellQuote(scriptPath) .. " status" }):start()
 end
 
 local function formatRemaining(seconds)
@@ -118,10 +124,11 @@ local function runAction(args, errorText)
   end)
 end
 
-local function refreshMenu()
-  local status = getStatus()
-  updateMenuTitle(status.active)
-  return status
+local function refreshMenu(callback)
+  getStatusAsync(function(status)
+    updateMenuTitle(status.active)
+    if callback then callback(status) end
+  end)
 end
 
 local function promptProfileFlags(current)
@@ -289,9 +296,10 @@ hs.hotkey.bind({ "cmd" }, "i", function()
 end)
 
 refreshAndReschedule = function()
-  local status = refreshMenu()
-  menu:setMenu(buildMenu(status))
-  ensureTimer(desiredInterval(status))
+  refreshMenu(function(status)
+    menu:setMenu(buildMenu(status))
+    ensureTimer(desiredInterval(status))
+  end)
 end
 
 refreshAndReschedule()

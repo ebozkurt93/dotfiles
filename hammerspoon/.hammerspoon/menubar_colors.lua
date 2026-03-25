@@ -14,4 +14,5 @@ spoon.MenubarFlag.colors = {
   ["Turkish Q"] = { hexToHammerspoonColor("#E30A17") },
 }
 
+spoon.MenubarFlag.timerFreq = 0
 spoon.MenubarFlag:start()

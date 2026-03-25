@@ -95,47 +95,68 @@ function M.findTableArrayItemByField(tableArray, key, value)
   return nil
 end
 
--- Not ideal, but prevents appwatchers being garbage collected
-_G.helpers_appWatchers = _G.helpers_appWatchers or {}
+-- Single shared app watcher that dispatches to a per-app handler registry,
+-- replacing the previous pattern of one watcher per hotkeyScopedToApp call.
+local _appHandlers = {}
+_G.helpers_sharedAppWatcher = hs.application.watcher.new(function(appName_, eventType, _)
+  local handlers = _appHandlers[appName_]
+  if handlers then
+    local callbacks = handlers[eventType]
+    if callbacks then
+      for _, cb in ipairs(callbacks) do cb() end
+    end
+  end
+end)
+_G.helpers_sharedAppWatcher:start()
+
+local function registerAppHandler(appName, eventType, callback)
+  if not _appHandlers[appName] then _appHandlers[appName] = {} end
+  if not _appHandlers[appName][eventType] then _appHandlers[appName][eventType] = {} end
+  table.insert(_appHandlers[appName][eventType], callback)
+end
 
 function M.hotkeyScopedToApp(mods, key, appName, func)
-  local yourHotkey = hs.hotkey.new(mods, key, function()
+  local hotkey = hs.hotkey.new(mods, key, function()
     local app = hs.application.frontmostApplication()
     if app and app:name() == appName then
       func(app)
     end
   end)
 
-  local appWatcher = hs.application.watcher.new(function(appName_, eventType, app)
-    if appName_ == appName then
-      if eventType == hs.application.watcher.activated then
-        yourHotkey:enable()
-      elseif eventType == hs.application.watcher.deactivated then
-        yourHotkey:disable()
-      end
-    end
-  end)
-
-  appWatcher:start()
-  table.insert(_G.helpers_appWatchers, appWatcher)
+  registerAppHandler(appName, hs.application.watcher.activated, function() hotkey:enable() end)
+  registerAppHandler(appName, hs.application.watcher.deactivated, function() hotkey:disable() end)
 end
 
 function M.hotkeyExcludingApp(mods, key, appName, func)
   local hotkey = hs.hotkey.new(mods, key, func)
 
-  local appWatcher = hs.application.watcher.new(function(appName_, eventType, app)
-    if appName_ == appName then
-      if eventType == hs.application.watcher.activated then
-        hotkey:disable()
-      elseif eventType == hs.application.watcher.deactivated then
-        hotkey:enable()
-      end
-    end
-  end)
-
-  appWatcher:start()
-  table.insert(_G.helpers_appWatchers, appWatcher)
+  registerAppHandler(appName, hs.application.watcher.activated, function() hotkey:disable() end)
+  registerAppHandler(appName, hs.application.watcher.deactivated, function() hotkey:enable() end)
 end
+
+-- Shared keyDown dispatcher — one eventtap for all keyDown handlers in this config.
+-- Returns a handle with :start()/:stop() to pause/resume a specific handler.
+local _keyDownHandlers = {}
+_G.helpers_sharedKeyDownTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(event)
+  for _, entry in ipairs(_keyDownHandlers) do
+    if entry.enabled and entry.fn(event) then
+      return true
+    end
+  end
+  return false
+end)
+_G.helpers_sharedKeyDownTap:start()
+
+local function registerKeyDownHandler(fn)
+  local entry = { fn = fn, enabled = true }
+  table.insert(_keyDownHandlers, entry)
+  return {
+    start = function() entry.enabled = true end,
+    stop  = function() entry.enabled = false end,
+  }
+end
+
+M.registerKeyDownHandler = registerKeyDownHandler
 
 function M.isCurrentTabUrlStartingWith(startsWith)
   local _, currentUrl =
@@ -197,28 +218,38 @@ end
 
 function M.keystrokesScopedToApp(target, app, func)
   local keystrokeBuffer = ""
+  local currentFrontmost = hs.application.frontmostApplication()
+  local appActive = currentFrontmost and currentFrontmost:title() == app
 
-  local function handleKeystrokes(event)
-    local currentApp = hs.application.frontmostApplication()
+  registerAppHandler(app, hs.application.watcher.activated, function()
+    appActive = true
+    keystrokeBuffer = ""
+  end)
+  registerAppHandler(app, hs.application.watcher.deactivated, function()
+    appActive = false
+    keystrokeBuffer = ""
+  end)
 
-    if currentApp:title() == app then
-      local character = event:getCharacters()
-      keystrokeBuffer = keystrokeBuffer .. character
+  local handle = registerKeyDownHandler(function(event)
+    if not appActive then return false end
 
-      if #keystrokeBuffer > #target then
-        keystrokeBuffer = keystrokeBuffer:sub(-#target)
-      end
+    local character = event:getCharacters()
+    if not character or character == "" then return false end
 
-      if keystrokeBuffer == target then
-        keystrokeBuffer = ""
-        func()
-      end
+    keystrokeBuffer = keystrokeBuffer .. character
+    if #keystrokeBuffer > #target then
+      keystrokeBuffer = keystrokeBuffer:sub(-#target)
     end
-  end
 
-  local keystrokeTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, handleKeystrokes)
-  keystrokeTap:start()
-  return keystrokeTap, keystrokeBuffer
+    if keystrokeBuffer == target then
+      keystrokeBuffer = ""
+      hs.timer.doAfter(0, func)
+    end
+
+    return false
+  end)
+
+  return handle, keystrokeBuffer
 end
 
 function M.isCurrentWindowInFullScreen()

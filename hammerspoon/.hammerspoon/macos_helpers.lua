@@ -480,14 +480,18 @@ function M.refreshBitBarPlugins()
   hs.execute([[ open -g "bitbar://refreshPlugin?name=*" ]])
 end
 
-function M.isDarkMode()
+-- Cached — avoids AppleScript overhead in hot paths (e.g. drag event handlers).
+-- Call M.updateDarkModeCache() on startup and whenever the theme changes.
+local _darkModeCache = false
+
+function M.updateDarkModeCache()
   local script = 'tell application "System Events"\nreturn dark mode of appearance preferences\nend tell'
   local ok, result = hs.osascript.applescript(script)
-  if ok then
-    return result
-  else
-    return false
-  end
+  _darkModeCache = ok and result or false
+end
+
+function M.isDarkMode()
+  return _darkModeCache
 end
 
 function M.resetWiFiDNS()
