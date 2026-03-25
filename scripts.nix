@@ -16,15 +16,21 @@
     $HOME/.tmux/plugins/tpm/bin/clean_plugins
     $HOME/.tmux/plugins/tpm/bin/install_plugins
   '';
-  installStateSwitcher =
+  installStateSwitcher = let
+    requiredPackages = with pkgs; [git];
+  in
     # sh
     ''
+      export PATH=${lib.makeBinPath requiredPackages}:$PATH
       cd $HOME/dotfiles/bitbar/Documents/bitbar_plugins/source/state-switcher
       nix develop -c make all
     '';
-  installTmuxMover =
+  installTmuxMover = let
+    requiredPackages = with pkgs; [git];
+  in
     # sh
     ''
+      export PATH=${lib.makeBinPath requiredPackages}:$PATH
       cd $HOME/dotfiles/tmux/tmux-mover
       nix develop -c make install
     '';
