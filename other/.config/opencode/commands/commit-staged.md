@@ -4,6 +4,7 @@ description: Create a commit from staged changes
 Create a git commit using only staged changes. Do not stage or modify files.
 
 Explain the changes and rationale in 1-2 short paragraphs in the commit message body if needed.
+If you use backticks make sure to escape them so that commit message contains correct text.
 Include a Co-authored-by line for the AI provider and model, chosen based on the active model at runtime.
 
 Examples:
