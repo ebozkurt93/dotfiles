@@ -529,6 +529,20 @@ local function toggleTerminalTheme()
   end
 end
 
+function M.syncClaudeTheme()
+  local theme = M.isDarkMode() and "dark" or "light"
+  local settingsPath = os.getenv("HOME") .. "/.claude.json"
+  local settings = hs.json.read(settingsPath)
+  if settings then
+    settings["theme"] = theme
+    local f = io.open(settingsPath, "w")
+    if f then
+      f:write(hs.json.encode(settings, true))
+      f:close()
+    end
+  end
+end
+
 function M.toggleTheme()
   -- toggleTerminalTheme()
   hs.execute([[ osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode' ]])

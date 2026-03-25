@@ -24,6 +24,7 @@ local _ = require("kb_battery")
 local _ = require("rapid_toggle")
 local _ = require("action_menu")
 local _ = require("bt_menu")
+local _ = require("theme_sync")
 local _ = require("sleepwatcher")
 local _, _ = helpers.safeRequire("personal", {}, nil)
 
