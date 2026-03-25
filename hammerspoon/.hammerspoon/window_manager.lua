@@ -31,7 +31,7 @@ end
 
 local function applyShiftItSizes()
   if hasWidescreen() then
-    spoon.ShiftIt:setWindowCyclingSizes({ 50, 25, 75 }, { 50 })
+    spoon.ShiftIt:setWindowCyclingSizes({ 50, 25, 33, 67, 75 }, { 50 })
   else
     spoon.ShiftIt:setWindowCyclingSizes({ 50, 33, 67 }, { 50 })
   end
