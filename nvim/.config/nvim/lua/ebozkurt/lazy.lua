@@ -168,7 +168,7 @@ require("lazy").setup({
     "nvim-neotest/neotest-go",
     "haydenmeade/neotest-jest",
 
-    "RRethy/vim-illuminate",
+    { "folke/snacks.nvim", priority = 1000, lazy = false },
     "mbbill/undotree",
 
     { "kevinhwang91/nvim-bqf" },

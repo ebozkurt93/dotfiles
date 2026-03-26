@@ -66,20 +66,14 @@ vim.keymap.set('x', '<leader>p', '"_dP', { noremap = true })
 -- more center things after different type of jumps
 vim.keymap.set('n', 'n', 'nzzzv', { noremap = true })
 vim.keymap.set('n', 'N', 'Nzzzv', { noremap = true })
-vim.api.nvim_create_autocmd('User', {
-	pattern = 'IlluminateInitialized',
-	callback = function()
-		local illuminate = require('illuminate')
-		vim.keymap.set('n', '<A-n>', function()
-			illuminate.goto_next_reference(true)
-			vim.cmd([[ :normal zz ]])
-		end, { noremap = true })
-		vim.keymap.set('n', '<A-p>', function()
-			illuminate.goto_prev_reference(true)
-			vim.cmd([[ :normal zz ]])
-		end, { noremap = true })
-	end
-})
+vim.keymap.set('n', '<A-n>', function()
+	Snacks.words.jump(1, true)
+	vim.cmd([[ :normal zz ]])
+end, { noremap = true })
+vim.keymap.set('n', '<A-p>', function()
+	Snacks.words.jump(-1, true)
+	vim.cmd([[ :normal zz ]])
+end, { noremap = true })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'IndentBlanklineInitialized',
 	callback = function()
