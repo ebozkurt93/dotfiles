@@ -105,7 +105,7 @@ end
 
 local function updateMenuTitle(active)
   if active then
-    menu:setTitle(onIcon)
+    menu:setTitle(hs.styledtext.new(onIcon, { color = { red = 0.22, green = 0.75, blue = 0.36 } }))
   else
     menu:setTitle(offIcon)
   end
