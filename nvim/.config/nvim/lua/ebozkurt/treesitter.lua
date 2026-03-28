@@ -74,3 +74,26 @@ require("nvim-treesitter.configs").setup({
 
 -- use treesitter for folding
 vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+
+-- nvim 0.12 breaking change: directive captures are now TSNode[] arrays but
+-- nvim-treesitter expects a single TSNode. Apply after VimEnter so lazy.nvim
+-- has finished loading nvim-treesitter (which would otherwise overwrite this).
+vim.api.nvim_create_autocmd("VimEnter", {
+	once = true,
+	callback = function()
+		local aliases = { ex = "elixir", pl = "perl", sh = "bash", uxn = "uxntal", ts = "typescript" }
+		require("vim.treesitter.query").add_directive(
+			"set-lang-from-info-string!",
+			function(match, _, bufnr, pred, metadata)
+				local node = match[pred[2]]
+				if type(node) == "table" then node = node[1] end
+				if not node then return end
+				local alias = vim.treesitter.get_node_text(node, bufnr):lower()
+				local lang = vim.filetype.match({ filename = "a." .. alias })
+				metadata["injection.language"] = lang or aliases[alias] or alias
+			end,
+			{ force = true }
+		)
+	end,
+})
+
