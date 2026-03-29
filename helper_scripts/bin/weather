@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+lat="${WEATHER_LAT:-}"
+lon="${WEATHER_LON:-}"
+label="${WEATHER_LABEL:-Weather}"
+ttl="${WEATHER_TTL:-45m}"
+stale="${WEATHER_STALE_TTL:-30m}"
+location_ttl="${WEATHER_LOCATION_TTL:-45m}"
+location_stale="${WEATHER_LOCATION_STALE_TTL:-30m}"
+force=false
+live_fetch=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force)
+      force=true
+      shift
+      ;;
+    --live-fetch)
+      live_fetch=true
+      shift
+      ;;
+    --lat)
+      lat="$2"
+      shift 2
+      ;;
+    --lon)
+      lon="$2"
+      shift 2
+      ;;
+    --label)
+      label="$2"
+      shift 2
+      ;;
+    *)
+      echo "unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "${lat}" || -z "${lon}" ]]; then
+  location_bkt_args=(
+    --ttl "${location_ttl}"
+    --stale "${location_stale}"
+    --scope "weather-location-ip"
+  )
+
+  if [[ "${force}" == "true" ]]; then
+    location_bkt_args+=(--force)
+  fi
+
+  location_json="$(
+    bkt "${location_bkt_args[@]}" -- \
+      curl --fail --silent --show-error --location "https://ipinfo.io/json"
+  )"
+
+  lat="$(printf '%s' "${location_json}" | jq -r '.loc | split(",")[0] // empty')"
+  lon="$(printf '%s' "${location_json}" | jq -r '.loc | split(",")[1] // empty')"
+
+  if [[ "${label}" == "Weather" ]]; then
+    label="$(printf '%s' "${location_json}" | jq -r '.city // .region // .country // "Weather"')"
+  fi
+fi
+
+if [[ -z "${lat}" || -z "${lon}" ]]; then
+  echo "failed to determine location from IP" >&2
+  exit 1
+fi
+
+if [[ "${live_fetch}" == "true" ]]; then
+  api_url="https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}"
+
+  raw_json="$(
+    curl --fail --silent --show-error --location "${api_url}"
+  )"
+
+  fetched_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  temp_c="$(printf '%s' "${raw_json}" | jq -r '.properties.timeseries[0].data.instant.details.air_temperature | tonumber')"
+  wind_mps="$(printf '%s' "${raw_json}" | jq -r '.properties.timeseries[0].data.instant.details.wind_speed // 0 | tonumber')"
+
+  feels_like_c="null"
+  if awk "BEGIN { exit !(${temp_c} < 10 && ${wind_mps} >= 1.4) }"; then
+    feels_like_c="$(
+      awk "BEGIN {
+        wind_kph = ${wind_mps} * 3.6
+        print 13.12 + 0.6215 * ${temp_c} - 11.37 * (wind_kph ^ 0.16) + 0.3965 * ${temp_c} * (wind_kph ^ 0.16)
+      }"
+    )"
+  fi
+
+  # Yr's "feels like" guidance for Locationforecast says to use wind chill for
+  # cold/windy conditions and points to Yr's help page for the formula:
+  # https://docs.api.met.no/doc/locationforecast/FAQ.html
+  # https://hjelp.yr.no/hc/no/articles/360001695513-Effektiv-temperatur-og-f%C3%B8les-som
+  #
+  # The help page describes:
+  # - T in celsius at 2m
+  # - V in km/h at 10m
+  # - the formula is not valid below 1.4 m/s wind speed
+  #
+  # We only emit feels_like_c when the wind chill formula is valid.
+  printf '%s' "${raw_json}" | jq -c --arg label "${label}" --arg fetchedAt "${fetched_at}" --arg lat "${lat}" --arg lon "${lon}" --arg feelsLike "${feels_like_c}" '
+    .properties.meta.updated_at as $updatedAt
+    | .properties.timeseries as $timeseries
+    | .properties.timeseries[0] as $current
+    | ($current.data.instant.details.air_temperature | tonumber) as $temp
+    | (
+        $timeseries
+        | map(
+            select(.data.next_1_hours.details.precipitation_amount? != null)
+            | {
+                time: .time,
+                precipitation_amount: (.data.next_1_hours.details.precipitation_amount | tonumber)
+              }
+          )
+        | map(select(.precipitation_amount > 0))
+        | .[0]
+      ) as $nextRain
+    | {
+        label: $label,
+        latitude: ($lat | tonumber),
+        longitude: ($lon | tonumber),
+        fetched_at: $fetchedAt,
+        updated_at: $updatedAt,
+        temperature_c: $temp,
+        feels_like_c: (if $feelsLike == "null" then null else ($feelsLike | tonumber) end),
+        next_rain_at: ($nextRain.time // null),
+        next_rain_amount_mm: ($nextRain.precipitation_amount // null),
+        symbol_code: (
+          $current.data.next_1_hours.summary.symbol_code
+          // $current.data.next_6_hours.summary.symbol_code
+          // $current.data.next_12_hours.summary.symbol_code
+          // "cloudy"
+        )
+      }
+  '
+  exit 0
+fi
+
+# Cache the script's final JSON output, not the raw upstream response, so
+# fetched_at/next_rain_* stay tied to the cached payload itself.
+bkt_args=(
+  --ttl "${ttl}"
+  --stale "${stale}"
+  --scope "weather-yr"
+)
+
+if [[ "${force}" == "true" ]]; then
+  bkt_args+=(--force)
+fi
+
+exec bkt "${bkt_args[@]}" -- "$0" --live-fetch --lat "${lat}" --lon "${lon}" --label "${label}"
