@@ -2,6 +2,7 @@
 with pkgs; [
   atuin
   bat
+  bkt
   blueutil
   coreutils
   colima
