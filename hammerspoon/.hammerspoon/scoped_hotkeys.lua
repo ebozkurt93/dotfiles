@@ -60,7 +60,10 @@ hs.hotkey.bind({ "cmd", "shift" }, "8", function()
 end)
 
 helpers.hotkeyScopedToApp({ "ctrl" }, "d", "Google Chrome", function(app)
-  app:selectMenuItem({ "Tab", "Duplicate Tab" })
+  helpers.selectMenuItemFromPaths(app, {
+    { "Tab", "Duplicate Tab" },
+    { "Tab", "Duplicate tab" },
+  })
 end)
 
 helpers.hotkeyScopedToApp({ "alt" }, "d", "Google Chrome", function()
@@ -97,7 +100,10 @@ helpers.hotkeyScopedToApp({ "cmd", "ctrl" }, "t", "Google Chrome", function(app)
 end)
 
 helpers.hotkeyScopedToApp({ "cmd", "ctrl" }, "p", "Google Chrome", function(app)
-  app:selectMenuItem({ "Tab", "Pin Tab" })
+  helpers.selectMenuItemFromPaths(app, {
+    { "Tab", "Pin Tab" },
+    { "Tab", "Pin tab" },
+  })
 end)
 
 helpers.hotkeyScopedToApp({ "ctrl", "alt" }, "m", "Google Chrome", function(app)

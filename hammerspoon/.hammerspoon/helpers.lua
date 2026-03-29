@@ -260,6 +260,20 @@ function M.isCurrentWindowInFullScreen()
   return false
 end
 
+function M.selectMenuItemFromPaths(app, paths)
+  if not app or type(paths) ~= "table" then
+    return false
+  end
+
+  for _, path in ipairs(paths) do
+    if type(path) == "table" and app:selectMenuItem(path) then
+      return true
+    end
+  end
+
+  return false
+end
+
 function M.runShellCommandInBackground(command)
   local shell = "/bin/bash"
   local arguments = { "-c", command }
