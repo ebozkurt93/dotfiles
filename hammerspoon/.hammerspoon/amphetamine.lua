@@ -132,19 +132,23 @@ local function refreshMenu(callback)
 end
 
 local function promptProfileFlags(current)
-  local button, text = hs.dialog.textPrompt(
-    "Amphetamine Profile",
-    "Set profile flags for now + future sessions (examples: -d -i -m, -i -m, -d)",
-    current or "-d -i -m",
-    "Apply",
-    "Cancel"
-  )
+  hs.timer.doAfter(0, function()
+    hs.focus()
 
-  if button ~= "Apply" then
-    return
-  end
+    local button, text = hs.dialog.textPrompt(
+      "Amphetamine Profile",
+      "Set profile flags for now + future sessions (examples: -d -i -m, -i -m, -d)",
+      current or "-d -i -m",
+      "Apply",
+      "Cancel"
+    )
 
-  runAction({ "profile", text }, "Invalid flags")
+    if button ~= "Apply" then
+      return
+    end
+
+    runAction({ "profile", text }, "Invalid flags")
+  end)
 end
 
 local function buildMenu(status)
@@ -244,25 +248,29 @@ local function buildMenu(status)
     {
       title = "Start custom duration...",
       fn = function()
-        local button, text = hs.dialog.textPrompt(
-          "Amphetamine",
-          "Enter duration (15m, 2h, 90m, 3600s)",
-          "",
-          "Start",
-          "Cancel"
-        )
+        hs.timer.doAfter(0, function()
+          hs.focus()
 
-        if button ~= "Start" then
-          return
-        end
+          local button, text = hs.dialog.textPrompt(
+            "Amphetamine",
+            "Enter duration (15m, 2h, 90m, 3600s)",
+            "",
+            "Start",
+            "Cancel"
+          )
 
-        local seconds = parseDurationToSeconds(text)
-        if not seconds then
-          hs.alert.show("Invalid duration")
-          return
-        end
+          if button ~= "Start" then
+            return
+          end
 
-        runAction({ "start", tostring(seconds) .. "s" })
+          local seconds = parseDurationToSeconds(text)
+          if not seconds then
+            hs.alert.show("Invalid duration")
+            return
+          end
+
+          runAction({ "start", tostring(seconds) .. "s" })
+        end)
       end,
     },
   }
