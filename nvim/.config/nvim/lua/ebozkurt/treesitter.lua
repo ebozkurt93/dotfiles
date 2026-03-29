@@ -81,12 +81,19 @@ vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 vim.api.nvim_create_autocmd("VimEnter", {
 	once = true,
 	callback = function()
+		local function first_node(match, capture_id)
+			local node = match[capture_id]
+			if type(node) == "table" then
+				node = node[1]
+			end
+			return node
+		end
+
 		local aliases = { ex = "elixir", pl = "perl", sh = "bash", uxn = "uxntal", ts = "typescript" }
 		require("vim.treesitter.query").add_directive(
 			"set-lang-from-info-string!",
 			function(match, _, bufnr, pred, metadata)
-				local node = match[pred[2]]
-				if type(node) == "table" then node = node[1] end
+				local node = first_node(match, pred[2])
 				if not node then return end
 				local alias = vim.treesitter.get_node_text(node, bufnr):lower()
 				local lang = vim.filetype.match({ filename = "a." .. alias })
@@ -94,6 +101,23 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			end,
 			{ force = true }
 		)
+
+		require("vim.treesitter.query").add_directive(
+			"downcase!",
+			function(match, _, bufnr, pred, metadata)
+				local capture_id = pred[2]
+				local node = first_node(match, capture_id)
+				if not node then return end
+
+				local capture_metadata = metadata[capture_id]
+				local text = vim.treesitter.get_node_text(node, bufnr, { metadata = capture_metadata }) or ""
+				if not capture_metadata then
+					capture_metadata = {}
+					metadata[capture_id] = capture_metadata
+				end
+				capture_metadata.text = text:lower()
+			end,
+			{ force = true }
+		)
 	end,
 })
-
