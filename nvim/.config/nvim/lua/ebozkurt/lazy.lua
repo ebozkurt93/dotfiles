@@ -47,10 +47,10 @@ require("lazy").setup({
 
     {
       "nvim-treesitter/nvim-treesitter",
+      branch = "main",
       build = ":TSUpdate",
     },
     "nvim-treesitter/nvim-treesitter-textobjects",
-    { "nvim-treesitter/playground" },
     "nvim-treesitter/nvim-treesitter-context",
 
     -- lsp and autocompletion

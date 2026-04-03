@@ -34,6 +34,7 @@ with pkgs; [
   zsh-autosuggestions
   direnv
   nix-direnv
+  tree-sitter
 
   age
   sops
