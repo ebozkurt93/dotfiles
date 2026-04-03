@@ -35,8 +35,42 @@ def split_row(row):
 
     return fields
 
+def find_separator_positions(lines):
+    """Return the character positions of '+' in the first border/separator line found."""
+    for line in lines:
+        stripped = line.strip()
+        if stripped and "+" in stripped and all(c in "-+| " for c in stripped):
+            positions = [i for i, c in enumerate(line) if c == "+"]
+            if positions:
+                return positions
+    return None
+
+def split_row_at_positions(row, positions):
+    """Split a row into fields using known column boundary positions."""
+    has_leading = positions[0] == 0
+
+    boundaries = list(positions)
+    if not has_leading:
+        boundaries = [-1] + boundaries
+
+    fields = []
+    for i in range(len(boundaries) - 1):
+        start = boundaries[i] + 1
+        end = boundaries[i + 1]
+        fields.append(row[start:end].strip())
+
+    if not has_leading:
+        last_start = boundaries[-1] + 1
+        fields.append(row[last_start:].strip())
+
+    return fields
+
 def parse_table(input_data):
     lines = input_data.splitlines()
+
+    # Find column positions from border lines before removing them
+    separator_positions = find_separator_positions(lines)
+
     # Remove lines with only borders (e.g., +---+)
     lines = [line for line in lines if not set(line.strip()) <= {"-", "+", "|", " "}]
 
@@ -48,8 +82,12 @@ def parse_table(input_data):
         return [], []
 
     # Extract headers and rows
-    headers = split_row(lines[0])
-    rows = [split_row(line) for line in lines[1:]]
+    if separator_positions:
+        headers = split_row_at_positions(lines[0], separator_positions)
+        rows = [split_row_at_positions(line, separator_positions) for line in lines[1:]]
+    else:
+        headers = split_row(lines[0])
+        rows = [split_row(line) for line in lines[1:]]
 
     # Trim empty columns from the start and end
     while headers and headers[0] == "":
@@ -69,7 +107,7 @@ def parse_table(input_data):
 def table_to_csv(headers, rows):
     import io
     output = io.StringIO()  # Create an in-memory file object
-    writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL, lineterminator="\n")
     writer.writerow(headers)
     writer.writerows(rows)
     return output.getvalue()  # Return the content as a string
@@ -94,7 +132,7 @@ def main():
         sys.exit(0)
 
     # Read input from stdin
-    input_data = sys.stdin.read()
+    input_data = sys.stdin.read().replace("\r\n", "\n").replace("\r", "\n")
 
     # Parse the table
     headers, rows = parse_table(input_data)
