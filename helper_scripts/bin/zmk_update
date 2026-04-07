@@ -1,5 +1,15 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # vi: ft=sh
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [[ "$(basename "$repo_root")" == "chocofi-zmk-config" ]]; then
+	left_firmware="$repo_root/build/artifacts/corne_left nice_view_adapter nice_view-nice_nano__zmk-zmk.uf2"
+	right_firmware="$repo_root/build/artifacts/corne_right nice_view_adapter nice_view-nice_nano__zmk-zmk.uf2"
+else
+	left_firmware="$HOME/Downloads/firmware/corne_left nice_view_adapter nice_view-nice_nano__zmk-zmk.uf2"
+	right_firmware="$HOME/Downloads/firmware/corne_right nice_view_adapter nice_view-nice_nano__zmk-zmk.uf2"
+fi
 
 options=$(cat <<-END
 flash_left
@@ -9,23 +19,23 @@ download_latest_firmware
 END
 )
 
-selected=$(echo $options | tr ' ' '\n' | fzf)
+selected=$(echo "$options" | fzf)
 echo "$selected"
+
 if [[ "$selected" == "flash_left" ]]; then
-	cp ~/Downloads/firmware/corne_left\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/left.uf2
+	cp "$left_firmware" /Volumes/NICENANO/left.uf2
 elif [[ "$selected" == "flash_right" ]]; then
-	cp ~/Downloads/firmware/corne_right\ nice_view_adapter\ nice_view-nice_nano_v2-zmk.uf2 /Volumes/NICENANO/right.uf2
+	cp "$right_firmware" /Volumes/NICENANO/right.uf2
 elif [[ "$selected" == "remove_downloads" ]]; then
-	rm -rf ~/Downloads/firmware
-	rm ~/Downloads/firmware.zip
+	rm -rf "$HOME/Downloads/firmware"
+	rm -f "$HOME/Downloads/firmware.zip"
 elif [[ "$selected" == "download_latest_firmware" ]]; then
-	rm -rf ~/Downloads/firmware
-	rm ~/Downloads/firmware.zip
-	cd ~/Downloads
-	databaseId=$(gh run list --repo 'ebozkurt93/chocofi-zmk-config' --status 'success' --limit 1 --json 'databaseId' | jq -r '.[0] | .databaseId')
-	gh run download --repo 'ebozkurt93/chocofi-zmk-config' $databaseId
+	rm -rf "$HOME/Downloads/firmware"
+	rm -f "$HOME/Downloads/firmware.zip"
+	cd "$HOME/Downloads" || exit 1
+	databaseId=$(gh run list --repo 'ebozkurt93/chocofi-zmk-config' --status 'success' --limit 1 --json 'databaseId' | jq -r '.[0].databaseId')
+	gh run download --repo 'ebozkurt93/chocofi-zmk-config' "$databaseId"
 else
 	echo "invalid, exiting"
-	exit
+	exit 1
 fi
-
