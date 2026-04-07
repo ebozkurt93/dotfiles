@@ -19,6 +19,13 @@ type State struct {
 	Disabled               bool   `json:"disabled"`
 }
 
+type StateStatus struct {
+	Title   string `json:"title"`
+	Icon    string `json:"icon,omitempty"`
+	Paths   string `json:"paths,omitempty"`
+	Enabled bool   `json:"enabled"`
+}
+
 func main() {
 	args := os.Args[1:]
 	var arg1, arg2, arg3 string
@@ -107,6 +114,8 @@ func main() {
 		fmt.Println(paths[arg2])
 	case "states":
 		fmt.Println(strings.Join(titles, " "))
+	case "states-json":
+		printStatesJSON(enabledStates)
 	case "states-with-marks":
 		maxLen := 0
 		for _, title := range titles {
@@ -128,6 +137,26 @@ func main() {
 	default:
 		fmt.Println("Invalid argument")
 	}
+}
+
+func printStatesJSON(states []State) {
+	stateStatuses := make([]StateStatus, 0, len(states))
+	for _, state := range states {
+		stateStatuses = append(stateStatuses, StateStatus{
+			Title:   state.Title,
+			Icon:    state.Icon,
+			Paths:   substituteEnvVars(state.Paths),
+			Enabled: fileExists(getFilePath(state.Title)),
+		})
+	}
+
+	payload, err := json.Marshal(stateStatuses)
+	if err != nil {
+		fmt.Println("Error encoding states json:", err)
+		return
+	}
+
+	fmt.Println(string(payload))
 }
 
 func readConfigFile(filePath string) ([]State, error) {

@@ -23,6 +23,7 @@ local _ = require("amphetamine")
 local _ = require("kb_battery")
 local _ = require("rapid_toggle")
 local _ = require("action_menu")
+local _ = require("state_switcher")
 local _ = require("bt_menu")
 local _ = require("theme_sync")
 local _ = require("weather")
@@ -33,4 +34,3 @@ local _, _ = helpers.safeRequire("personal", {}, nil)
 -- require("google_meet_mic_toggle")
 
 hs.alert.show("Config loaded")
-
