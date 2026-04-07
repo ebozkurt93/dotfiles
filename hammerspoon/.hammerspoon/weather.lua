@@ -190,6 +190,50 @@ local function menuSummary(data)
   return string.format("%s: %s°", descriptionFor(data.symbol_code), roundedTemperature(data))
 end
 
+local function yrSearchUrlFor(data)
+  if not data or data.latitude == nil or data.longitude == nil then
+    return nil
+  end
+
+  return string.format(
+    "https://www.yr.no/en/search?q=%s,%s",
+    tostring(data.latitude),
+    tostring(data.longitude)
+  )
+end
+
+local function yrForecastUrlFromSearchHtml(body)
+  if not body or body == "" then
+    return nil
+  end
+
+  local path = body:match('href="(/en/forecast/daily%-table/[^"]+)"')
+  if not path then
+    return nil
+  end
+
+  return "https://www.yr.no" .. path
+end
+
+local function openYrForecastFor(data)
+  local searchUrl = yrSearchUrlFor(data)
+  if not searchUrl then
+    return
+  end
+
+  hs.http.asyncGet(searchUrl, nil, function(status, body)
+    if status >= 200 and status < 300 then
+      local forecastUrl = yrForecastUrlFromSearchHtml(body)
+      if forecastUrl then
+        hs.urlevent.openURL(forecastUrl)
+        return
+      end
+    end
+
+    hs.urlevent.openURL(searchUrl)
+  end)
+end
+
 local function updateMenu()
   local menu = {
     {
@@ -234,6 +278,13 @@ local function updateMenu()
   end
 
   table.insert(menu, { title = "-" })
+
+  if yrSearchUrlFor(lastWeather) then
+    table.insert(menu, {
+      title = "Open in Yr",
+      fn = function() openYrForecastFor(lastWeather) end,
+    })
+  end
 
   table.insert(menu, {
     title = "Refresh now",
