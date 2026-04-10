@@ -54,6 +54,11 @@ vim.keymap.set({ "x", "o" }, "ib", ts_textobj("@block.inner"), { noremap = true 
 vim.keymap.set({ "x", "o" }, "ap", ts_textobj("@parameter.outer"), { noremap = true })
 vim.keymap.set({ "x", "o" }, "ip", ts_textobj("@parameter.inner"), { noremap = true })
 
+-- treesitter incremental selection (nvim 0.12 built-in)
+vim.keymap.set("n", "<c-space>", function() vim.fn.feedkeys("van", "m") end, { noremap = true })
+vim.keymap.set("x", "<c-space>", function() vim.fn.feedkeys("an", "m") end, { noremap = true })
+vim.keymap.set("x", "<a-backspace>", function() vim.fn.feedkeys("in", "m") end, { noremap = true })
+
 -- center things after jump
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
