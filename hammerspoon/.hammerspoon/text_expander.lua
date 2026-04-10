@@ -140,6 +140,8 @@ local expander = (function()
   return keyWatcher
 end)()
 
+local expanderEnabled = true
+
 local function showExpansionsViaChooser()
   expander:stop()
   local choices = {}
@@ -157,10 +159,23 @@ local function showExpansionsViaChooser()
 
   chooser:choices(choices)
   chooser:queryChangedCallback(helpers.queryChangedCallback(chooser, choices))
-  chooser:hideCallback(function() expander:start() end)
+  chooser:hideCallback(function() if expanderEnabled then expander:start() end end)
   chooser:show()
 end
 
+local function toggleExpander()
+  if expanderEnabled then
+    expander:stop()
+    expanderEnabled = false
+    hs.alert.show("Text expansion disabled")
+  else
+    expander:start()
+    expanderEnabled = true
+    hs.alert.show("Text expansion enabled")
+  end
+end
+
 hs.hotkey.bind({ "cmd", "shift" }, "e", showExpansionsViaChooser)
+hs.hotkey.bind({ "cmd", "shift" }, "x", toggleExpander)
 
 return { expander }
