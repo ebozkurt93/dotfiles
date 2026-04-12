@@ -254,6 +254,18 @@ require("lazy").setup({
     "xero/miasma.nvim",
     { "fynnfluegge/monet.nvim", name = "monet" },
     { "diegoulloao/neofusion.nvim", priority = 1000 },
+    { "zitrocode/carvion.nvim", lazy = false, priority = 1000, opts = {} },
+    {
+      "ember-theme/nvim",
+      name = "ember",
+      priority = 1000,
+      -- config = function()
+      --   require("ember").setup({
+      --     variant = "ember", -- "ember" | "ember-soft" | "ember-light"
+      --   })
+      --   vim.cmd("colorscheme ember")
+      -- end,
+    },
     "junegunn/seoul256.vim",
     {
       "zenbones-theme/zenbones.nvim",

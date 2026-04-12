@@ -18,6 +18,45 @@ function M.find_colors()
 	local visual_bg = ("#%06x"):format(visual.background or normal.background)
 	local visual_fg = ("#%06x"):format(visual.foreground or normal.foreground)
 
+	-- Pick the most-used foreground color across a semantic role's highlight groups.
+	local function role_color(groups, fallback)
+		local counts = {}
+		for _, group in ipairs(groups) do
+			local ok, hl = pcall(vim.api.nvim_get_hl_by_name, group, true)
+			if ok and hl and hl.foreground then
+				local color = ("#%06x"):format(hl.foreground)
+				counts[color] = (counts[color] or 0) + 1
+			end
+		end
+
+		local best_color, best_count = nil, 0
+		for color, count in pairs(counts) do
+			if count > best_count then
+				best_color = color
+				best_count = count
+			end
+		end
+		return best_color or fallback
+	end
+
+	local error = role_color({ "DiagnosticError", "Error", "ErrorMsg", "@comment.error" }, normal_fg)
+	local string = role_color({
+		"String", "@string", "@string.documentation", "@string.regexp", "@string.special", "Character", "@character",
+	}, normal_fg)
+	local accent = role_color({
+		"Function", "@function", "@function.call", "@function.method", "@function.method.call", "@function.builtin",
+		"@function.macro", "@attribute", "@tag", "Title", "FloatTitle", "PmenuMatch",
+	}, normal_fg)
+	local type = role_color({ "Type", "@type", "@type.definition", "DiagnosticInfo", "Question", "Directory" }, normal_fg)
+	local special = role_color({
+		"Constant", "@constant", "@constant.builtin", "@constant.macro", "Special", "Debug", "@markup.link.label",
+	}, accent)
+	local keyword = role_color({
+		"Keyword", "@keyword", "@keyword.function", "@keyword.return", "@keyword.conditional", "@keyword.repeat",
+		"Statement", "PreProc", "Operator", "@operator", "@keyword.operator",
+	}, normal_fg)
+	local comment = role_color({ "Comment", "@comment", "LineNr", "NonText", "Whitespace" }, normal_bg)
+
 	local my_colors = {
 		bg = normal_bg,
 		fg = normal_fg,
@@ -27,27 +66,23 @@ function M.find_colors()
 
 		cursor_background = cursor_bg,
 		cursor_foreground = cursor_fg,
-		-- bg_visual = bg,
 
-		color0 = vim.g.terminal_color_0,
-		color1 = vim.g.terminal_color_1,
-		color2 = vim.g.terminal_color_2,
-		color3 = vim.g.terminal_color_3,
-		color4 = vim.g.terminal_color_4,
-		color5 = vim.g.terminal_color_5,
-		color6 = vim.g.terminal_color_6,
-		color7 = vim.g.terminal_color_7,
-		color8 = vim.g.terminal_color_8,
-		color9 = vim.g.terminal_color_9,
-		color10 = vim.g.terminal_color_10,
-		color11 = vim.g.terminal_color_11,
-		color12 = vim.g.terminal_color_12,
-		color13 = vim.g.terminal_color_13,
-		color14 = vim.g.terminal_color_14,
-		color15 = vim.g.terminal_color_15,
-		--
-		-- active_tab_background = vim.g.active_tab_background,
-		-- active_tab_foreground = vim.g.active_tab_foreground,
+		color0  = vim.g.terminal_color_0  or normal_bg,
+		color1  = vim.g.terminal_color_1  or error,
+		color2  = vim.g.terminal_color_2  or string,
+		color3  = vim.g.terminal_color_3  or accent,
+		color4  = vim.g.terminal_color_4  or type,
+		color5  = vim.g.terminal_color_5  or special,
+		color6  = vim.g.terminal_color_6  or keyword,
+		color7  = vim.g.terminal_color_7  or normal_fg,
+		color8  = vim.g.terminal_color_8  or comment,
+		color9  = vim.g.terminal_color_9  or error,
+		color10 = vim.g.terminal_color_10 or string,
+		color11 = vim.g.terminal_color_11 or accent,
+		color12 = vim.g.terminal_color_12 or type,
+		color13 = vim.g.terminal_color_13 or special,
+		color14 = vim.g.terminal_color_14 or keyword,
+		color15 = vim.g.terminal_color_15 or normal_fg,
 	}
 	return my_colors
 end

@@ -11,5 +11,8 @@ function _G.ReloadConfig()
 end
 
 function _G.ReloadTheme()
+	for i = 0, 15 do
+		vim.g["terminal_color_" .. i] = nil
+	end
 	vim.cmd([[ source ~/.config/nvim/lua/ebozkurt/themes.lua ]])
 end

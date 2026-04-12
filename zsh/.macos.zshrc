@@ -185,7 +185,8 @@ function __theme_helper() {
   'zenbones-light' 'zenbones-dark'
   'neobones-light' 'neobones-dark'
   'kanso-zen' 'kanso-ink' 'kanso-pearl'
-  'teide-darker' 'teide-dark' 'teide-dimmed' 'teide-light'
+  'teide-darker' 'teide-dark' 'teide-dimmed' 'teide-light' 'carvion'
+  'ember' 'ember-soft' 'ember-light'
   )
   typeset -A custom_kitty_themes
   local custom_kitty_themes=(

@@ -1,17 +1,5 @@
 local selected_theme = 'nordic'
 
--- default is also gruvbox
--- gruvbox
-vim.opt.background = 'dark'
-vim.cmd [[ colorscheme gruvbox ]]
-
--- nord
--- vim.cmd [[ colorscheme nord ]]
-
--- tokyonight
--- vim.cmd[[colorscheme tokyonight]]
--- vim.cmd[[colorscheme tokyonight-moon]]
-
 local function reloadPackages(pattern)
 	for name, _ in pairs(package.loaded) do
 		if name:match(pattern) then
@@ -205,4 +193,21 @@ elseif selected_theme == 'teide-dimmed' then
 elseif selected_theme == 'teide-light' then
 	vim.opt.background = 'light'
 	vim.cmd [[ colorscheme teide-light ]]
+elseif selected_theme == 'carvion' then
+	vim.opt.background = 'dark'
+	-- something is off here, calling colorscheme once does not work...
+	vim.cmd [[ colorscheme carvion ]]
+	vim.cmd [[ colorscheme carvion ]]
+elseif selected_theme == 'ember' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme ember ]]
+elseif selected_theme == 'ember-soft' then
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme ember-soft ]]
+elseif selected_theme == 'ember-light' then
+	vim.opt.background = 'light'
+	vim.cmd [[ colorscheme ember-light ]]
+else
+	vim.opt.background = 'dark'
+	vim.cmd [[ colorscheme gruvbox ]]
 end
