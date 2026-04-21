@@ -272,3 +272,6 @@ function withenv {
 if is_macos; then
   source $HOME/.macos.zshrc
 fi
+
+autoload -Uz compinit && compinit -C
+source <(jj util completion zsh)

@@ -1,0 +1,9 @@
+[user]
+name = "Erdem Bozkurt"
+email = "ebozkurt93@gmail.com"
+
+[ui]
+default-command = "log"
+
+[remotes.origin]
+auto-track-bookmarks = "*"

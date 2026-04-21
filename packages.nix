@@ -50,6 +50,10 @@ with pkgs; [
   shfmt
   postgresql_16 # for psql
 
+  jujutsu
+  lazyjj
+  jjui
+
   # ai
   opencode
 ]
