@@ -1,0 +1,167 @@
+#!/bin/bash
+
+[[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
+
+PERSONAL_SOCKET="/tmp/tailscale-personal/tailscaled.sock"
+PERSONAL_STATE_DIR="$HOME/.local/share/tailscale-personal"
+PERSONAL_LOG="/tmp/tailscale-personal/daemon.log"
+
+# tailscale 1.96.5 — pinned nixpkgs-unstable commit
+NIXPKGS_TAILSCALE="github:NixOS/nixpkgs/6f2615d8183b23a55a533615689e059c3ff86b87"
+
+options=$(printf 'up\ndown\nstatus\ninfo\nexit-node\nhelp')
+
+_pass() {
+  if [[ -z "$_PASS_CACHE" ]]; then
+    _PASS_CACHE=$(~/bin/helpers/pass.sh)
+  fi
+  echo "$_PASS_CACHE"
+}
+
+_ensure_bins() {
+  if [[ -z "$TAILSCALE_BIN" ]]; then
+    local store
+    store=$(nix build --no-link --print-out-paths "${NIXPKGS_TAILSCALE}#tailscale")
+    TAILSCALE_BIN="${store}/bin/tailscale"
+    TAILSCALED_BIN="${store}/bin/tailscaled"
+  fi
+}
+
+_running() {
+  pgrep -f "tailscaled.*tailscale-personal" &>/dev/null
+}
+
+_ts() {
+  _ensure_bins
+  "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" "$@"
+}
+
+_start_daemon() {
+  if _running; then
+    echo "daemon already running"
+    return
+  fi
+  _ensure_bins
+  mkdir -p "$(dirname "$PERSONAL_SOCKET")" "$PERSONAL_STATE_DIR"
+  echo "$(_pass)" | sudo -S sh -c \
+    "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1 &"
+  local i=0
+  while [[ ! -S "$PERSONAL_SOCKET" ]] && (( i++ < 20 )); do sleep 0.5; done
+  if [[ ! -S "$PERSONAL_SOCKET" ]]; then
+    echo "daemon failed to start, check $PERSONAL_LOG"
+    exit 1
+  fi
+}
+
+_stop_daemon() {
+  local pid
+  pid=$(pgrep -f "tailscaled.*tailscale-personal" | head -1)
+  if [[ -n "$pid" ]]; then
+    echo "$(_pass)" | sudo -S kill "$pid"
+  else
+    echo "daemon not running"
+  fi
+}
+
+_help() {
+  cat <<'EOF'
+Usage: ts-manager [command]
+
+Commands:
+  up              start daemon and connect to headscale
+  down            disconnect and stop daemon
+  status          show peers and connection status
+  info            show connection/exit node as JSON
+  exit-node       pick an exit node via fzf (or pass name as arg)
+  cli <args>      run any tailscale command against the personal daemon
+
+Examples:
+  ts-manager up
+  ts-manager down
+  ts-manager exit-node
+  ts-manager exit-node beelink
+  ts-manager exit-node none
+
+  # ssh into a node by tailscale hostname
+  ts-manager cli ssh user@node-name
+
+  # ping a node
+  ts-manager cli ping node-name
+EOF
+}
+
+if [[ "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]; then
+  _help; exit 0
+fi
+
+if [[ "$1" == "cli" ]]; then
+  shift
+  if [[ "$1" == "up" ]] && [[ "$*" != *"--login-server"* ]]; then
+    _ts up --login-server "$HEADSCALE_URL" --accept-dns --accept-routes "${@:2}"
+  else
+    _ts "$@"
+  fi
+  exit $?
+fi
+
+if [[ -n "$1" ]]; then
+  selected="$1"
+else
+  selected=$(echo "$options" | fzf)
+fi
+
+case "$selected" in
+  up)
+    _start_daemon
+    state=$(_ts status --json 2>/dev/null | jq -r '.BackendState')
+    if [[ "$state" != "Running" ]]; then
+      _ts up --login-server "$HEADSCALE_URL" --accept-dns --accept-routes
+    fi
+    ;;
+  down)
+    if ! _running; then
+      echo "daemon not running"
+      exit 0
+    fi
+    _ts down
+    _stop_daemon
+    ;;
+  status)
+    if _running; then
+      _ts status 2>/dev/null || echo "disconnected"
+    else
+      echo "daemon not running"
+    fi
+    ;;
+  exit-node)
+    nodes=$(printf 'none\n'; _ts status --json 2>/dev/null | jq -r '.Peer[] | select(.ExitNodeOption == true) | .HostName')
+    if [[ -n "$2" ]]; then
+      selected_node="$2"
+    else
+      selected_node=$(echo "$nodes" | fzf --prompt="exit node: ")
+    fi
+    [[ -z "$selected_node" ]] && exit 0
+    if [[ "$selected_node" == "none" ]]; then
+      _ts set --exit-node=
+    else
+      _ts set --exit-node="$selected_node"
+    fi
+    ;;
+  info)
+    if ! _running; then
+      echo '{"connected": false, "exit_node": null}'
+    else
+      _ts status --json 2>/dev/null | jq '{
+        connected: (.BackendState == "Running"),
+        exit_node: ([.Peer[] | select(.ExitNode == true) | .HostName][0] // null)
+      }'
+    fi
+    ;;
+  help)
+    _help
+    ;;
+  *)
+    echo "invalid, exiting"
+    exit 1
+    ;;
+esac
