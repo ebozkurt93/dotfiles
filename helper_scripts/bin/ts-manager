@@ -1,6 +1,5 @@
 #!/bin/bash
 
-[[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
 
 PERSONAL_SOCKET="/tmp/tailscale-personal/tailscaled.sock"
 PERSONAL_STATE_DIR="$HOME/.local/share/tailscale-personal"
@@ -97,6 +96,7 @@ fi
 if [[ "$1" == "cli" ]]; then
   shift
   if [[ "$1" == "up" ]] && [[ "$*" != *"--login-server"* ]]; then
+    [[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
     _ts up --login-server "$HEADSCALE_URL" --accept-dns --accept-routes "${@:2}"
   else
     _ts "$@"
@@ -112,6 +112,7 @@ fi
 
 case "$selected" in
   up)
+    [[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
     _start_daemon
     state=$(_ts status --json 2>/dev/null | jq -r '.BackendState')
     if [[ "$state" != "Running" ]]; then
