@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -87,6 +88,22 @@ func TestRenderChoiceListContainsTitleAndItems(t *testing.T) {
 	}
 	if !strings.Contains(clean, "work 0:w0") {
 		t.Fatalf("expected choice label")
+	}
+}
+
+func TestRenderChoiceListScrollsToSelected(t *testing.T) {
+	choices := make([]choice, 10)
+	for i := range choices {
+		choices[i] = choice{ID: fmt.Sprintf("@%d", i), Label: fmt.Sprintf("item %d", i)}
+	}
+	// height=6 means visibleCount=4 (6-2 for header/separator); selected=9 should scroll
+	panel := renderChoiceList("Title", choices, 9, 60, 6)
+	clean := ansi.Strip(panel)
+	if !strings.Contains(clean, "item 9") {
+		t.Fatalf("expected selected item 9 to be visible, got:\n%s", clean)
+	}
+	if strings.Contains(clean, "item 0") {
+		t.Fatalf("item 0 should be scrolled out of view, got:\n%s", clean)
 	}
 }
 

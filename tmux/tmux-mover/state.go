@@ -297,6 +297,71 @@ func sessionChoicesForMove(m model) []choice {
 	return buildSessionChoices(m.state, exclude)
 }
 
+// initialWindowTargetIndex returns the choice index of the window just before
+// the current pane's window in the windows list (wrapping).
+func initialWindowTargetIndex(m model) int {
+	choices := windowChoicesForMove(m)
+	if len(choices) == 0 {
+		return 0
+	}
+	currentWindowID := windowIDForPane(m.state, m.selectedPaneID)
+	windows := m.state.Windows
+	choiceIdx := map[string]int{}
+	for i, c := range choices {
+		choiceIdx[c.ID] = i
+	}
+	currentPos := -1
+	for i, w := range windows {
+		if w.ID == currentWindowID {
+			currentPos = i
+			break
+		}
+	}
+	if currentPos < 0 {
+		return 0
+	}
+	for step := 1; step <= len(windows); step++ {
+		idx := (currentPos - step + len(windows)) % len(windows)
+		if ci, ok := choiceIdx[windows[idx].ID]; ok {
+			return ci
+		}
+	}
+	return 0
+}
+
+// initialSessionTargetIndex returns the choice index of the session just before
+// the current pane's session in the sessions list (wrapping).
+func initialSessionTargetIndex(m model) int {
+	choices := sessionChoicesForMove(m)
+	if len(choices) == 0 {
+		return 0
+	}
+	windowID := windowIDForPane(m.state, m.selectedPaneID)
+	currentSessionID := sessionIDForWindow(m.state, windowID)
+	sessions := m.state.Sessions
+	choiceIdx := map[string]int{}
+	for i, c := range choices {
+		choiceIdx[c.ID] = i
+	}
+	currentPos := -1
+	for i, s := range sessions {
+		if s.ID == currentSessionID {
+			currentPos = i
+			break
+		}
+	}
+	if currentPos < 0 {
+		return 0
+	}
+	for step := 1; step <= len(sessions); step++ {
+		idx := (currentPos - step + len(sessions)) % len(sessions)
+		if ci, ok := choiceIdx[sessions[idx].ID]; ok {
+			return ci
+		}
+	}
+	return 0
+}
+
 func windowIDForPane(state TmuxState, paneID string) string {
 	for _, pane := range state.Panes {
 		if pane.ID == paneID {

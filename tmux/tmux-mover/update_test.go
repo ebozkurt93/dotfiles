@@ -277,6 +277,108 @@ func TestUpdateBreakPaneRefocusesSelf(t *testing.T) {
 	}
 }
 
+func TestMoveDownWrapsMainList(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"}},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0},
+			{ID: "%2", WindowID: "@1", SessionID: "$0", IndexNum: 1},
+		},
+	}
+	m := model{
+		state:          state,
+		mode:           ModeList,
+		selectedIndex:  1,
+		selectedPaneID: "%2",
+		paneOrder:      []string{"%1", "%2"},
+		keys:           defaultKeymap(),
+		selectedPanes:  map[string]bool{},
+	}
+	updated, _ := moveDown(m)
+	next := updated.(model)
+	if next.selectedIndex != 0 {
+		t.Fatalf("expected wrap to index 0, got %d", next.selectedIndex)
+	}
+}
+
+func TestMoveUpWrapsMainList(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"}},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0},
+			{ID: "%2", WindowID: "@1", SessionID: "$0", IndexNum: 1},
+		},
+	}
+	m := model{
+		state:          state,
+		mode:           ModeList,
+		selectedIndex:  0,
+		selectedPaneID: "%1",
+		paneOrder:      []string{"%1", "%2"},
+		keys:           defaultKeymap(),
+		selectedPanes:  map[string]bool{},
+	}
+	updated, _ := moveUp(m)
+	next := updated.(model)
+	if next.selectedIndex != 1 {
+		t.Fatalf("expected wrap to index 1, got %d", next.selectedIndex)
+	}
+}
+
+func TestMoveDownWrapsPickWindow(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$0", IndexNum: 1, Name: "w1"},
+			{ID: "@3", SessionID: "$0", IndexNum: 2, Name: "w2"},
+		},
+		Panes: []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0}},
+	}
+	// choices = [@2, @3] (excludes @1, the current window); targetIndex starts at 1 (last)
+	m := model{
+		state:          state,
+		mode:           ModePickWindow,
+		selectedPaneID: "%1",
+		targetIndex:    1,
+		keys:           defaultKeymap(),
+		selectedPanes:  map[string]bool{},
+	}
+	updated, _ := moveDown(m)
+	next := updated.(model)
+	if next.targetIndex != 0 {
+		t.Fatalf("expected wrap to index 0, got %d", next.targetIndex)
+	}
+}
+
+func TestMoveUpWrapsPickWindow(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$0", IndexNum: 1, Name: "w1"},
+			{ID: "@3", SessionID: "$0", IndexNum: 2, Name: "w2"},
+		},
+		Panes: []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0}},
+	}
+	// choices = [@2, @3]; targetIndex starts at 0 (first)
+	m := model{
+		state:          state,
+		mode:           ModePickWindow,
+		selectedPaneID: "%1",
+		targetIndex:    0,
+		keys:           defaultKeymap(),
+		selectedPanes:  map[string]bool{},
+	}
+	updated, _ := moveUp(m)
+	next := updated.(model)
+	if next.targetIndex != 1 {
+		t.Fatalf("expected wrap to index 1, got %d", next.targetIndex)
+	}
+}
+
 func TestSelfTargetSetsSelection(t *testing.T) {
 	state := TmuxState{
 		Sessions: []Session{{ID: "$0", Name: "work"}},

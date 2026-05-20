@@ -254,6 +254,60 @@ func TestBuildTreeRowsIncludesHeaders(t *testing.T) {
 	}
 }
 
+func TestInitialWindowTargetIndexSelectsPrevious(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$0", IndexNum: 1, Name: "w1"},
+			{ID: "@3", SessionID: "$0", IndexNum: 2, Name: "w2"},
+		},
+		Panes: []Pane{{ID: "%1", WindowID: "@2", SessionID: "$0", IndexNum: 0}},
+	}
+	// current window = @2; choices = [@1, @3]; previous of @2 in state.Windows is @1 -> choice index 0
+	m := model{state: state, selectedPaneID: "%1", selectedPanes: map[string]bool{}}
+	got := initialWindowTargetIndex(m)
+	if got != 0 {
+		t.Fatalf("expected choice index 0 (@1), got %d", got)
+	}
+}
+
+func TestInitialWindowTargetIndexWraps(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$0", IndexNum: 1, Name: "w1"},
+			{ID: "@3", SessionID: "$0", IndexNum: 2, Name: "w2"},
+		},
+		Panes: []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0}},
+	}
+	// current window = @1 (first); choices = [@2, @3]; previous wraps to @3 -> choice index 1
+	m := model{state: state, selectedPaneID: "%1", selectedPanes: map[string]bool{}}
+	got := initialWindowTargetIndex(m)
+	if got != 1 {
+		t.Fatalf("expected choice index 1 (@3), got %d", got)
+	}
+}
+
+func TestInitialSessionTargetIndexSelectsPrevious(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{
+			{ID: "$0", Name: "a"},
+			{ID: "$1", Name: "b"},
+			{ID: "$2", Name: "c"},
+		},
+		Windows: []Window{{ID: "@1", SessionID: "$1", IndexNum: 0, Name: "w0"}},
+		Panes:   []Pane{{ID: "%1", WindowID: "@1", SessionID: "$1", IndexNum: 0}},
+	}
+	// current session = $1 (index 1); choices = [$0, $2]; previous is $0 -> choice index 0
+	m := model{state: state, selectedPaneID: "%1", selectedPanes: map[string]bool{}}
+	got := initialSessionTargetIndex(m)
+	if got != 0 {
+		t.Fatalf("expected choice index 0 ($0), got %d", got)
+	}
+}
+
 func TestBuildTreeRowsGolden(t *testing.T) {
 	state := TmuxState{
 		Sessions: []Session{{ID: "$0", Name: "work"}},

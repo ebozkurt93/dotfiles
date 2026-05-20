@@ -144,13 +144,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case keyMatches(msg, m.keys.MovePane):
 			if m.mode == ModeList {
 				m.mode = ModePickWindow
-				m.targetIndex = 0
+				m.targetIndex = initialWindowTargetIndex(m)
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.MoveWindow):
 			if m.mode == ModeList {
 				m.mode = ModePickSession
-				m.targetIndex = 0
+				m.targetIndex = initialSessionTargetIndex(m)
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.CreateSession):
@@ -340,20 +340,20 @@ func moveDown(m model) (tea.Model, tea.Cmd) {
 	case ModePickWindow:
 		choices := windowChoicesForMove(m)
 		if len(choices) > 0 {
-			m.targetIndex = min(m.targetIndex+1, len(choices)-1)
+			m.targetIndex = (m.targetIndex + 1) % len(choices)
 		}
 		return m, nil
 	case ModePickSession:
 		choices := sessionChoicesForMove(m)
 		if len(choices) > 0 {
-			m.targetIndex = min(m.targetIndex+1, len(choices)-1)
+			m.targetIndex = (m.targetIndex + 1) % len(choices)
 		}
 		return m, nil
 	default:
 		order := activeOrder(m)
 		if len(order) > 0 {
 			m = normalizeSelectedIndex(m)
-			m.selectedIndex = min(m.selectedIndex+1, len(order)-1)
+			m.selectedIndex = (m.selectedIndex + 1) % len(order)
 			m.selectedPaneID = currentPaneID(m)
 			m.lastSelectedID = m.selectedPaneID
 			m.status = ""
@@ -380,20 +380,22 @@ func moveDownByCount(m model, defaultCount int) (tea.Model, tea.Cmd) {
 func moveUp(m model) (tea.Model, tea.Cmd) {
 	switch m.mode {
 	case ModePickWindow:
-		if len(windowChoicesForMove(m)) > 0 {
-			m.targetIndex = max(m.targetIndex-1, 0)
+		choices := windowChoicesForMove(m)
+		if len(choices) > 0 {
+			m.targetIndex = (m.targetIndex - 1 + len(choices)) % len(choices)
 		}
 		return m, nil
 	case ModePickSession:
-		if len(sessionChoicesForMove(m)) > 0 {
-			m.targetIndex = max(m.targetIndex-1, 0)
+		choices := sessionChoicesForMove(m)
+		if len(choices) > 0 {
+			m.targetIndex = (m.targetIndex - 1 + len(choices)) % len(choices)
 		}
 		return m, nil
 	default:
 		order := activeOrder(m)
 		if len(order) > 0 {
 			m = normalizeSelectedIndex(m)
-			m.selectedIndex = max(m.selectedIndex-1, 0)
+			m.selectedIndex = (m.selectedIndex - 1 + len(order)) % len(order)
 			m.selectedPaneID = currentPaneID(m)
 			m.lastSelectedID = m.selectedPaneID
 			m.status = ""

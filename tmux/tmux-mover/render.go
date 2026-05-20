@@ -79,7 +79,9 @@ func renderChoiceList(title string, choices []choice, selected int, width int, h
 	if len(rows) == 0 {
 		rows = append(rows, "(no targets)")
 	}
-	visible := sliceRows(rows, 0, max(1, height-2))
+	visibleCount := max(1, height-2)
+	scroll := max(0, selected-visibleCount+1)
+	visible := sliceRows(rows, scroll, visibleCount)
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(rowWidth)
 	return modalFrame(title, content, width, height, headerStyle, separator, lipgloss.Color("6"))
