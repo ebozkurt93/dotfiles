@@ -69,8 +69,9 @@ if [ "$1" = 'fzf' ]; then
       .createdAt[0:22],
       .updatedAt[0:22],
       (if .isDraft then "Draft" else "" end),
+      (.statusCheckRollup | if . == null or length == 0 then "" elif (map(select(.conclusion == "FAILURE" or .conclusion == "TIMED_OUT" or .conclusion == "ACTION_REQUIRED" or .conclusion == "CANCELLED")) | length > 0) then "Failing" elif (map(select(.status != "COMPLETED")) | length > 0) then "Pending" else "Passing" end),
       .url
-    ] | @tsv' | awk -F'\t' '{printf "%-30s %-80s %-20s %-25s %-25s %-7s %-60s\n", $1, $2, $3, $4, $5, $6, $7}'
+    ] | @tsv' | awk -F'\t' '{printf "%-30s %-80s %-20s %-25s %-25s %-7s %-10s %-60s\n", $1, $2, $3, $4, $5, $6, $7, $8}'
 	exit
 fi
 
@@ -87,6 +88,7 @@ is_draft=$(echo $content | jq -r '.[] | "\(.isDraft)"' | sed -e 's/true/Draft/g'
 review_decision=$(echo $content | jq -r '.[] | "\(.reviewDecision)"' | sed -e 's/APPROVED/Approved/g' \
 	-e 's/REVIEW_REQUIRED/Review required/g' -e 's/CHANGES_REQUESTED/Changes requested/g')
 mergeable=$(echo $content | jq -r '.[] | "\(.mergeable)"' | sed -e '/MERGEABLE/!s/.*/Not mergeable/g' -e 's/MERGEABLE//g')
+checks=$(echo $content | jq -r '.[] | (.statusCheckRollup | if . == null or length == 0 then "" elif (map(select(.conclusion == "FAILURE" or .conclusion == "TIMED_OUT" or .conclusion == "ACTION_REQUIRED" or .conclusion == "CANCELLED")) | length > 0) then "Failing" elif (map(select(.status != "COMPLETED")) | length > 0) then "Pending" else "Passing" end)')
 urls=$(echo $content | jq -r '.[] | "\(.url)"')
 
 while read -r line; do pr_names+=("$line"); done <<<"$pr_names"
@@ -98,6 +100,7 @@ while read -r line; do deletions+=("$line"); done <<<"$deletions"
 while read -r line; do is_draft+=("$line"); done <<<"$is_draft"
 while read -r line; do review_decision+=("$line"); done <<<"$review_decision"
 while read -r line; do mergeable+=("$line"); done <<<"$mergeable"
+while read -r line; do checks+=("$line"); done <<<"$checks"
 while read -r line; do urls+=("$line"); done <<<"$urls"
 
 echo "PRs: $length ($non_dependabot_length)| dropdown=true $style"
@@ -107,9 +110,9 @@ if [ $length != 0 ]; then
 		if [[ $q = 0 ]]; then
 			continue
 		fi
-		printf "%-30s %-70s %-20s %-2s %-7s %-52s | href=${urls[$q]} $style $([[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=teal ") \
+		printf "%-30s %-70s %-20s %-2s %-7s %-52s %-10s | href=${urls[$q]} $style $([[ "${authors[$q]}" == "$GH_USERNAME" ]] && echo " color=teal ") \
     $([[ "${authors[$q]}" == "app/dependabot" ]] && echo " color=dimgray ") \n" "${pr_names[$q]}" "${pr_titles[$q]}" \
-			"👤 ${authors[$q]}" "💬 ${comment_counts[$q]}" "📜+${additions[$q]}-${deletions[q]}" "${is_draft[q]} ${review_decision[q]} ${mergeable[q]}"
+			"👤 ${authors[$q]}" "💬 ${comment_counts[$q]}" "📜+${additions[$q]}-${deletions[q]}" "${is_draft[q]} ${review_decision[q]} ${mergeable[q]}" "${checks[$q]}"
 	done
 	echo "---"
 fi
