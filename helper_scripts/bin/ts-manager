@@ -4,6 +4,7 @@
 PERSONAL_SOCKET="/tmp/tailscale-personal/tailscaled.sock"
 PERSONAL_STATE_DIR="$HOME/.local/share/tailscale-personal"
 PERSONAL_LOG="/tmp/tailscale-personal/daemon.log"
+PERSONAL_DNS_SAVE="/tmp/tailscale-personal/saved-dns"
 
 # tailscale 1.96.5 — pinned nixpkgs-unstable commit
 NIXPKGS_TAILSCALE="github:NixOS/nixpkgs/6f2615d8183b23a55a533615689e059c3ff86b87"
@@ -19,6 +20,7 @@ _pass() {
 
 _ensure_bins() {
   if [[ -z "$TAILSCALE_BIN" ]]; then
+    export PATH="/nix/var/nix/profiles/default/bin:$PATH"
     local store
     store=$(nix build --no-link --print-out-paths "${NIXPKGS_TAILSCALE}#tailscale")
     TAILSCALE_BIN="${store}/bin/tailscale"
@@ -50,6 +52,39 @@ _start_daemon() {
     echo "daemon failed to start, check $PERSONAL_LOG"
     exit 1
   fi
+}
+
+_primary_service() {
+  local iface
+  iface=$(route -n get default 2>/dev/null | awk '/interface:/{print $2}')
+  networksetup -listnetworkserviceorder 2>/dev/null \
+    | grep -B1 "Device: ${iface})" | head -1 | sed 's/^([0-9]*) //'
+}
+
+_configure_dns() {
+  [[ -f "$PERSONAL_DNS_SAVE" ]] && return
+  local dns_server service saved
+  dns_server=$(timeout 5 "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" debug netmap 2>/dev/null | jq -r '.DNS.Resolvers[0].Addr // empty')
+  [[ -z "$dns_server" ]] && { echo "no DNS resolver in netmap, skipping DNS config"; return; }
+  service=$(_primary_service)
+  [[ -z "$service" ]] && { echo "could not detect primary network service"; return; }
+  saved=$(networksetup -getdnsservers "$service" 2>/dev/null)
+  mkdir -p "$(dirname "$PERSONAL_DNS_SAVE")"
+  printf '%s\n%s\n' "$service" "$saved" > "$PERSONAL_DNS_SAVE"
+  echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" "$dns_server"
+}
+
+_restore_dns() {
+  [[ ! -f "$PERSONAL_DNS_SAVE" ]] && return
+  local service saved
+  service=$(sed -n '1p' "$PERSONAL_DNS_SAVE")
+  saved=$(sed -n '2,$p' "$PERSONAL_DNS_SAVE")
+  if [[ "$saved" == "There aren't any DNS Servers set on"* ]]; then
+    echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" empty
+  else
+    echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" $saved
+  fi
+  rm -f "$PERSONAL_DNS_SAVE"
 }
 
 _stop_daemon() {
@@ -97,7 +132,7 @@ if [[ "$1" == "cli" ]]; then
   shift
   if [[ "$1" == "up" ]] && [[ "$*" != *"--login-server"* ]]; then
     [[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
-    _ts up --login-server "$HEADSCALE_URL" --accept-dns --accept-routes "${@:2}"
+    _ts up --login-server "$HEADSCALE_URL" --accept-routes "${@:2}"
   else
     _ts "$@"
   fi
@@ -116,14 +151,16 @@ case "$selected" in
     _start_daemon
     state=$(_ts status --json 2>/dev/null | jq -r '.BackendState')
     if [[ "$state" != "Running" ]]; then
-      _ts up --login-server "$HEADSCALE_URL" --accept-dns --accept-routes
+      _ts up --login-server "$HEADSCALE_URL" --accept-routes
     fi
+    _configure_dns
     ;;
   down)
     if ! _running; then
       echo "daemon not running"
       exit 0
     fi
+    _restore_dns
     _ts down
     _stop_daemon
     ;;
