@@ -136,22 +136,28 @@ function __execute_package_json_command() {
   local info=(
     [yarn-run_cmd]="yarn"
     [yarn-install_cmd]="yarn install"
-    [yarn-lockfile]="yarn.lock"
+    [yarn-lockfiles]="yarn.lock"
     [npm-run_cmd]="npm run"
     [npm-install_cmd]="npm install"
-    [npm-lockfile]="package-lock.json"
+    [npm-lockfiles]="package-lock.json"
     [pnpm-run_cmd]="pnpm"
     [pnpm-install_cmd]="pnpm install"
-    [pnpm-lockfile]="pnpm-lock.yaml"
+    [pnpm-lockfiles]="pnpm-lock.yaml"
+    [bun-run_cmd]="bun run"
+    [bun-install_cmd]="bun install"
+    [bun-lockfiles]="bun.lock bun.lockb"
 )
   local cmd_alternatives=$(echo "${(k)info}" | tr " " "\n" | cut -d'-' -f1 | sort | uniq | tr "\n" " " | xargs)
   local op='yarn'
   # split by space as separator
   for c in ${(s: :)cmd_alternatives}
   do
-    if [[ -f "$info[$c-lockfile]" || -f "$(git rev-parse --show-toplevel 2>/dev/null)/$info[$c-lockfile]" ]]; then
-      op="$c"
-    fi
+    for lockfile in ${(s: :)info[$c-lockfiles]}
+    do
+      if [[ -f "$lockfile" || -f "$(git rev-parse --show-toplevel 2>/dev/null)/$lockfile" ]]; then
+        op="$c"
+      fi
+    done
   done
 
   local selection=$(cat package.json | jq -r '.scripts | to_entries | .[] | "\(.key) -> \(.value)"')
