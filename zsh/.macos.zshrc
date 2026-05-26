@@ -45,10 +45,26 @@ alias ss='echo $__sourced_states'
 
 eval "$(direnv hook zsh)"
 export DIRENV_LOG_FORMAT=""
+__macos_sed=/usr/bin/sed
+
+function __nvim_cmd() {
+  if [[ -x "$HOME/.nix-profile/bin/nvim" ]]; then
+    echo "$HOME/.nix-profile/bin/nvim"
+    return
+  fi
+  if [[ -x "$HOME/bin/nvim" ]]; then
+    echo "$HOME/bin/nvim"
+    return
+  fi
+
+  command -v nvim
+}
 
 function nvim_remote_exec() {
   local msg="$1"
   local pc="${pc:-$(sysctl -n hw.ncpu 2>/dev/null || echo 4)}"
+  local nvim_cmd="$(__nvim_cmd)"
+  [[ -z "$nvim_cmd" ]] && return 1
 
   setopt local_options null_glob
 
@@ -77,13 +93,13 @@ function nvim_remote_exec() {
   local a
   for a in "${candidates[@]}"; do
     [[ -S "$a" || -p "$a" ]] || continue
-    nvim --server "$a" --remote-expr "1" >/dev/null 2>&1 && live+=("$a")
+    "$nvim_cmd" --server "$a" --remote-expr "1" >/dev/null 2>&1 && live+=("$a")
   done
 
   (( ${#live[@]} == 0 )) && return 0
 
   printf '%s\n' "${live[@]}" | xargs -n 1 -P "$pc" -I {} \
-    nvim --server {} --remote-send "$msg" >/dev/null 2>&1
+    "$nvim_cmd" --server {} --remote-send "$msg" >/dev/null 2>&1
 }
 
 # Attempts to find and kill nvim instances that are not connected to a tty
@@ -236,7 +252,17 @@ function __theme_helper() {
 	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
 	  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
 	else
-	  nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate()<cr>" > /dev/null 2>&1
+	  nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate('$kitty_theme')<cr>" > /dev/null 2>&1
+	  if [[ ! -f $kitty_conf/themes/$kitty_theme.conf ]]; then
+	    local nvim_cmd="$(__nvim_cmd)"
+	    [[ -n "$nvim_cmd" ]] && "$nvim_cmd" --headless -c "lua require('ebozkurt.theme-gen').generate('$kitty_theme')" -c qa > /dev/null 2>&1
+	  fi
+	  if [[ ! -f $kitty_conf/themes/$kitty_theme.conf ]]; then
+	    echo "Could not generate kitty theme for $2" >&2
+	    return 1
+	  fi
+	  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
+	  rm $kitty_conf/themes/$kitty_theme.conf
 	fi
 	# SIGUSR1 reloads kitty config
 	~/bin/helpers/tmux_status_color.sh
@@ -264,7 +290,7 @@ function __theme_helper() {
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
-	sed -i '' "1s/.*/local selected_theme = \'$2\'/" $nvim_themefile
+	"${__macos_sed}" -i '' "1s/.*/local selected_theme = \'$2\'/" $nvim_themefile
 	nvim_remote_exec "<cmd>lua ReloadTheme()<cr>" > /dev/null 2>&1 
 	return
   fi
@@ -275,11 +301,11 @@ function __change_theme() {
   local selected_theme=$(echo "$(__theme_helper get_themes)" | tr ' ' '\n' | grep -v "^$current_nvim_theme$" | sort | \
 	  { echo $current_nvim_theme ; xargs echo ; } | tr ' ' '\n' | fzf --preview 'source ~/.zshrc; __theme_helper preview_theme {}' --preview-window 0)
   if [[ -z $selected_theme ]]; then
-	__theme_helper set_kitty_theme $current_nvim_theme
 	__theme_helper set_nvim_theme $current_nvim_theme
+	__theme_helper set_kitty_theme $current_nvim_theme
   else
-	__theme_helper set_kitty_theme $selected_theme
 	__theme_helper set_nvim_theme $selected_theme
+	__theme_helper set_kitty_theme $selected_theme
   fi
   zle reset-prompt
 }
@@ -372,7 +398,11 @@ zle -N __open_folder
 bindkey "^[o" __open_folder
 
 function __reload_kitty_config {
-  pgrep kitty | xargs kill -SIGUSR1
+  local -a pids
+  pids=(${(f)"$(command pgrep -x kitty 2>/dev/null || true)"})
+  (( ${#pids[@]} == 0 )) && return
+
+  kill -SIGUSR1 "${pids[@]}"
 }
 
 # in most cases wezterm reloads its own config, however when we change theme we need to notify wezterm(as we convert theme from kitty one dynamicly)
@@ -395,17 +425,17 @@ APPLESCRIPT
 }
 
 function __wezterm_change_font() {
-  sed -i '' "3s/.*/M.font = \'$1\'/" ~/dotfiles/wezterm/.config/wezterm/overrides.lua;
+  "${__macos_sed}" -i '' "3s/.*/M.font = \'$1\'/" ~/dotfiles/wezterm/.config/wezterm/overrides.lua;
 }
 
 
 function __kitty_change_font() {
-  sed -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf;
+  "${__macos_sed}" -i '' "3s/.*/font_family $1/" ~/dotfiles/kitty/.config/kitty/toggled-settings.conf;
   __reload_kitty_config
 }
 
 function __ghostty_change_font() {
-  sed -i '' "3s/.*/font-family = \"$1\"/" ~/dotfiles/ghostty/.config/ghostty/overrides;
+  "${__macos_sed}" -i '' "3s/.*/font-family = \"$1\"/" ~/dotfiles/ghostty/.config/ghostty/overrides;
   __reload_ghostty_config
 }
 
@@ -494,10 +524,10 @@ function __kitty_toggle_transparency() {
 
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^# '; then
-    sed -i '' "${lineNum}s/^# //" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
     nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
   else
-    sed -i '' "${lineNum}s/^/# /" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
     nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
   fi
 
@@ -511,10 +541,10 @@ function __wezterm_toggle_transparency() {
 
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^-- '; then
-    sed -i '' "${lineNum}s/^-- //" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^-- //" $file
     nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
   else
-    sed -i '' "${lineNum}s/^/-- /" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^/-- /" $file
     nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
   fi
 }
@@ -525,10 +555,10 @@ function __ghostty_toggle_transparency() {
 
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^# '; then
-    sed -i '' "${lineNum}s/^# //" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
     nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
   else
-    sed -i '' "${lineNum}s/^/# /" $file
+    "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
     nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
   fi
 
@@ -554,15 +584,15 @@ function __kitty_change_setting() {
   if [[ "$op" = "toggle" ]]; then
     # Check if the line is commented
     if sed -n "${lineNum}p" $file | grep -q '^# '; then
-      sed -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
     else
-      sed -i '' "${lineNum}s/^/# /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
     fi
   elif [[ "$op" = "enable" ]]; then
-      sed -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
   else
-      sed -i '' "${lineNum}s/^# //" $file
-      sed -i '' "${lineNum}s/^/# /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
   fi
 
   __reload_kitty_config
@@ -581,15 +611,15 @@ function __wezterm_change_setting() {
   if [[ "$op" = "toggle" ]]; then
     # Check if the line is commented
     if sed -n "${lineNum}p" $file | grep -q '^-- '; then
-      sed -i '' "${lineNum}s/^-- //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^-- //" $file
     else
-      sed -i '' "${lineNum}s/^/-- /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/-- /" $file
     fi
   elif [[ "$op" = "enable" ]]; then
-      sed -i '' "${lineNum}s/^-- //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^-- //" $file
   else
-      sed -i '' "${lineNum}s/^-- //" $file
-      sed -i '' "${lineNum}s/^/-- /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^-- //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/-- /" $file
   fi
 }
 
@@ -606,15 +636,15 @@ function __ghostty_change_setting() {
   if [[ "$op" = "toggle" ]]; then
     # Check if the line is commented
     if sed -n "${lineNum}p" $file | grep -q '^# '; then
-      sed -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
     else
-      sed -i '' "${lineNum}s/^/# /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
     fi
   elif [[ "$op" = "enable" ]]; then
-      sed -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
   else
-      sed -i '' "${lineNum}s/^# //" $file
-      sed -i '' "${lineNum}s/^/# /" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
+      "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
   fi
 
   __reload_ghostty_config
