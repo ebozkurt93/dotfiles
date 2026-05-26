@@ -1,0 +1,472 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Print Codex and Claude Code quota remaining.
+#
+# Default output:
+#   Codex
+#     5h remaining: 93%
+#     5h reset:     295m
+#     Weekly left:  68%
+#
+# Tmux output:
+#   Co 93/68 295m Cl 100/82 157m
+#
+# Meaning:
+#   Co / Cl        Codex / Claude Code
+#   93/68         5-hour remaining percent / weekly remaining percent
+#   295m          minutes until the current 5-hour window resets
+#
+# Examples:
+#   ai_quota
+#   ai_quota codex
+#   ai_quota --tmux
+#   ai_quota --tmux claude
+#   ai_quota refresh
+#   ai_quota refresh claude
+#
+# Environment:
+#   AI_QUOTA_SOURCES="codex claude"  source order/filter
+#   AI_QUOTA_TTL=5m                  raw API JSON cache TTL
+#   AI_QUOTA_CURL_TIMEOUT=3          API timeout in seconds
+#   CODEX_AUTH=~/.codex/auth.json    Codex auth file override
+#
+# Notes:
+#   API responses are cached as raw JSON with bkt. Formatting is applied after
+#   reading the cache, so tmux layout changes do not invalidate the API cache.
+#   Missing auth, missing tools, network failures, or unavailable sources produce
+#   no output rather than breaking tmux status.
+
+ttl="${AI_QUOTA_TTL:-5m}"
+sources="${AI_QUOTA_SOURCES:-claude codex}"
+curl_timeout="${AI_QUOTA_CURL_TIMEOUT:-3}"
+
+usage() {
+  cat <<'EOF'
+Print Codex and Claude Code quota remaining.
+
+Default output:
+  Codex
+    5h remaining: 93%
+    5h reset:     295m
+    Weekly left:  68%
+
+Tmux output:
+  Co 93/68 295m Cl 100/82 157m
+
+Meaning:
+  Co / Cl        Codex / Claude Code
+  93/68         5-hour remaining percent / weekly remaining percent
+  295m          minutes until the current 5-hour window resets
+
+Examples:
+  ai_quota
+  ai_quota codex
+  ai_quota --tmux
+  ai_quota --tmux claude
+  ai_quota refresh
+  ai_quota refresh claude
+
+Environment:
+  AI_QUOTA_SOURCES="codex claude"  source order/filter
+  AI_QUOTA_TTL=5m                  raw API JSON cache TTL
+  AI_QUOTA_CURL_TIMEOUT=3          API timeout in seconds
+  CODEX_AUTH=~/.codex/auth.json    Codex auth file override
+Notes:
+  API responses are cached as raw JSON with bkt. Formatting is applied after
+  reading the cache, so tmux layout changes do not invalidate the API cache.
+  Missing auth, missing tools, network failures, or unavailable sources produce
+  no output rather than breaking tmux status.
+EOF
+}
+
+mins_left() {
+  local value="${1:-}"
+  [[ -z "${value}" || "${value}" == "null" ]] && return 0
+
+  if [[ "${value}" =~ ^[0-9]+$ ]]; then
+    printf '%s' "$(((value + 59) / 60))"
+    return 0
+  fi
+
+  local reset now diff
+  reset="$(
+    date -j -f "%Y-%m-%dT%H:%M:%S" "${value%%.*}" +%s 2>/dev/null ||
+      date -d "${value}" +%s 2>/dev/null ||
+      true
+  )"
+
+  [[ -z "${reset}" ]] && return 0
+
+  now="$(date +%s)"
+  diff=$(((reset - now + 59) / 60))
+  ((diff < 0)) && diff=0
+  printf '%s' "${diff}"
+}
+
+reset_datetime() {
+  local value="${1:-}"
+  [[ -z "${value}" || "${value}" == "null" ]] && return 0
+
+  local reset
+  if [[ "${value}" =~ ^[0-9]+$ ]]; then
+    reset="$(($(date +%s) + value))"
+  else
+    reset="$(
+      date -j -f "%Y-%m-%dT%H:%M:%S" "${value%%.*}" +%s 2>/dev/null ||
+        date -d "${value}" +%s 2>/dev/null ||
+        true
+    )"
+  fi
+
+  [[ -z "${reset}" ]] && return 0
+
+  date -r "${reset}" "+%Y-%m-%d %H:%M" 2>/dev/null ||
+    date -d "@${reset}" "+%Y-%m-%d %H:%M" 2>/dev/null ||
+    true
+}
+
+tmux_fg() {
+  local pct="$1"
+
+  if [[ "${pct}" == "?" ]]; then
+    printf '#[fg=colour244]'
+  elif ((pct < 20)); then
+    printf '#[fg=red]'
+  elif ((pct < 50)); then
+    printf '#[fg=yellow]'
+  else
+    printf '#[fg=green]'
+  fi
+}
+
+tmux_reset() {
+  printf '#[default]'
+}
+
+raw_codex_json() {
+  local auth="${CODEX_AUTH:-$HOME/.codex/auth.json}"
+  [[ -f "${auth}" ]] || return 1
+
+  local token account
+  token="$(jq -r '.tokens.access_token // .access_token // empty' "${auth}")"
+  account="$(jq -r '.tokens.account_id // .account_id // empty' "${auth}")"
+
+  [[ -n "${token}" ]] || return 1
+
+  curl -fsS --max-time "${curl_timeout}" https://chatgpt.com/backend-api/wham/usage \
+    -H "Authorization: Bearer ${token}" \
+    ${account:+-H "ChatGPT-Account-Id: ${account}"} \
+    2>/dev/null
+}
+
+raw_claude_json() {
+  local token
+  token="$(
+    security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null |
+      jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null || true
+  )"
+
+  [[ -n "${token}" ]] || return 1
+
+  curl -fsS --max-time "${curl_timeout}" https://api.anthropic.com/api/oauth/usage \
+    -H "Authorization: Bearer ${token}" \
+    -H "anthropic-beta: oauth-2025-04-20" \
+    2>/dev/null
+}
+
+cached_json() {
+  local source="$1"
+  local raw="_raw_${source}_json"
+  local json
+
+  if command -v bkt >/dev/null 2>&1; then
+    json="$(
+      bkt --discard-failures --ttl "${ttl}" --scope "tmux-quota-${source}-json" -- "$0" "${raw}" 2>/dev/null ||
+        true
+    )"
+
+    if [[ -z "${json}" ]]; then
+      json="$(
+        bkt --force --discard-failures --ttl "${ttl}" --scope "tmux-quota-${source}-json" -- "$0" "${raw}" 2>/dev/null ||
+          true
+      )"
+    fi
+
+    [[ -n "${json}" ]] || return 1
+    printf '%s\n' "${json}"
+  else
+    "$0" "${raw}"
+  fi
+}
+
+refresh_source() {
+  local source="$1"
+  local raw="_raw_${source}_json"
+
+  if command -v bkt >/dev/null 2>&1; then
+    bkt --force --discard-failures --ttl "${ttl}" --scope "tmux-quota-${source}-json" -- "$0" "${raw}" >/dev/null 2>&1 || true
+  else
+    "$0" "${raw}" >/dev/null 2>&1 || true
+  fi
+}
+
+format_codex() {
+  local json="$1"
+  [[ -n "${json}" ]] || return 0
+
+  jq -r '
+    def codex_left($x): if $x == null then "?" else (100 - ($x | tonumber) | floor) end;
+    [
+      codex_left(.rate_limit.primary_window.used_percent),
+      codex_left(.rate_limit.secondary_window.used_percent),
+      (.rate_limit.primary_window.reset_after_seconds // "")
+    ] | @tsv
+  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset; do
+    reset_m="$(mins_left "${reset}")"
+    printf '#[fg=cyan]Co %s%s' "$(tmux_fg "${five}")" "${five}"
+    printf '#[fg=colour244]/'
+    printf '%s%s' "$(tmux_fg "${weekly}")" "${weekly}"
+    [[ -n "${reset_m}" ]] && printf ' #[fg=colour244]%sm' "${reset_m}"
+    tmux_reset
+    printf '\n'
+  done
+}
+
+format_claude() {
+  local json="$1"
+  [[ -n "${json}" ]] || return 0
+
+  jq -r '
+    def claude_used($window):
+      (
+        $window.utilization
+      ) as $x
+      | if $x == null then "?"
+        elif ($x | tonumber) <= 1 then (($x | tonumber) * 100 | floor)
+        else ($x | tonumber | floor)
+        end;
+    def claude_left($window):
+      (
+        $window.remaining_percent //
+        $window.remainingPercent //
+        $window.percent_remaining //
+        $window.percentRemaining //
+        $window.remaining //
+        $window.available_percent //
+        $window.availablePercent
+      ) as $x
+      | if $x != null then
+          if ($x | tonumber) <= 1 then (($x | tonumber) * 100 | floor)
+          else ($x | tonumber | floor)
+          end
+        else (100 - claude_used($window))
+        end;
+    [
+      claude_left(.five_hour),
+      claude_left(.seven_day),
+      (
+        .five_hour.reset_after_seconds //
+        .five_hour.resets_in_seconds //
+        .five_hour.seconds_until_reset //
+        .five_hour.resets_at //
+        .five_hour.reset_at //
+        .five_hour.reset_time //
+        ""
+      )
+    ] | @tsv
+  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset; do
+    reset_m="$(mins_left "${reset}")"
+    printf '#[fg=magenta]Cl %s%s' "$(tmux_fg "${five}")" "${five}"
+    printf '#[fg=colour244]/'
+    printf '%s%s' "$(tmux_fg "${weekly}")" "${weekly}"
+    [[ -n "${reset_m}" ]] && printf ' #[fg=colour244]%sm' "${reset_m}"
+    tmux_reset
+    printf '\n'
+  done
+}
+
+format_source() {
+  local source="$1"
+  local json
+
+  json="$(cached_json "${source}" 2>/dev/null)"
+  case "${source}" in
+    codex) format_codex "${json}" ;;
+    claude) format_claude "${json}" ;;
+  esac
+}
+
+details_codex() {
+  local json="$1"
+  [[ -n "${json}" ]] || return 0
+
+  jq -r '
+    def codex_left($x): if $x == null then "?" else (100 - ($x | tonumber) | floor) end;
+    [
+      codex_left(.rate_limit.primary_window.used_percent),
+      codex_left(.rate_limit.secondary_window.used_percent),
+      (.rate_limit.primary_window.reset_after_seconds // ""),
+      (
+        .rate_limit.secondary_window.reset_after_seconds //
+        .rate_limit.secondary_window.resets_in_seconds //
+        .rate_limit.secondary_window.seconds_until_reset //
+        .rate_limit.secondary_window.resets_at //
+        .rate_limit.secondary_window.reset_at //
+        .rate_limit.secondary_window.reset_time //
+        ""
+      )
+    ] | @tsv
+  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset weekly_reset; do
+    reset_m="$(mins_left "${reset}")"
+    weekly_reset_at="$(reset_datetime "${weekly_reset}")"
+    printf 'Codex\n'
+    printf '  5h remaining: %s%%\n' "${five}"
+    [[ -n "${reset_m}" ]] && printf '  5h reset:     %sm\n' "${reset_m}"
+    printf '  Weekly left:  %s%%\n' "${weekly}"
+    [[ -n "${weekly_reset_at}" ]] && printf '  Weekly reset: %s\n' "${weekly_reset_at}"
+  done
+}
+
+details_claude() {
+  local json="$1"
+  [[ -n "${json}" ]] || return 0
+
+  jq -r '
+    def claude_used($window):
+      (
+        $window.utilization
+      ) as $x
+      | if $x == null then "?"
+        elif ($x | tonumber) <= 1 then (($x | tonumber) * 100 | floor)
+        else ($x | tonumber | floor)
+        end;
+    def claude_left($window):
+      (
+        $window.remaining_percent //
+        $window.remainingPercent //
+        $window.percent_remaining //
+        $window.percentRemaining //
+        $window.remaining //
+        $window.available_percent //
+        $window.availablePercent
+      ) as $x
+      | if $x != null then
+          if ($x | tonumber) <= 1 then (($x | tonumber) * 100 | floor)
+          else ($x | tonumber | floor)
+          end
+        else (100 - claude_used($window))
+        end;
+    [
+      claude_left(.five_hour),
+      claude_left(.seven_day),
+      (
+        .five_hour.reset_after_seconds //
+        .five_hour.resets_in_seconds //
+        .five_hour.seconds_until_reset //
+        .five_hour.resets_at //
+        .five_hour.reset_at //
+        .five_hour.reset_time //
+        ""
+      ),
+      (
+        .seven_day.reset_after_seconds //
+        .seven_day.resets_in_seconds //
+        .seven_day.seconds_until_reset //
+        .seven_day.resets_at //
+        .seven_day.reset_at //
+        .seven_day.reset_time //
+        ""
+      )
+    ] | @tsv
+  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset weekly_reset; do
+    reset_m="$(mins_left "${reset}")"
+    weekly_reset_at="$(reset_datetime "${weekly_reset}")"
+    printf 'Claude Code\n'
+    printf '  5h remaining: %s%%\n' "${five}"
+    [[ -n "${reset_m}" ]] && printf '  5h reset:     %sm\n' "${reset_m}"
+    printf '  Weekly left:  %s%%\n' "${weekly}"
+    [[ -n "${weekly_reset_at}" ]] && printf '  Weekly reset: %s\n' "${weekly_reset_at}"
+  done
+}
+
+details_source() {
+  local source="$1"
+  local json
+
+  json="$(cached_json "${source}" 2>/dev/null)"
+  case "${source}" in
+    codex) details_codex "${json}" ;;
+    claude) details_claude "${json}" ;;
+  esac
+}
+
+details_all() {
+  for source in ${sources}; do
+    details_source "${source}"
+  done
+}
+
+format_all() {
+  command -v jq >/dev/null 2>&1 || exit 0
+  command -v curl >/dev/null 2>&1 || exit 0
+
+  segments=()
+  for source in ${sources}; do
+    out="$(format_source "${source}" 2>/dev/null | tr '\n' ' ')"
+    out="$(printf '%s' "${out}" | sed -E 's/[[:space:]]+/ /g; s/^ | $//g')"
+    [[ -n "${out}" ]] && segments+=("${out}")
+  done
+
+  if ((${#segments[@]} > 0)); then
+    printf '%s' "${segments[0]}"
+    for segment in "${segments[@]:1}"; do
+      printf ' %s' "${segment}"
+    done
+    printf '\n'
+  fi
+}
+
+case "${1:-details}" in
+  _raw_codex_json) raw_codex_json ;;
+  _raw_claude_json) raw_claude_json ;;
+  codex | claude) details_source "$1" ;;
+  --details | details)
+    case "${2:-all}" in
+      codex | claude) details_source "$2" ;;
+      all) details_all ;;
+      *) echo "usage: $0 details [codex|claude]" >&2; exit 1 ;;
+    esac
+    ;;
+  --tmux | tmux | status)
+    case "${2:-all}" in
+      codex | claude) format_source "$2" ;;
+      all) format_all ;;
+      *) echo "usage: $0 --tmux [codex|claude]" >&2; exit 1 ;;
+    esac
+    ;;
+  refresh)
+    case "${2:-all}" in
+      codex | claude)
+        refresh_source "$2"
+        details_source "$2"
+        ;;
+      all)
+        for source in ${sources}; do
+          refresh_source "${source}"
+        done
+        details_all
+        ;;
+      *) echo "usage: $0 refresh [codex|claude]" >&2; exit 1 ;;
+    esac
+    ;;
+  all) details_all ;;
+  -h | --help | help)
+    usage
+    ;;
+  *)
+    echo "usage: $0 [codex|claude|details [codex|claude]|--tmux [codex|claude]|refresh [codex|claude]|help]" >&2
+    exit 1
+    ;;
+esac

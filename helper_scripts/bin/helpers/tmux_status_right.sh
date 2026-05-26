@@ -86,9 +86,11 @@ scroll_marquee_step() {
 }
 
 media_scrolled() { media | scroll_marquee_step 50 media 4; }
+ai_quota_tmux() { ~/bin/ai_quota --tmux; }
 
 paths=(
   media_scrolled
+  ai_quota_tmux
   ~/bin/helpers/tmux_state.sh
   ~/bin/helpers/tmux_focus_mode.sh
   ~/bin/helpers/tmux_bluetooth.sh
@@ -104,4 +106,3 @@ for p in "${paths[@]}"; do
 done
 
 printf '%s\n' "${res[*]}"
-
