@@ -38,7 +38,8 @@ local function openChooser(app, choices)
   _chooser = hs.chooser.new(function(choice)
     _chooser = nil
     if not choice then return end
-    hs.timer.doAfter(0.05, function()
+    hs.timer.doAfter(0.3, function()
+      app:activate()
       app:selectMenuItem(choice.path)
     end)
   end)

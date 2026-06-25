@@ -1,0 +1,7 @@
+{
+  "name": "firefox_bridge",
+  "description": "Hammerspoon Firefox bridge",
+  "path": "__DOTFILES_DIR__/firefox/native-host/firefox_bridge.py",
+  "type": "stdio",
+  "allowed_extensions": ["firefox-bridge@local"]
+}

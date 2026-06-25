@@ -123,6 +123,9 @@ function M.hotkeyScopedToApp(mods, key, appName, func)
     end
   end)
 
+  local currentApp = hs.application.frontmostApplication()
+  if currentApp and currentApp:name() == appName then hotkey:enable() end
+
   registerAppHandler(appName, hs.application.watcher.activated, function() hotkey:enable() end)
   registerAppHandler(appName, hs.application.watcher.deactivated, function() hotkey:disable() end)
 end
@@ -158,16 +161,37 @@ end
 
 M.registerKeyDownHandler = registerKeyDownHandler
 
-function M.isCurrentTabUrlStartingWith(startsWith)
+local _bridgeSend = os.getenv("HOME") .. "/dotfiles/firefox/native-host/bridge_send.py"
+local _bridgeTmp  = "/tmp/firefox_bridge_cmd.json"
+
+local function sendBridgeCommand(payload, expectResponse)
+  local f = io.open(_bridgeTmp, "w")
+  f:write(hs.json.encode(payload))
+  f:close()
+  local result = hs.execute("python3 " .. _bridgeSend .. " " .. _bridgeTmp)
+  if expectResponse then return result end
+end
+M.sendBridgeCommand = sendBridgeCommand
+
+local function frontmostBrowser()
+  local app = hs.application.frontmostApplication()
+  return app and app:name() or ""
+end
+
+local function chromeIsCurrentTabUrlStartingWith(startsWith)
   local _, currentUrl =
     hs.osascript.applescript('tell application "Google Chrome" to return URL of active tab of front window')
-
   return currentUrl:sub(1, #startsWith) == startsWith
 end
 
--- For these to work executing javascript from applescript must be enabled
--- View > Developer > Allow JavaScript from Apple Events
-function M.runJsOnCurrentBrowserTab(jsScript)
+local function firefoxIsCurrentTabUrlStartingWith(startsWith)
+  local result = sendBridgeCommand({ type = "getUrl" }, true) or ""
+  local data = hs.json.decode(result)
+  local url = data and data.url or ""
+  return url:sub(1, #startsWith) == startsWith
+end
+
+local function chromeRunJsOnCurrentBrowserTab(jsScript)
   local script = [[
 var chrome = Application("Google Chrome");
 
@@ -179,14 +203,15 @@ var command = `
 
 chrome.windows[0].activeTab.execute({javascript:command})
 ]]
-
   local status, _, output = hs.osascript.javascript(script:format(jsScript))
-  if (status == false) then
-    P(output)
-  end
+  if (status == false) then P(output) end
 end
 
-function M.runJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
+local function firefoxRunJsOnCurrentBrowserTab(jsScript)
+  sendBridgeCommand({ type = "exec", js = jsScript })
+end
+
+local function chromeRunJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
   local script = [[
 
 var chrome = Application('Google Chrome');
@@ -212,8 +237,30 @@ windows.forEach(function(window) {
 foundTabs[0].execute({javascript:command})
 
 ]]
-
   hs.osascript.javascript(script:format(urlPattern, jsScript))
+end
+
+local function firefoxRunJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
+  sendBridgeCommand({ type = "execMatch", pattern = urlPattern, js = jsScript })
+end
+
+function M.isCurrentTabUrlStartingWith(startsWith)
+  local browser = frontmostBrowser()
+  if browser == "Google Chrome" then return chromeIsCurrentTabUrlStartingWith(startsWith) end
+  if browser == "Firefox Developer Edition" then return firefoxIsCurrentTabUrlStartingWith(startsWith) end
+  return false
+end
+
+function M.runJsOnCurrentBrowserTab(jsScript)
+  local browser = frontmostBrowser()
+  if browser == "Google Chrome" then chromeRunJsOnCurrentBrowserTab(jsScript) end
+  if browser == "Firefox Developer Edition" then firefoxRunJsOnCurrentBrowserTab(jsScript) end
+end
+
+function M.runJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript)
+  local browser = frontmostBrowser()
+  if browser == "Google Chrome" then chromeRunJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript) end
+  if browser == "Firefox Developer Edition" then firefoxRunJsOnFirstBrowserTabThatMatchesUrl(urlPattern, jsScript) end
 end
 
 function M.keystrokesScopedToApp(target, app, func)

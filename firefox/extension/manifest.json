@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Firefox Bridge",
+  "version": "1.1",
+  "description": "Hammerspoon bridge for tab automation",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "firefox-bridge@local"
+    }
+  },
+  "permissions": [
+    "tabs",
+    "<all_urls>",
+    "nativeMessaging"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  }
+}
