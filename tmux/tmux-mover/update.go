@@ -57,7 +57,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
-		if m.mode == ModeNewSession {
+		if m.mode == ModeNewSession || m.mode == ModeRenameSession {
 			switch {
 			case keyMatches(msg, m.keys.Cancel):
 				m.mode = ModeList
@@ -66,7 +66,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case keyMatches(msg, m.keys.Accept):
 				return acceptAction(m)
 			case keyMatches(msg, m.keys.Backspace):
-				if len(m.input) > 0 {
+				if msg.Alt {
+					m.input = deleteLastWord(m.input)
+				} else if len(m.input) > 0 {
 					m.input = m.input[:len(m.input)-1]
 				}
 				return m, nil
@@ -159,6 +161,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.input = ""
 				return m, nil
 			}
+		case keyMatches(msg, m.keys.RenameSession):
+			if m.mode == ModeList {
+				sessionID := sessionIDForPane(m.state, m.selectedPaneID)
+				if sessionID == "" {
+					m.status = "No session selected"
+					return m, nil
+				}
+				m.mode = ModeRenameSession
+				m.input = sessionNameByID(m.state, sessionID)
+				return m, nil
+			}
 		case keyMatches(msg, m.keys.DeletePanes):
 			if m.mode == ModeList {
 				count := deletePaneCount(m)
@@ -200,7 +213,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			if m.filtering {
-				if len(m.filterInput) > 0 {
+				if msg.Alt {
+					m.filterInput = deleteLastWord(m.filterInput)
+				} else if len(m.filterInput) > 0 {
 					m.filterInput = m.filterInput[:len(m.filterInput)-1]
 				}
 				m = syncSelection(m)
@@ -499,6 +514,19 @@ func acceptAction(m model) (tea.Model, tea.Cmd) {
 			m.status = "Created new session"
 		} else {
 			m.status = fmt.Sprintf("Created session %s", name)
+		}
+		m.mode = ModeList
+		m.input = ""
+		return m, loadStateCmd()
+	case ModeRenameSession:
+		name := strings.TrimSpace(m.input)
+		sessionID := sessionIDForPane(m.state, m.selectedPaneID)
+		if name == "" || sessionID == "" {
+			m.status = "Rename cancelled"
+		} else if err := applySessionRename(sessionID, name); err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+		} else {
+			m.status = fmt.Sprintf("Renamed session to %s", name)
 		}
 		m.mode = ModeList
 		m.input = ""

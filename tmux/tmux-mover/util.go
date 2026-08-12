@@ -2,6 +2,8 @@ package main
 
 import (
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/mattn/go-runewidth"
@@ -89,6 +91,28 @@ func padRightANSI(s string, width int) string {
 		return s
 	}
 	return s + strings.Repeat(" ", width-current)
+}
+
+func deleteLastWord(s string) string {
+	isWordChar := func(r rune) bool {
+		return unicode.IsLetter(r) || unicode.IsDigit(r)
+	}
+	i := len(s)
+	for i > 0 {
+		r, size := utf8.DecodeLastRuneInString(s[:i])
+		if isWordChar(r) {
+			break
+		}
+		i -= size
+	}
+	for i > 0 {
+		r, size := utf8.DecodeLastRuneInString(s[:i])
+		if !isWordChar(r) {
+			break
+		}
+		i -= size
+	}
+	return s[:i]
 }
 
 func sectionRule(width int) string {

@@ -39,6 +39,7 @@ const (
 	ModePickWindow
 	ModePickSession
 	ModeNewSession
+	ModeRenameSession
 	ModeConfirmDelete
 )
 
@@ -50,6 +51,7 @@ type Keymap struct {
 	MovePane          []string
 	MoveWindow        []string
 	CreateSession     []string
+	RenameSession     []string
 	DeletePanes       []string
 	BreakPane         []string
 	ConfirmYes        []string
@@ -75,6 +77,7 @@ func defaultKeymap() Keymap {
 		MovePane:          []string{"m"},
 		MoveWindow:        []string{"M"},
 		CreateSession:     []string{"s"},
+		RenameSession:     []string{"r"},
 		DeletePanes:       []string{"d"},
 		BreakPane:         []string{"b"},
 		ConfirmYes:        []string{"y"},

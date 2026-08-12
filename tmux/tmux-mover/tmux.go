@@ -200,6 +200,14 @@ func applySessionCreate(name string) error {
 	return err
 }
 
+func applySessionRename(sessionID string, name string) error {
+	if sessionID == "" || strings.TrimSpace(name) == "" {
+		return fmt.Errorf("missing session or name")
+	}
+	_, err := tmuxOutput("rename-session", "-t", sessionID, name)
+	return err
+}
+
 func applyPaneKill(paneID string) error {
 	if paneID == "" {
 		return fmt.Errorf("missing pane")

@@ -153,6 +153,29 @@ func renderNewSession(m model, width int, height int) string {
 	return modalFrame("Create Session", content, width, height, headerStyle, separator, lipgloss.Color("2"))
 }
 
+func renderRenameSession(m model, width int, height int) string {
+	rowWidth := max(10, width-4)
+	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("2"))
+	accentStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Width(rowWidth)
+	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
+	plain := lipgloss.NewStyle().Width(rowWidth).Foreground(lipgloss.Color("7"))
+
+	sessionID := sessionIDForPane(m.state, m.selectedPaneID)
+	currentName := sessionNameByID(m.state, sessionID)
+
+	lines := []string{}
+	lines = append(lines, accentStyle.Render("Rename session"))
+	lines = append(lines, muted.Render("Current: "+currentName))
+	lines = append(lines, plain.Render("New name: "+m.input))
+	lines = append(lines, "")
+	lines = append(lines, plain.Render("Press enter to rename or esc to cancel."))
+
+	visible := sliceRows(lines, 0, max(1, height-2))
+	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
+	separator := mutedSeparator(rowWidth)
+	return modalFrame("Rename Session", content, width, height, headerStyle, separator, lipgloss.Color("2"))
+}
+
 func modalFrame(title string, content string, width int, height int, headerStyle lipgloss.Style, separator string, accent lipgloss.Color) string {
 	rowWidth := max(10, width-2)
 	frame := lipgloss.NewStyle().
@@ -180,6 +203,8 @@ func renderModalForMode(m model, availableWidth int) (string, bool) {
 		return renderChoiceList("Move Window -> Session", sessions, m.targetIndex, modalWidth, modalHeight), true
 	case ModeNewSession:
 		return renderNewSession(m, modalWidth, modalHeight), true
+	case ModeRenameSession:
+		return renderRenameSession(m, modalWidth, modalHeight), true
 	case ModeConfirmDelete:
 		return renderConfirmDelete(m, modalWidth, modalHeight), true
 	default:
@@ -559,6 +584,7 @@ func keyHintsStyled(keys Keymap, width int) []string {
 		item("c", "clear selection"),
 		item(joinKeys(keys.BreakPane), "break pane"),
 		item(joinKeys(keys.CreateSession), "new session"),
+		item(joinKeys(keys.RenameSession), "rename session"),
 		item(joinKeys(keys.DeletePanes), "delete panes"),
 		item(joinKeys(keys.MovePane), "move pane"),
 		item(joinKeys(keys.MoveWindow), "move window"),
