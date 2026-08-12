@@ -54,7 +54,10 @@ func renderMainPanel(m model, width int, height int) string {
 		filtered := activeState(m)
 		order := buildPaneOrder(filtered)
 		effectiveID := effectiveSelectedPaneID(order, m.selectedPaneID, m.lastSelectedID, m.selectedIndex)
-		return renderPaneList(filtered, effectiveID, m.scroll, width, height, m.selectedPanes, nil, m.selfSessionID, m.selfWindowID)
+		if m.agentView {
+			return renderAgentDashboard(m, filtered, effectiveID, m.scroll, width, height)
+		}
+		return renderPaneList(filtered, effectiveID, m.scroll, width, height, m.selectedPanes, nil, m.selfSessionID, m.selfWindowID, m.agents, m.frame)
 	}
 }
 
@@ -326,7 +329,7 @@ func deletePaneLabel(state TmuxState, paneID string) string {
 	return strings.Join(parts, " — ")
 }
 
-func renderPaneList(state TmuxState, selectedPaneID string, scroll int, width int, height int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string) string {
+func renderPaneList(state TmuxState, selectedPaneID string, scroll int, width int, height int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string, agents map[string]AgentState, frame int) string {
 	if selectedWindows == nil {
 		selectedWindows = map[string]bool{}
 		for _, pane := range state.Panes {
@@ -335,7 +338,7 @@ func renderPaneList(state TmuxState, selectedPaneID string, scroll int, width in
 			}
 		}
 	}
-	tree := buildTreeRows(state, selectedPaneID, width, selectedPanes, selectedWindows, activeSessionID, activeWindowID)
+	tree := buildTreeRows(state, selectedPaneID, width, selectedPanes, selectedWindows, activeSessionID, activeWindowID, agents, frame)
 	visible := sliceRows(tree.rows, scroll, max(1, height-2))
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(max(1, width-2))
@@ -348,7 +351,7 @@ type treeRows struct {
 	selectedRow int
 }
 
-func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string) treeRows {
+func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string, agents map[string]AgentState, frame int) treeRows {
 	rowWidth := max(10, width-2)
 	normalStyle := lipgloss.NewStyle().Width(rowWidth)
 	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Foreground(lipgloss.Color("2"))
@@ -411,13 +414,14 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 				if selectedPanes != nil && selectedPanes[pane.ID] {
 					paneMarker = "*"
 				}
-				row := fmt.Sprintf("    %s %s  %s", paneMarker, pane.Command, pane.Path)
-				row = truncateRow(row, rowWidth)
+				dot, dotWidth := agentStatusDot(agents[pane.ID], frame)
+				text := fmt.Sprintf("    %s %s  %s", paneMarker, pane.Command, pane.Path)
+				text = truncateRow(text, max(1, rowWidth-dotWidth))
 				if pane.ID == selectedPaneID {
 					selectedRow = len(rows)
-					rows = append(rows, selectedStyle.Render(row))
+					rows = append(rows, dot+selectedStyle.Width(rowWidth-dotWidth).Render(text))
 				} else {
-					rows = append(rows, normalStyle.Render(row))
+					rows = append(rows, dot+normalStyle.Width(rowWidth-dotWidth).Render(text))
 				}
 			}
 		}
@@ -428,6 +432,173 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 		rows:        rows,
 		selectedRow: selectedRow,
 	}
+}
+
+// agentStatusColor picks a status color deliberately clear of colors this
+// file already assigns structural meaning to (session=4 blue, window=6 cyan,
+// selected=2 green, delete-confirm=1 red) so a status dot never gets misread
+// as one of those. Bright (9-15) ANSI codes are used throughout so the dots
+// track the terminal's own theme instead of a fixed hex color.
+func agentStatusColor(status AgentStatus) lipgloss.Color {
+	switch status {
+	case AgentStatusWaiting:
+		return lipgloss.Color("11") // bright yellow: needs you
+	case AgentStatusBusy:
+		return lipgloss.Color("12") // bright blue: actively working
+	default:
+		return lipgloss.Color("8") // gray: idle / unknown
+	}
+}
+
+// agentSpinnerFrames drives the busy-status animation, stepped once per
+// 100ms state tick (see update.go's stateTickMsg handling of m.frame).
+var agentSpinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+
+// agentWaitingBlinkFrames drives the waiting-status alert blink: a hard
+// on/off flip between filled and hollow, not a smooth fade — a calm breathing
+// effect reads as ambient/idle, but "needs your input" should read as an
+// alert. ●/○ are the same characters already used elsewhere in the app
+// (Idle/Unknown dots), so they're confirmed to render at a consistent width.
+var agentWaitingBlinkFrames = []string{"●", "○"}
+
+// agentStatusDot returns a small colored status marker (and its display
+// width) for a pane's detected AI-CLI state, animated using frame (a
+// monotonically increasing tick counter): busy panes get a spinning braille
+// glyph, panes waiting on you get the agentWaitingBlinkFrames alert blink so
+// they keep drawing the eye without relying on the terminal's own blink
+// attribute. Panes with no detected agent (the zero AgentState) render as
+// blank space so pane rows stay aligned.
+func agentStatusDot(state AgentState, frame int) (string, int) {
+	if state.Kind == AgentNone {
+		return "  ", 2
+	}
+	glyph := "●"
+	style := lipgloss.NewStyle().Foreground(agentStatusColor(state.Status))
+	switch state.Status {
+	case AgentStatusBusy:
+		glyph = agentSpinnerFrames[frame%len(agentSpinnerFrames)]
+	case AgentStatusWaiting:
+		glyph = agentWaitingBlinkFrames[(frame/6)%len(agentWaitingBlinkFrames)]
+		style = style.Bold(true)
+	case AgentStatusUnknown:
+		glyph = "○"
+	}
+	return style.Render(glyph) + " ", 2
+}
+
+func renderAgentDashboard(m model, state TmuxState, selectedPaneID string, scroll int, width int, height int) string {
+	rowWidth := max(10, width-2)
+	dash := buildAgentDashboardRows(m, state, selectedPaneID, rowWidth)
+	visible := sliceRows(dash.rows, scroll, max(1, height-2))
+	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
+	separator := mutedSeparator(rowWidth)
+	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth)
+	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, headerStyle.Render(dash.header), separator, content))
+}
+
+// buildAgentDashboardRows is the AI-dashboard counterpart to buildTreeRows:
+// same treeRows shape (rows + which one is selected) so ensureVisible's
+// scroll math works identically for both views, just fed a different row
+// source depending on m.agentView.
+func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, rowWidth int) treeRows {
+	normalStyle := lipgloss.NewStyle().Width(rowWidth)
+	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Foreground(lipgloss.Color("2"))
+	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
+	mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+
+	sectionTitle := map[AgentStatus]string{
+		AgentStatusWaiting: "Needs input",
+		AgentStatusBusy:    "Working",
+		AgentStatusIdle:    "Idle",
+		AgentStatusUnknown: "Unknown",
+	}
+
+	paneByID := map[string]Pane{}
+	for _, pane := range state.Panes {
+		paneByID[pane.ID] = pane
+	}
+	// Same order buildPaneOrder/activeOrder use for the AI dashboard, so
+	// keyboard navigation lands on exactly the row rendered next/previous.
+	order := agentDashboardOrder(state, m.agents)
+
+	rows := []string{}
+	selectedRow := -1
+	lastStatus := AgentStatus(-1)
+	sectionCount := 0
+	for i, paneID := range order {
+		pane := paneByID[paneID]
+		agent := m.agents[paneID]
+
+		if agent.Status != lastStatus {
+			// Count how many entries belong to this section before rendering
+			// its header.
+			sectionCount = 0
+			for _, id := range order[i:] {
+				if m.agents[id].Status != agent.Status {
+					break
+				}
+				sectionCount++
+			}
+			rows = append(rows, lipgloss.NewStyle().Bold(true).Foreground(agentStatusColor(agent.Status)).Width(rowWidth).
+				Render(fmt.Sprintf("%s (%d)", sectionTitle[agent.Status], sectionCount)))
+			lastStatus = agent.Status
+		}
+
+		dot, dotWidth := agentStatusDot(agent, m.frame)
+		location := deletePaneLabelLocation(state, pane)
+		label := agent.Task
+		if label == "" {
+			label = pane.Command
+		}
+		marker := " "
+		if m.selectedPanes != nil && m.selectedPanes[pane.ID] {
+			marker = "*"
+		}
+		primary := fmt.Sprintf("%s %s [%s]", marker, label, agent.Kind.Label())
+		primary = truncateRow(primary, max(1, rowWidth-dotWidth))
+		line := dot
+		if pane.ID == selectedPaneID {
+			selectedRow = len(rows)
+			line += selectedStyle.Width(rowWidth - dotWidth).Render(primary)
+		} else {
+			line += normalStyle.Width(rowWidth - dotWidth).Render(primary)
+		}
+		rows = append(rows, line)
+		rows = append(rows, metaStyle.Render("    "+truncateRow(location, max(1, rowWidth-4))))
+	}
+
+	if len(order) == 0 {
+		rows = append(rows, mutedStyle.Render("No AI sessions detected."))
+	}
+
+	return treeRows{header: "AI Dashboard", rows: rows, selectedRow: selectedRow}
+}
+
+func deletePaneLabelLocation(state TmuxState, pane Pane) string {
+	windowName := ""
+	windowIndex := ""
+	for _, w := range state.Windows {
+		if w.ID == pane.WindowID {
+			windowName = w.Name
+			windowIndex = w.Index
+			break
+		}
+	}
+	sessionName := ""
+	for _, s := range state.Sessions {
+		if s.ID == pane.SessionID {
+			sessionName = s.Name
+			break
+		}
+	}
+	windowLabel := windowName
+	if windowIndex != "" {
+		windowLabel = fmt.Sprintf("%s:%s", windowIndex, windowName)
+	}
+	if sessionName != "" {
+		return fmt.Sprintf("%s / %s — %s", sessionName, windowLabel, pane.Path)
+	}
+	return fmt.Sprintf("%s — %s", windowLabel, pane.Path)
 }
 
 func renderPreview(text string, err error, width int, height int) string {
@@ -578,6 +749,7 @@ func keyHintsStyled(keys Keymap, width int) []string {
 		item("enter", "jump to pane"),
 		item("alt+j/alt+k", "swap pane"),
 		item("alt+J/alt+K", "swap window"),
+		item(joinKeys(keys.ToggleAgentView), "AI dashboard"),
 		item("space", "select pane"),
 		item("tab", "select+next"),
 		item("shift+tab", "select+prev"),

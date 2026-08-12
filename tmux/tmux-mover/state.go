@@ -68,7 +68,12 @@ func ensureVisible(m model) model {
 	visibleRows := max(1, listHeight-2)
 	state := activeState(m)
 	effectiveID := effectiveSelectedPaneID(activeOrder(m), m.selectedPaneID, m.lastSelectedID, m.selectedIndex)
-	tree := buildTreeRows(state, effectiveID, listWidth, m.selectedPanes, nil, m.selfSessionID, m.selfWindowID)
+	var tree treeRows
+	if m.agentView {
+		tree = buildAgentDashboardRows(m, state, effectiveID, max(10, listWidth-2))
+	} else {
+		tree = buildTreeRows(state, effectiveID, listWidth, m.selectedPanes, nil, m.selfSessionID, m.selfWindowID, m.agents, m.frame)
+	}
 	selectedRow := tree.selectedRow
 	if selectedRow < 0 {
 		selectedRow = 0
@@ -153,14 +158,74 @@ func layoutDimsVertical(m model, availableWidth int, mainHeight int) (listWidth 
 }
 
 func activeState(m model) TmuxState {
+	state := m.state
 	if m.filterActive && strings.TrimSpace(m.filterInput) != "" {
-		return filterState(m.state, m.filterInput)
+		state = filterState(state, m.filterInput)
 	}
-	return m.state
+	if m.agentView {
+		state = agentOnlyState(state, m.agents)
+	}
+	return state
+}
+
+func agentOnlyState(state TmuxState, agents map[string]AgentState) TmuxState {
+	if len(agents) == 0 {
+		return TmuxState{}
+	}
+
+	panes := []Pane{}
+	windowSet := map[string]bool{}
+	for _, pane := range state.Panes {
+		if _, ok := agents[pane.ID]; ok {
+			panes = append(panes, pane)
+			windowSet[pane.WindowID] = true
+		}
+	}
+
+	windows := []Window{}
+	sessionSet := map[string]bool{}
+	for _, window := range state.Windows {
+		if windowSet[window.ID] {
+			windows = append(windows, window)
+			sessionSet[window.SessionID] = true
+		}
+	}
+
+	sessions := []Session{}
+	for _, session := range state.Sessions {
+		if sessionSet[session.ID] {
+			sessions = append(sessions, session)
+		}
+	}
+
+	return TmuxState{Sessions: sessions, Windows: windows, Panes: panes}
 }
 
 func activeOrder(m model) []string {
-	return buildPaneOrder(activeState(m))
+	state := activeState(m)
+	if m.agentView {
+		return agentDashboardOrder(state, m.agents)
+	}
+	return buildPaneOrder(state)
+}
+
+// agentDashboardOrder returns pane IDs in exactly the order the AI dashboard
+// displays them: grouped by status (waiting, busy, idle, unknown), each
+// group internally in the normal session/window/pane order. Keyboard
+// navigation has to walk this same order — otherwise "down" can jump to a
+// row nowhere near the one below the cursor on screen.
+func agentDashboardOrder(state TmuxState, agents map[string]AgentState) []string {
+	base := buildPaneOrder(state)
+	statusSequence := []AgentStatus{AgentStatusWaiting, AgentStatusBusy, AgentStatusIdle, AgentStatusUnknown}
+	order := make([]string, 0, len(base))
+	for _, status := range statusSequence {
+		for _, paneID := range base {
+			if agent, ok := agents[paneID]; ok && agent.Status == status {
+				order = append(order, paneID)
+			}
+		}
+	}
+	return order
 }
 
 func consumeCount(buffer *string, fallback int) int {

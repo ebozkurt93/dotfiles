@@ -7,6 +7,39 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func TestReconcileAgentStatesKeepsResolvedAmbiguousKindSticky(t *testing.T) {
+	panes := []Pane{{ID: "%1", Command: "node", Title: "", PID: "999"}}
+
+	// Pretend a previous tick already resolved %1 to Gemini via the process-tree probe.
+	agents := map[string]AgentState{"%1": {Kind: AgentGemini}}
+	probed := map[string]string{"%1": "node"}
+
+	next, nextProbed := reconcileAgentStates(agents, probed, panes)
+
+	if next["%1"].Kind != AgentGemini {
+		t.Fatalf("expected sticky Gemini kind, got %v", next["%1"].Kind)
+	}
+	if nextProbed["%1"] != "node" {
+		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"])
+	}
+}
+
+func TestReconcileAgentStatesDoesNotReProbeSameCommand(t *testing.T) {
+	panes := []Pane{{ID: "%1", Command: "node", Title: "", PID: "999"}}
+
+	// %1 was already probed against "node" and found not to be an agent.
+	probed := map[string]string{"%1": "node"}
+
+	next, nextProbed := reconcileAgentStates(nil, probed, panes)
+
+	if _, ok := next["%1"]; ok {
+		t.Fatalf("expected %%1 to stay unresolved without a re-probe")
+	}
+	if nextProbed["%1"] != "node" {
+		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"])
+	}
+}
+
 func TestUpdateConfirmDeleteIgnoresMovementKeys(t *testing.T) {
 	state := TmuxState{
 		Sessions: []Session{{ID: "$0", Name: "work"}},

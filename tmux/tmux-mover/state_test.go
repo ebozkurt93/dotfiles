@@ -39,7 +39,7 @@ func TestBuildTreeRowsSelectedRow(t *testing.T) {
 		Panes:    []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "bash", Path: "~/p"}},
 	}
 
-	rows := buildTreeRows(state, "%1", 80, nil, nil, "", "")
+	rows := buildTreeRows(state, "%1", 80, nil, nil, "", "", nil, 0)
 	if rows.selectedRow < 0 {
 		t.Fatalf("expected selected row")
 	}
@@ -244,7 +244,7 @@ func TestBuildTreeRowsIncludesHeaders(t *testing.T) {
 		Windows:  []Window{{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w0"}},
 		Panes:    []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "bash", Path: "~/p"}},
 	}
-	rows := buildTreeRows(state, "%1", 80, nil, nil, "", "")
+	rows := buildTreeRows(state, "%1", 80, nil, nil, "", "", nil, 0)
 	joined := strings.Join(rows.rows, "\n")
 	if !strings.Contains(joined, "work") {
 		t.Fatalf("expected session header")
@@ -314,7 +314,7 @@ func TestBuildTreeRowsGolden(t *testing.T) {
 		Windows:  []Window{{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w0"}},
 		Panes:    []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "bash", Path: "~/p"}},
 	}
-	rows := buildTreeRows(state, "%1", 120, nil, nil, "", "")
+	rows := buildTreeRows(state, "%1", 120, nil, nil, "", "", nil, 0)
 	if len(rows.rows) < 3 {
 		t.Fatalf("expected at least 3 rows, got %d", len(rows.rows))
 	}
@@ -330,5 +330,107 @@ func TestBuildTreeRowsGolden(t *testing.T) {
 	}
 	if !strings.Contains(joined, "bash  ~/p") {
 		t.Fatalf("expected pane row")
+	}
+}
+
+func buildManyAgentPanesState() (TmuxState, map[string]AgentState) {
+	sessions := []Session{{ID: "$0", Name: "work"}}
+	windows := []Window{}
+	panes := []Pane{}
+	agents := map[string]AgentState{}
+	statuses := []AgentStatus{
+		AgentStatusWaiting,
+		AgentStatusBusy,
+		AgentStatusIdle, AgentStatusIdle, AgentStatusIdle, AgentStatusIdle,
+	}
+	for i, status := range statuses {
+		windowID := "@" + string(rune('0'+i))
+		paneID := "%" + string(rune('0'+i))
+		windows = append(windows, Window{ID: windowID, SessionID: "$0", Index: string(rune('0' + i)), IndexNum: i, Name: "w"})
+		panes = append(panes, Pane{ID: paneID, WindowID: windowID, SessionID: "$0", IndexNum: 0, Command: "claude"})
+		agents[paneID] = AgentState{Kind: AgentClaude, Status: status}
+	}
+	return TmuxState{Sessions: sessions, Windows: windows, Panes: panes}, agents
+}
+
+func TestEnsureVisibleScrollsAgentDashboardToKeepSelectionVisible(t *testing.T) {
+	state, agents := buildManyAgentPanesState()
+
+	base := model{
+		width:  200,
+		height: 20,
+		state:  state,
+		agents: agents,
+		keys:   defaultKeymap(),
+	}
+	base.agentView = true
+
+	dash := buildAgentDashboardRows(base, state, "", 200)
+	if len(dash.rows) <= 10 {
+		t.Fatalf("expected enough rows to force scrolling, got %d", len(dash.rows))
+	}
+
+	// Select the last (deepest) pane and confirm ensureVisible scrolls down
+	// to reveal it instead of leaving the dashboard rendering top-anchored.
+	m := base
+	m.selectedPaneID = "%5"
+	m.lastSelectedID = "%5"
+	m = ensureVisible(m)
+
+	listWidth, _, listHeight, _, _, _, _, _, _ := layoutDims(m, max(1, m.width-2))
+	visibleRows := max(1, listHeight-2)
+	dashAfter := buildAgentDashboardRows(m, state, "%5", max(10, listWidth-2))
+
+	if dashAfter.selectedRow < m.scroll || dashAfter.selectedRow >= m.scroll+visibleRows {
+		t.Fatalf("selected row %d not within visible window [%d, %d)", dashAfter.selectedRow, m.scroll, m.scroll+visibleRows)
+	}
+
+	maxScroll := max(0, len(dashAfter.rows)-visibleRows)
+	if m.scroll > maxScroll {
+		t.Fatalf("scroll %d exceeds max scroll %d", m.scroll, maxScroll)
+	}
+	if m.scroll == 0 {
+		t.Fatalf("expected scroll to advance past 0 to reveal a deep selection")
+	}
+}
+
+func TestAgentOnlyStateKeepsOnlyAgentPanesAndAncestors(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}, {ID: "$1", Name: "other"}},
+		Windows: []Window{
+			{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w0"},
+			{ID: "@2", SessionID: "$0", Index: "1", IndexNum: 1, Name: "w1"},
+			{ID: "@3", SessionID: "$1", Index: "0", IndexNum: 0, Name: "w0"},
+		},
+		Panes: []Pane{
+			{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "claude"},
+			{ID: "%2", WindowID: "@2", SessionID: "$0", IndexNum: 0, Command: "nvim"},
+			{ID: "%3", WindowID: "@3", SessionID: "$1", IndexNum: 0, Command: "zsh"},
+		},
+	}
+	agents := map[string]AgentState{"%1": {Kind: AgentClaude}}
+
+	got := agentOnlyState(state, agents)
+
+	if len(got.Panes) != 1 || got.Panes[0].ID != "%1" {
+		t.Fatalf("expected only pane %%1, got %+v", got.Panes)
+	}
+	if len(got.Windows) != 1 || got.Windows[0].ID != "@1" {
+		t.Fatalf("expected only window @1, got %+v", got.Windows)
+	}
+	if len(got.Sessions) != 1 || got.Sessions[0].ID != "$0" {
+		t.Fatalf("expected only session $0, got %+v", got.Sessions)
+	}
+}
+
+func TestAgentOnlyStateEmptyWhenNoAgents(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@1", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w0"}},
+		Panes:    []Pane{{ID: "%1", WindowID: "@1", SessionID: "$0", IndexNum: 0, Command: "zsh"}},
+	}
+	got := agentOnlyState(state, nil)
+	if len(got.Panes) != 0 || len(got.Windows) != 0 || len(got.Sessions) != 0 {
+		t.Fatalf("expected empty state, got %+v", got)
 	}
 }

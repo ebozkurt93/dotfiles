@@ -47,13 +47,16 @@ func TestParseWindowsOutput(t *testing.T) {
 }
 
 func TestParsePanesOutput(t *testing.T) {
-	input := "%1\t@1\t$0\t0\t~/proj\tnvim\tapi\n%2\t@1\t$0\t1\t~/proj\tbash\t\n"
+	input := "%1\t@1\t$0\t0\t~/proj\tnvim\tapi\t111\n%2\t@1\t$0\t1\t~/proj\tbash\t\t222\n"
 	got := parsePanesOutput(input)
 	if len(got) != 2 {
 		t.Fatalf("expected 2 panes, got %d", len(got))
 	}
 	if got[0].IndexNum != 0 || got[1].IndexNum != 1 {
 		t.Fatalf("expected pane indexes 0,1 got %d,%d", got[0].IndexNum, got[1].IndexNum)
+	}
+	if got[0].PID != "111" || got[1].PID != "222" {
+		t.Fatalf("expected pids 111,222 got %s,%s", got[0].PID, got[1].PID)
 	}
 }
 

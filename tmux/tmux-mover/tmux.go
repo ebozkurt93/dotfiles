@@ -53,6 +53,7 @@ type Pane struct {
 	Path      string
 	Command   string
 	Title     string
+	PID       string
 }
 
 type TmuxState struct {
@@ -101,7 +102,7 @@ func listWindows() ([]Window, error) {
 }
 
 func listPanes() ([]Pane, error) {
-	out, err := tmuxOutput("list-panes", "-a", "-F", "#{pane_id}\t#{window_id}\t#{session_id}\t#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_title}")
+	out, err := tmuxOutput("list-panes", "-a", "-F", "#{pane_id}\t#{window_id}\t#{session_id}\t#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_title}\t#{pane_pid}")
 	if err != nil {
 		return nil, err
 	}
@@ -305,8 +306,8 @@ func parsePanesOutput(out string) []Pane {
 	lines := splitLines(out)
 	panes := make([]Pane, 0, len(lines))
 	for _, line := range lines {
-		parts := strings.SplitN(line, "\t", 7)
-		if len(parts) != 7 {
+		parts := strings.SplitN(line, "\t", 8)
+		if len(parts) != 8 {
 			continue
 		}
 		indexNum := 0
@@ -321,6 +322,7 @@ func parsePanesOutput(out string) []Pane {
 			Path:      parts[4],
 			Command:   parts[5],
 			Title:     parts[6],
+			PID:       parts[7],
 		})
 	}
 

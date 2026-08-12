@@ -3,33 +3,37 @@ package main
 import tea "github.com/charmbracelet/bubbletea"
 
 type model struct {
-	width          int
-	height         int
-	state          TmuxState
-	err            error
-	selectedIndex  int
-	scroll         int
-	selectedPaneID string
-	lastSelectedID string
-	selfPaneID     string
-	selfSessionID  string
-	selfWindowID   string
-	selfClientID   string
-	selfIsPopup    bool
-	paneOrder      []string
-	preview        string
-	previewErr     error
-	staged         []StagedAction
-	mode           Mode
-	targetIndex    int
-	input          string
-	status         string
-	keys           Keymap
-	selectedPanes  map[string]bool
-	filterInput    string
-	filtering      bool
-	filterActive   bool
-	countBuffer    string
+	width           int
+	height          int
+	state           TmuxState
+	err             error
+	selectedIndex   int
+	scroll          int
+	selectedPaneID  string
+	lastSelectedID  string
+	selfPaneID      string
+	selfSessionID   string
+	selfWindowID    string
+	selfClientID    string
+	selfIsPopup     bool
+	paneOrder       []string
+	preview         string
+	previewErr      error
+	staged          []StagedAction
+	mode            Mode
+	targetIndex     int
+	input           string
+	status          string
+	keys            Keymap
+	selectedPanes   map[string]bool
+	filterInput     string
+	filtering       bool
+	filterActive    bool
+	countBuffer     string
+	agents          map[string]AgentState
+	probedNonAgents map[string]string
+	agentView       bool
+	frame           int
 }
 
 type Mode int
@@ -66,6 +70,7 @@ type Keymap struct {
 	ClearSelection    []string
 	Accept            []string
 	Backspace         []string
+	ToggleAgentView   []string
 }
 
 func defaultKeymap() Keymap {
@@ -92,9 +97,10 @@ func defaultKeymap() Keymap {
 		ClearSelection:    []string{"c"},
 		Accept:            []string{"enter"},
 		Backspace:         []string{"backspace"},
+		ToggleAgentView:   []string{"a"},
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(loadStateCmd(), stateTickCmd(), loadSelfTargetCmd())
+	return tea.Batch(loadStateCmd(), stateTickCmd(), loadSelfTargetCmd(), agentTickCmd())
 }

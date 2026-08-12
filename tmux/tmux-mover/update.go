@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -18,6 +19,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = filterPopupState(m.state, m.selfWindowID)
 		}
 		m.selectedPanes = pruneSelectedPanes(m.selectedPanes, m.state.Panes)
+		m.agents, m.probedNonAgents = reconcileAgentStates(m.agents, m.probedNonAgents, m.state.Panes)
 		// window selection derived from selected panes
 		m.paneOrder = buildPaneOrder(m.state)
 		if m.selfPaneID != "" {
@@ -30,9 +32,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = syncSelection(m)
 		m = ensureVisible(m)
 		if m.selectedPaneID != "" {
-			return m, tea.Batch(loadPreviewCmd(m.selectedPaneID), stateTickCmd())
+			return m, loadPreviewCmd(m.selectedPaneID)
 		}
-		return m, stateTickCmd()
+		return m, nil
 	case tea.KeyMsg:
 		if m.filtering {
 			if msg.Type == tea.KeyRunes {
@@ -104,6 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.filtering = false
 			m.filterInput = ""
 			m.filterActive = false
+			m.agentView = false
 			m.countBuffer = ""
 			m = syncSelection(m)
 			m = ensureVisible(m)
@@ -143,6 +146,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selectedPanes = map[string]bool{}
 			m.status = "Cleared selections"
 			return m, nil
+		case keyMatches(msg, m.keys.ToggleAgentView):
+			if m.mode == ModeList {
+				m.agentView = !m.agentView
+				m = syncSelection(m)
+				m = ensureVisible(m)
+				if m.agentView {
+					m.status = "AI dashboard"
+				} else {
+					m.status = ""
+				}
+				if m.selectedPaneID != "" {
+					return m, loadPreviewCmd(m.selectedPaneID)
+				}
+				return m, nil
+			}
 		case keyMatches(msg, m.keys.MovePane):
 			if m.mode == ModeList {
 				m.mode = ModePickWindow
@@ -256,7 +274,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case stateTickMsg:
-		return m, loadStateCmd()
+		// stateTickCmd must only ever be re-armed here — exactly one
+		// self-sustaining tick chain. Every other loadStateCmd() call site
+		// (pane moves, renames, deletes, break-pane, ...) triggers a
+		// one-shot stateMsg refresh; it used to also re-arm a *new*
+		// permanent stateTickCmd chain of its own, which meant every action
+		// silently doubled the ongoing tick rate forever (and m.frame's
+		// animations sped up more with every action taken).
+		m.frame++
+		return m, tea.Batch(loadStateCmd(), stateTickCmd())
+	case agentTickMsg:
+		return m, refreshAgentsCmd(m.agents)
+	case agentStatusMsg:
+		now := msg.now
+		for paneID, content := range msg.results {
+			state, ok := m.agents[paneID]
+			if !ok {
+				continue
+			}
+			raw := detectAgentStatus(state.Kind, content, state.Status)
+			m.agents[paneID] = applyIdleDebounce(state, content, raw, now)
+		}
+		return m, agentTickCmd()
 	case selfTargetMsg:
 		if msg.err != nil {
 			m.status = fmt.Sprintf("Error: %s", msg.err)
@@ -295,6 +334,13 @@ type previewMsg struct {
 
 type stateTickMsg struct{}
 
+type agentTickMsg struct{}
+
+type agentStatusMsg struct {
+	results map[string]string
+	now     time.Time
+}
+
 type selfTargetMsg struct {
 	paneID    string
 	sessionID string
@@ -322,6 +368,71 @@ func stateTickCmd() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
 		return stateTickMsg{}
 	})
+}
+
+func agentTickCmd() tea.Cmd {
+	return tea.Tick(1*time.Second, func(time.Time) tea.Msg {
+		return agentTickMsg{}
+	})
+}
+
+func refreshAgentsCmd(agents map[string]AgentState) tea.Cmd {
+	paneIDs := make([]string, 0, len(agents))
+	for paneID := range agents {
+		paneIDs = append(paneIDs, paneID)
+	}
+	return func() tea.Msg {
+		results := make(map[string]string, len(paneIDs))
+		for _, paneID := range paneIDs {
+			text, err := capturePane(paneID)
+			if err != nil {
+				continue
+			}
+			results[paneID] = ansi.Strip(text)
+		}
+		return agentStatusMsg{results: results, now: time.Now()}
+	}
+}
+
+// reconcileAgentStates re-derives which panes are AI-CLI panes on every fast
+// (100ms) state refresh. probed tracks, per pane ID, the pane_current_command
+// value it was last probed against via probeAgentKindByProcessTree — so an
+// ambiguous runtime pane (see isAmbiguousRuntimeCommand) that isn't an agent
+// only gets that (comparatively expensive) probe once per distinct command
+// value instead of on every tick, and a pane already resolved to a real kind
+// stays resolved even though its pane_current_command keeps reading e.g.
+// "node" rather than "gemini".
+func reconcileAgentStates(agents map[string]AgentState, probed map[string]string, panes []Pane) (map[string]AgentState, map[string]string) {
+	if agents == nil {
+		agents = map[string]AgentState{}
+	}
+	next := make(map[string]AgentState, len(agents))
+	nextProbed := make(map[string]string, len(probed))
+	for _, pane := range panes {
+		kind := detectAgentKind(pane.Command)
+		if kind == AgentNone && isAmbiguousRuntimeCommand(pane.Command) {
+			if existing, ok := agents[pane.ID]; ok && existing.Kind != AgentNone {
+				kind = existing.Kind
+				nextProbed[pane.ID] = probed[pane.ID]
+			} else if probed[pane.ID] != pane.Command {
+				kind = probeAgentKindByProcessTree(pane.PID)
+				nextProbed[pane.ID] = pane.Command
+			} else {
+				nextProbed[pane.ID] = probed[pane.ID]
+			}
+		}
+		if kind == AgentNone {
+			continue
+		}
+		state, existed := agents[pane.ID]
+		if !existed {
+			state = AgentState{Kind: kind}
+		}
+		state.Kind = kind
+		state.Task = parseAgentTaskLabel(pane.Title)
+		next[pane.ID] = state
+	}
+	return next, nextProbed
 }
 
 func loadSelfTargetCmd() tea.Cmd {
