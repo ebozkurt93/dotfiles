@@ -70,6 +70,8 @@ func runWatchAgents() int {
 				continue
 			}
 			agents, probedNonAgents = reconcileAgentStates(agents, probedNonAgents, state.Panes)
+			paneByID := paneIndexByID(state.Panes)
+			sessionByID, windowByID := sessionAndWindowIndex(state)
 			now := time.Now()
 			for paneID, prev := range agents {
 				content, err := capturePane(paneID)
@@ -81,11 +83,51 @@ func runWatchAgents() int {
 				next := applyIdleDebounce(prev, content, raw, now)
 				if shouldNotifyAgentTransition(prev.Status, next.Status) {
 					notifySound()
+					notifyBanner(agentTransitionTitle(next), agentTransitionMessage(next, paneByID[paneID], sessionByID, windowByID))
 				}
 				agents[paneID] = next
 			}
 		}
 	}
+}
+
+func paneIndexByID(panes []Pane) map[string]Pane {
+	byID := make(map[string]Pane, len(panes))
+	for _, p := range panes {
+		byID[p.ID] = p
+	}
+	return byID
+}
+
+func sessionAndWindowIndex(state TmuxState) (map[string]string, map[string]Window) {
+	sessionByID := make(map[string]string, len(state.Sessions))
+	for _, s := range state.Sessions {
+		sessionByID[s.ID] = s.Name
+	}
+	windowByID := make(map[string]Window, len(state.Windows))
+	for _, w := range state.Windows {
+		windowByID[w.ID] = w
+	}
+	return sessionByID, windowByID
+}
+
+func agentTransitionTitle(next AgentState) string {
+	if next.Status == AgentStatusWaiting {
+		return next.Kind.Label() + " is waiting for input"
+	}
+	return next.Kind.Label() + " finished"
+}
+
+// agentTransitionMessage builds the notification body: session:window, plus
+// the pane's task label (set by the CLI itself, e.g. its current TODO) when
+// one is available.
+func agentTransitionMessage(next AgentState, pane Pane, sessionByID map[string]string, windowByID map[string]Window) string {
+	window := windowByID[pane.WindowID]
+	location := fmt.Sprintf("%s:%s", sessionByID[pane.SessionID], window.Name)
+	if next.Task == "" {
+		return location
+	}
+	return location + " — " + next.Task
 }
 
 // shouldNotifyAgentTransition reports whether an agent pane's status change
