@@ -179,11 +179,21 @@ var (
 // getTerminalContent(terminal, n): every check below operates on a small,
 // fixed-size tail window rather than the entire capture, specifically so a
 // phrase near the top of a long pane can't pair up with an unrelated marker
-// (like the next ordinary "❯" prompt) far below it.
+// (like the next ordinary "❯" prompt) far below it. Trailing blank lines are
+// dropped first: unlike ccmanager's node-pty buffer, tmux's capture-pane
+// reports the full pane height, so a pane taller than its actual content
+// pads the capture with blank lines below whatever was last drawn — without
+// trimming those, the "last n lines" window would land on empty padding
+// instead of the real content.
 func lastLines(content string, n int) string {
 	lines := strings.Split(content, "\n")
+	end := len(lines)
+	for end > 0 && strings.TrimSpace(lines[end-1]) == "" {
+		end--
+	}
+	lines = lines[:end]
 	if len(lines) <= n {
-		return content
+		return strings.Join(lines, "\n")
 	}
 	return strings.Join(lines[len(lines)-n:], "\n")
 }
