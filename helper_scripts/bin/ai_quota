@@ -9,14 +9,26 @@ set -euo pipefail
 #     5h remaining: 93%
 #     5h reset:     295m
 #     Weekly left:  68%
+#     Weekly reset: 2026-08-20 19:52
+#
+#   If the API reports no 5h window (some Codex plans only expose a
+#   weekly limit), the "5h remaining"/"5h reset" lines are omitted and
+#   a countdown to the weekly reset is shown instead:
+#     Codex
+#       Reset in:     6d 21h
+#       Weekly left:  92%
+#       Weekly reset: 2026-08-20 19:52
 #
 # Tmux output:
 #   Co 93/68 295m Cl 100/82 157m
+#   Co 92 6d+                        (no 5h window: weekly percent + compact countdown)
 #
 # Meaning:
 #   Co / Cl        Codex / Claude Code
 #   93/68         5-hour remaining percent / weekly remaining percent
 #   295m          minutes until the current 5-hour window resets
+#   6d+           compact countdown (days/hours) to the weekly reset,
+#                 shown in place of X/Y Zm when there is no 5h window
 #
 # Examples:
 #   ai_quota
@@ -51,14 +63,26 @@ Default output:
     5h remaining: 93%
     5h reset:     295m
     Weekly left:  68%
+    Weekly reset: 2026-08-20 19:52
+
+  If the API reports no 5h window (some Codex plans only expose a
+  weekly limit), the "5h remaining"/"5h reset" lines are omitted and
+  a countdown to the weekly reset is shown instead:
+    Codex
+      Reset in:     6d 21h
+      Weekly left:  92%
+      Weekly reset: 2026-08-20 19:52
 
 Tmux output:
   Co 93/68 295m Cl 100/82 157m
+  Co 92 6d+                        (no 5h window: weekly percent + compact countdown)
 
 Meaning:
   Co / Cl        Codex / Claude Code
   93/68         5-hour remaining percent / weekly remaining percent
   295m          minutes until the current 5-hour window resets
+  6d+           compact countdown (days/hours) to the weekly reset,
+                shown in place of X/Y Zm when there is no 5h window
 
 Examples:
   ai_quota
@@ -103,6 +127,37 @@ mins_left() {
   diff=$(((reset - now + 59) / 60))
   ((diff < 0)) && diff=0
   printf '%s' "${diff}"
+}
+
+human_mins() {
+  local m="${1:-}"
+  local compact="${2:-}"
+  [[ -z "${m}" ]] && return 0
+
+  local d h rem
+  d=$((m / 1440))
+  rem=$((m % 1440))
+  h=$((rem / 60))
+  rem=$((rem % 60))
+
+  if [[ -n "${compact}" ]]; then
+    if ((d > 0)); then
+      printf '%dd+' "${d}"
+    elif ((h > 0)); then
+      printf '%dh+' "${h}"
+    else
+      printf '%dm' "${rem}"
+    fi
+    return 0
+  fi
+
+  if ((d > 0)); then
+    printf '%dd %dh' "${d}" "${h}"
+  elif ((h > 0)); then
+    printf '%dh %dm' "${h}" "${rem}"
+  else
+    printf '%dm' "${rem}"
+  fi
 }
 
 reset_datetime() {
@@ -218,17 +273,29 @@ format_codex() {
 
   jq -r '
     def codex_left($x): if $x == null then "?" else (100 - ($x | tonumber) | floor) end;
-    [
-      codex_left(.rate_limit.primary_window.used_percent),
-      codex_left(.rate_limit.secondary_window.used_percent),
-      (.rate_limit.primary_window.reset_after_seconds // "")
-    ] | @tsv
-  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset; do
-    reset_m="$(mins_left "${reset}")"
-    printf '#[fg=cyan]Co %s%s' "$(tmux_fg "${five}")" "${five}"
-    printf '#[fg=colour244]/'
-    printf '%s%s' "$(tmux_fg "${weekly}")" "${weekly}"
-    [[ -n "${reset_m}" ]] && printf ' #[fg=colour244]%sm' "${reset_m}"
+    ([.rate_limit.primary_window, .rate_limit.secondary_window] | map(select(. != null))) as $present
+    | ($present | map(select((.limit_window_seconds // 0) <= 21600)) | first) as $five_w
+    | ($present | map(select((.limit_window_seconds // 0) > 21600)) | first) as $week_w
+    | [
+        ($five_w != null),
+        codex_left($five_w.used_percent),
+        codex_left($week_w.used_percent),
+        ($five_w.reset_after_seconds // ""),
+        ($week_w.reset_after_seconds // "")
+      ] | map(tostring) | join("|")
+  ' <<<"${json}" | while IFS='|' read -r five_present five weekly reset weekly_reset; do
+    printf '#[fg=cyan]Co '
+    if [[ "${five_present}" == "true" ]]; then
+      printf '%s%s' "$(tmux_fg "${five}")" "${five}"
+      printf '#[fg=colour244]/'
+      printf '%s%s' "$(tmux_fg "${weekly}")" "${weekly}"
+      reset_m="$(mins_left "${reset}")"
+      [[ -n "${reset_m}" ]] && printf ' #[fg=colour244]%sm' "${reset_m}"
+    else
+      printf '%s%s' "$(tmux_fg "${weekly}")" "${weekly}"
+      reset_m="$(mins_left "${weekly_reset}")"
+      [[ -n "${reset_m}" ]] && printf ' #[fg=colour244]%s' "$(human_mins "${reset_m}" compact)"
+    fi
     tmux_reset
     printf '\n'
   done
@@ -275,8 +342,8 @@ format_claude() {
         .five_hour.reset_time //
         ""
       )
-    ] | @tsv
-  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset; do
+    ] | map(tostring) | join("|")
+  ' <<<"${json}" | while IFS='|' read -r five weekly reset; do
     reset_m="$(mins_left "${reset}")"
     printf '#[fg=magenta]Cl %s%s' "$(tmux_fg "${five}")" "${five}"
     printf '#[fg=colour244]/'
@@ -304,26 +371,35 @@ details_codex() {
 
   jq -r '
     def codex_left($x): if $x == null then "?" else (100 - ($x | tonumber) | floor) end;
-    [
-      codex_left(.rate_limit.primary_window.used_percent),
-      codex_left(.rate_limit.secondary_window.used_percent),
-      (.rate_limit.primary_window.reset_after_seconds // ""),
-      (
-        .rate_limit.secondary_window.reset_after_seconds //
-        .rate_limit.secondary_window.resets_in_seconds //
-        .rate_limit.secondary_window.seconds_until_reset //
-        .rate_limit.secondary_window.resets_at //
-        .rate_limit.secondary_window.reset_at //
-        .rate_limit.secondary_window.reset_time //
-        ""
-      )
-    ] | @tsv
-  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset weekly_reset; do
-    reset_m="$(mins_left "${reset}")"
+    ([.rate_limit.primary_window, .rate_limit.secondary_window] | map(select(. != null))) as $present
+    | ($present | map(select((.limit_window_seconds // 0) <= 21600)) | first) as $five_w
+    | ($present | map(select((.limit_window_seconds // 0) > 21600)) | first) as $week_w
+    | [
+        ($five_w != null),
+        codex_left($five_w.used_percent),
+        codex_left($week_w.used_percent),
+        ($five_w.reset_after_seconds // ""),
+        (
+          $week_w.reset_after_seconds //
+          $week_w.resets_in_seconds //
+          $week_w.seconds_until_reset //
+          $week_w.resets_at //
+          $week_w.reset_at //
+          $week_w.reset_time //
+          ""
+        )
+      ] | map(tostring) | join("|")
+  ' <<<"${json}" | while IFS='|' read -r five_present five weekly reset weekly_reset; do
     weekly_reset_at="$(reset_datetime "${weekly_reset}")"
     printf 'Codex\n'
-    printf '  5h remaining: %s%%\n' "${five}"
-    [[ -n "${reset_m}" ]] && printf '  5h reset:     %sm\n' "${reset_m}"
+    if [[ "${five_present}" == "true" ]]; then
+      reset_m="$(mins_left "${reset}")"
+      printf '  5h remaining: %s%%\n' "${five}"
+      [[ -n "${reset_m}" ]] && printf '  5h reset:     %sm\n' "${reset_m}"
+    else
+      weekly_reset_m="$(mins_left "${weekly_reset}")"
+      [[ -n "${weekly_reset_m}" ]] && printf '  Reset in:     %s\n' "$(human_mins "${weekly_reset_m}")"
+    fi
     printf '  Weekly left:  %s%%\n' "${weekly}"
     [[ -n "${weekly_reset_at}" ]] && printf '  Weekly reset: %s\n' "${weekly_reset_at}"
   done
@@ -379,8 +455,8 @@ details_claude() {
         .seven_day.reset_time //
         ""
       )
-    ] | @tsv
-  ' <<<"${json}" | while IFS=$'\t' read -r five weekly reset weekly_reset; do
+    ] | map(tostring) | join("|")
+  ' <<<"${json}" | while IFS='|' read -r five weekly reset weekly_reset; do
     reset_m="$(mins_left "${reset}")"
     weekly_reset_at="$(reset_datetime "${weekly_reset}")"
     printf 'Claude Code\n'
