@@ -70,7 +70,7 @@ func collectAgentSnapshots() ([]agentSnapshot, TmuxState, error) {
 		}
 		content = ansi.Strip(content)
 		status := detectAgentStatus(kind, content, AgentStatusIdle)
-		hasJob := paneHasActiveBackgroundTask(procs, pane.PID)
+		hasJob := paneHasActiveBackgroundTask(procs, pane.PID) || contentHasBackgroundAgentJob(content)
 		snapshots = append(snapshots, agentSnapshot{pane: pane, kind: kind, status: status, hasBackgroundJob: hasJob})
 	}
 	return snapshots, state, nil

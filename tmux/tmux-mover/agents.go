@@ -159,6 +159,21 @@ func probeAgentKindByProcessTree(pid string) AgentKind {
 // running".
 const claudeBackgroundTaskMarker = "shell-snapshots"
 
+// claudeBackgroundAgentWaiting matches Claude Code's own idle-but-waiting
+// footer ("✻ Waiting for 1 background agent to finish…"), rendered once the
+// foreground turn has ended but a background Agent-tool subagent is still
+// running. Unlike a run_in_background Bash task, a subagent has no local
+// process to find via paneHasActiveBackgroundTask (it runs server-side), so
+// this is the only signal available for it — a plain text match on the
+// pane's content rather than a process-tree walk.
+var claudeBackgroundAgentWaiting = regexp.MustCompile(`(?i)waiting for \d+ background agents? to finish`)
+
+// contentHasBackgroundAgentJob reports whether the pane's content shows
+// Claude Code's own "waiting for N background agent(s)" marker.
+func contentHasBackgroundAgentJob(content string) bool {
+	return claudeBackgroundAgentWaiting.MatchString(lastLines(content, 30))
+}
+
 // process is one row of `ps -eo pid,ppid,command` output.
 type process struct {
 	pid     string

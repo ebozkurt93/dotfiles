@@ -295,7 +295,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			raw := detectAgentStatus(state.Kind, content, state.Status)
 			next := applyIdleDebounce(state, content, raw, now)
-			next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, state.PID)
+			next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, state.PID) || contentHasBackgroundAgentJob(content)
 			m.agents[paneID] = next
 		}
 		return m, agentTickCmd()

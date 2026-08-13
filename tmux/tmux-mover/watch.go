@@ -83,7 +83,7 @@ func runWatchAgents() int {
 				content = ansi.Strip(content)
 				raw := detectAgentStatus(prev.Kind, content, prev.Status)
 				next := applyIdleDebounce(prev, content, raw, now)
-				next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID)
+				next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID) || contentHasBackgroundAgentJob(content)
 				if shouldNotifyAgentTransition(prev, next) {
 					notifySound()
 					pane := paneByID[paneID]
