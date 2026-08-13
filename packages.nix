@@ -43,12 +43,13 @@ with pkgs; [
   nil # nix language server
   nixd
   alejandra # nix formatter
-  nodePackages.bash-language-server
-  nodePackages.typescript-language-server
+  bash-language-server
+  typescript-language-server
   lua-language-server
   vscode-langservers-extracted # only using vscode-json-language-server
   shfmt
   postgresql_16 # for psql
+  terminal-notifier # tmux-mover --watch-agents banners
 
   # ai
   opencode
