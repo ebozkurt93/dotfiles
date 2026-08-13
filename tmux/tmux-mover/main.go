@@ -14,6 +14,8 @@ func main() {
 			os.Exit(runStatusCLI(false))
 		case "--agents-json":
 			os.Exit(runStatusCLI(true))
+		case "--watch-agents":
+			os.Exit(runWatchAgents())
 		}
 	}
 
