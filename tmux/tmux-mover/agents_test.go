@@ -309,3 +309,34 @@ func TestParseAgentTaskLabel(t *testing.T) {
 		}
 	}
 }
+
+func TestPaneHasActiveBackgroundTask(t *testing.T) {
+	// Mirrors the real tree observed in production: pane shell -> claude ->
+	// {caffeinate keep-awake helper, shell-snapshot wrapper for a
+	// run_in_background Bash tool call}.
+	withBackgroundTask := []process{
+		{pid: "55489", ppid: "31093", command: "-zsh"},
+		{pid: "43693", ppid: "55489", command: "claude"},
+		{pid: "60552", ppid: "43693", command: "caffeinate -i -t 300"},
+		{pid: "53423", ppid: "43693", command: "/bin/zsh -c source /Users/x/.claude/shell-snapshots/snapshot-zsh-123.sh && ... && eval 'sleep 90'"},
+	}
+	if !paneHasActiveBackgroundTask(withBackgroundTask, "55489") {
+		t.Error("expected true: a shell-snapshot descendant is present")
+	}
+
+	withoutBackgroundTask := []process{
+		{pid: "55489", ppid: "31093", command: "-zsh"},
+		{pid: "43693", ppid: "55489", command: "claude"},
+		{pid: "60552", ppid: "43693", command: "caffeinate -i -t 300"},
+	}
+	if paneHasActiveBackgroundTask(withoutBackgroundTask, "55489") {
+		t.Error("expected false: no shell-snapshot descendant, only the caffeinate helper")
+	}
+
+	if paneHasActiveBackgroundTask(withBackgroundTask, "") {
+		t.Error("expected false for an empty shell PID")
+	}
+	if paneHasActiveBackgroundTask(withBackgroundTask, "99999") {
+		t.Error("expected false for a shell PID with no matching process tree")
+	}
+}

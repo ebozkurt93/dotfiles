@@ -73,6 +73,7 @@ func runWatchAgents() int {
 			agents, probedNonAgents = reconcileAgentStates(agents, probedNonAgents, state.Panes)
 			paneByID := paneIndexByID(state.Panes)
 			sessionByID, windowByID := sessionAndWindowIndex(state)
+			procs, _ := listProcesses()
 			now := time.Now()
 			for paneID, prev := range agents {
 				content, err := capturePane(paneID)
@@ -82,7 +83,8 @@ func runWatchAgents() int {
 				content = ansi.Strip(content)
 				raw := detectAgentStatus(prev.Kind, content, prev.Status)
 				next := applyIdleDebounce(prev, content, raw, now)
-				if shouldNotifyAgentTransition(prev.Status, next.Status) {
+				next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID)
+				if shouldNotifyAgentTransition(prev, next) {
 					notifySound()
 					pane := paneByID[paneID]
 					title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
@@ -165,20 +167,27 @@ func tmuxJumpCommand(pane Pane) string {
 	)
 }
 
-// shouldNotifyAgentTransition reports whether an agent pane's status change
-// is one the user asked to be notified about: it started waiting on input,
-// or it just finished working (busy -> idle). A fresh pane's first-ever read
-// (prev == AgentStatusUnknown) never notifies, since that's tmux-mover
-// discovering an already-running agent rather than a state change.
-func shouldNotifyAgentTransition(prev, next AgentStatus) bool {
-	if prev == AgentStatusUnknown {
+// shouldNotifyAgentTransition reports whether an agent pane's state change is
+// one the user asked to be notified about: it started waiting on input, or
+// it just finished working. A fresh pane's first-ever read
+// (prev.Status == AgentStatusUnknown) never notifies, since that's
+// tmux-mover discovering an already-running agent rather than a state
+// change.
+//
+// "Finished" is defined across both Status and HasBackgroundJob, not Status
+// alone: the pane was doing something (actively rendering busy, or idle with
+// a background task still alive) and is now fully done (idle and no
+// background task) — so a render that goes idle while a run_in_background
+// Bash-tool task is still running does NOT yet count as finished; the
+// notification waits for the task to actually complete.
+func shouldNotifyAgentTransition(prev, next AgentState) bool {
+	if prev.Status == AgentStatusUnknown {
 		return false
 	}
-	if next == AgentStatusWaiting && prev != AgentStatusWaiting {
+	if next.Status == AgentStatusWaiting && prev.Status != AgentStatusWaiting {
 		return true
 	}
-	if prev == AgentStatusBusy && next == AgentStatusIdle {
-		return true
-	}
-	return false
+	wasWorking := prev.Status == AgentStatusBusy || prev.HasBackgroundJob
+	isDone := next.Status == AgentStatusIdle && !next.HasBackgroundJob
+	return wasWorking && isDone
 }

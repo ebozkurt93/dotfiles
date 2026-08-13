@@ -454,6 +454,13 @@ func agentStatusColor(status AgentStatus) lipgloss.Color {
 // 100ms state tick (see update.go's stateTickMsg handling of m.frame).
 var agentSpinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
+// agentBackgroundFrames animates the HasBackgroundJob marker: a rotating
+// circle, deliberately a different shape/motion than agentSpinnerFrames'
+// braille spin so the two read as distinct at a glance — this marks "a
+// background task is still running" independent of (and often alongside) a
+// fully idle-looking Status.
+var agentBackgroundFrames = []string{"◐", "◓", "◑", "◒"}
+
 // agentWaitingBlinkFrames drives the waiting-status alert blink: a hard
 // on/off flip between filled and hollow, not a smooth fade — a calm breathing
 // effect reads as ambient/idle, but "needs your input" should read as an
@@ -555,14 +562,39 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 			marker = "*"
 		}
 		primary := fmt.Sprintf("%s %s [%s]", marker, label, agent.Kind.Label())
-		primary = truncateRow(primary, max(1, rowWidth-dotWidth))
+
+		// The background-job marker is independent of the status section a
+		// row sits under: a pane can render fully idle (you can type right
+		// now) while a run_in_background Bash-tool task is still alive in
+		// its process tree — this flags that case rather than folding it
+		// into the Busy/Working status itself. Rendered as its own
+		// pre-styled suffix (like dot above) rather than embedded in
+		// primary, so its color survives primary's own style wrapping; the
+		// rotating-circle animation is deliberately a different shape/motion
+		// than agentStatusDot's braille spin so the two read as distinct at
+		// a glance.
+		backgroundMarker := ""
+		backgroundMarkerWidth := 0
+		if agent.HasBackgroundJob {
+			glyph := agentBackgroundFrames[m.frame%len(agentBackgroundFrames)]
+			backgroundMarker = " " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14")).Render(glyph)
+			backgroundMarkerWidth = 2
+		}
+
+		primaryWidth := max(1, rowWidth-dotWidth-backgroundMarkerWidth)
+		primary = truncateRow(primary, primaryWidth)
+		// Width is set to primary's own natural width (not the full
+		// available row width) so the style adds no trailing padding —
+		// otherwise backgroundMarker would land at the far right edge of
+		// the row instead of right next to the text it's describing.
 		line := dot
 		if pane.ID == selectedPaneID {
 			selectedRow = len(rows)
-			line += selectedStyle.Width(rowWidth - dotWidth).Render(primary)
+			line += selectedStyle.Width(lipgloss.Width(primary)).Render(primary)
 		} else {
-			line += normalStyle.Width(rowWidth - dotWidth).Render(primary)
+			line += normalStyle.Width(lipgloss.Width(primary)).Render(primary)
 		}
+		line += backgroundMarker
 		rows = append(rows, line)
 		rows = append(rows, metaStyle.Render("    "+truncateRow(location, max(1, rowWidth-4))))
 	}

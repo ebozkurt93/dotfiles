@@ -69,6 +69,14 @@ type AgentState struct {
 	Task        string
 	LastContent string
 	StableSince time.Time
+	PID         string
+	// HasBackgroundJob is orthogonal to Status: Status reflects exactly what's
+	// rendered on screen right now (so "idle" still means "you can type"),
+	// while this tracks whether a run_in_background Bash-tool task is still
+	// alive in the pane's process tree (see paneHasActiveBackgroundTask) even
+	// after the foreground turn that started it has ended and the render
+	// looks idle.
+	HasBackgroundJob bool
 }
 
 func detectAgentKind(command string) AgentKind {
@@ -138,6 +146,70 @@ func probeAgentKindByProcessTree(pid string) AgentKind {
 		return AgentNone
 	}
 	return matchAgentKindInCommandLines(strings.Split(string(cmdOut), "\n"))
+}
+
+// claudeBackgroundTaskMarker matches Claude Code's own Bash-tool wrapper
+// invocation (source .../.claude/shell-snapshots/snapshot-*.sh && ...),
+// which it spawns as a child process for every Bash tool call. A foreground
+// call already renders "esc to interrupt" while it runs, but a call made
+// with run_in_background keeps this child process alive after Claude's own
+// turn ends and its render goes fully idle — this is the only signal left
+// at that point, which is why detectAgentStatus's text-based checks alone
+// can't tell "genuinely idle" apart from "turn ended, background task still
+// running".
+const claudeBackgroundTaskMarker = "shell-snapshots"
+
+// process is one row of `ps -eo pid,ppid,command` output.
+type process struct {
+	pid     string
+	ppid    string
+	command string
+}
+
+// listProcesses snapshots every process on the machine in one `ps` call, so
+// paneHasActiveBackgroundTask can walk the tree for as many panes as needed
+// against a single, consistent snapshot instead of spawning ps per pane.
+func listProcesses() ([]process, error) {
+	out, err := exec.Command("ps", "-eo", "pid,ppid,command").Output()
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(string(out), "\n")
+	procs := make([]process, 0, len(lines))
+	for _, line := range lines[1:] { // skip header
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			continue
+		}
+		procs = append(procs, process{pid: fields[0], ppid: fields[1], command: strings.Join(fields[2:], " ")})
+	}
+	return procs, nil
+}
+
+// paneHasActiveBackgroundTask reports whether any descendant of the pane's
+// shell process (walking the whole subtree, not just direct children, since
+// Claude Code's wrapper can be nested a level or two deep) matches
+// claudeBackgroundTaskMarker — i.e. whether Claude Code has a background
+// Bash-tool task still running in that pane, regardless of what's currently
+// rendered on screen.
+func paneHasActiveBackgroundTask(procs []process, shellPID string) bool {
+	if shellPID == "" {
+		return false
+	}
+	childrenOf := map[string][]process{}
+	for _, p := range procs {
+		childrenOf[p.ppid] = append(childrenOf[p.ppid], p)
+	}
+	queue := childrenOf[shellPID]
+	for len(queue) > 0 {
+		p := queue[0]
+		queue = queue[1:]
+		if strings.Contains(p.command, claudeBackgroundTaskMarker) {
+			return true
+		}
+		queue = append(queue, childrenOf[p.pid]...)
+	}
+	return false
 }
 
 // Ported from kbwo/ccmanager (src/services/stateDetector/claude.ts).

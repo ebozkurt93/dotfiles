@@ -14,9 +14,10 @@ import (
 // a point-in-time read rather than the smoothed status shown while
 // tmux-mover is running.
 type agentSnapshot struct {
-	pane   Pane
-	kind   AgentKind
-	status AgentStatus
+	pane             Pane
+	kind             AgentKind
+	status           AgentStatus
+	hasBackgroundJob bool
 }
 
 // agentSnapshotJSON is the --agents-json output shape for a single pane.
@@ -27,14 +28,15 @@ type agentSnapshot struct {
 // specifically an AI-agent status feed, not a general dump of tmux-mover's
 // pane/session state.
 type agentSnapshotJSON struct {
-	PaneID      string `json:"pane_id"`
-	Kind        string `json:"kind"`
-	Status      string `json:"status"`
-	Task        string `json:"task"`
-	Session     string `json:"session"`
-	WindowIndex string `json:"window_index"`
-	WindowName  string `json:"window_name"`
-	Path        string `json:"path"`
+	PaneID        string `json:"pane_id"`
+	Kind          string `json:"kind"`
+	Status        string `json:"status"`
+	Task          string `json:"task"`
+	Session       string `json:"session"`
+	WindowIndex   string `json:"window_index"`
+	WindowName    string `json:"window_name"`
+	Path          string `json:"path"`
+	BackgroundJob bool   `json:"background_job"`
 }
 
 type agentStatusJSON struct {
@@ -52,6 +54,7 @@ func collectAgentSnapshots() ([]agentSnapshot, TmuxState, error) {
 		return nil, TmuxState{}, err
 	}
 
+	procs, _ := listProcesses()
 	snapshots := []agentSnapshot{}
 	for _, pane := range state.Panes {
 		kind := detectAgentKind(pane.Command)
@@ -67,17 +70,24 @@ func collectAgentSnapshots() ([]agentSnapshot, TmuxState, error) {
 		}
 		content = ansi.Strip(content)
 		status := detectAgentStatus(kind, content, AgentStatusIdle)
-		snapshots = append(snapshots, agentSnapshot{pane: pane, kind: kind, status: status})
+		hasJob := paneHasActiveBackgroundTask(procs, pane.PID)
+		snapshots = append(snapshots, agentSnapshot{pane: pane, kind: kind, status: status, hasBackgroundJob: hasJob})
 	}
 	return snapshots, state, nil
 }
 
+// countByStatus buckets snapshots for the plain-text/JSON count summary.
+// A pane that renders idle but still has a background task running counts
+// as busy here — from the plain "N working, N idle" summary's point of
+// view, it isn't done yet — while the per-pane JSON output still reports its
+// real Status plus an explicit background_job field for callers that want
+// the nuance.
 func countByStatus(snapshots []agentSnapshot) (waiting, busy, idle int) {
 	for _, s := range snapshots {
-		switch s.status {
-		case AgentStatusWaiting:
+		switch {
+		case s.status == AgentStatusWaiting:
 			waiting++
-		case AgentStatusBusy:
+		case s.status == AgentStatusBusy || s.hasBackgroundJob:
 			busy++
 		default:
 			idle++
@@ -146,20 +156,21 @@ func printAgentStatusJSON(snapshots []agentSnapshot, state TmuxState) error {
 	for _, snap := range snapshots {
 		window := windowByID[snap.pane.WindowID]
 		out.Panes = append(out.Panes, agentSnapshotJSON{
-			PaneID:      snap.pane.ID,
-			Kind:        snap.kind.Slug(),
-			Status:      snap.status.String(),
-			Task:        parseAgentTaskLabel(snap.pane.Title),
-			Session:     sessionByID[snap.pane.SessionID],
-			WindowIndex: window.Index,
-			WindowName:  window.Name,
-			Path:        snap.pane.Path,
+			PaneID:        snap.pane.ID,
+			Kind:          snap.kind.Slug(),
+			Status:        snap.status.String(),
+			Task:          parseAgentTaskLabel(snap.pane.Title),
+			Session:       sessionByID[snap.pane.SessionID],
+			WindowIndex:   window.Index,
+			WindowName:    window.Name,
+			Path:          snap.pane.Path,
+			BackgroundJob: snap.hasBackgroundJob,
 		})
 
-		switch snap.status {
-		case AgentStatusWaiting:
+		switch {
+		case snap.status == AgentStatusWaiting:
 			out.Counts.Waiting++
-		case AgentStatusBusy:
+		case snap.status == AgentStatusBusy || snap.hasBackgroundJob:
 			out.Counts.Busy++
 		default:
 			out.Counts.Idle++

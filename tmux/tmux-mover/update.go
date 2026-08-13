@@ -287,13 +287,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, refreshAgentsCmd(m.agents)
 	case agentStatusMsg:
 		now := msg.now
+		procs, _ := listProcesses()
 		for paneID, content := range msg.results {
 			state, ok := m.agents[paneID]
 			if !ok {
 				continue
 			}
 			raw := detectAgentStatus(state.Kind, content, state.Status)
-			m.agents[paneID] = applyIdleDebounce(state, content, raw, now)
+			next := applyIdleDebounce(state, content, raw, now)
+			next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, state.PID)
+			m.agents[paneID] = next
 		}
 		return m, agentTickCmd()
 	case selfTargetMsg:
@@ -430,6 +433,7 @@ func reconcileAgentStates(agents map[string]AgentState, probed map[string]string
 		}
 		state.Kind = kind
 		state.Task = parseAgentTaskLabel(pane.Title)
+		state.PID = pane.PID
 		next[pane.ID] = state
 	}
 	return next, nextProbed
