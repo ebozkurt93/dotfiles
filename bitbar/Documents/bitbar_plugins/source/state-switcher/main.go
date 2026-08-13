@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 type State struct {
@@ -265,6 +266,9 @@ func runOnCommandHook(customState, command string) {
 	cmd := exec.Command(os.Getenv("HOME") + "/.nix-profile/bin/zsh", "-c", cmdStr)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
+	// New session so this outlives a tmux popup (`-E`) tearing down the
+	// calling process's process group the instant it exits.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	cmd.Start()
 }
 
