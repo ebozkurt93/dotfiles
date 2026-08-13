@@ -117,15 +117,24 @@ func sessionAndWindowIndex(state TmuxState) (map[string]string, map[string]Windo
 }
 
 // agentTransitionNotification builds the (title, subtitle, body) shown for a
-// pane's status change: title leads with a glyph distinguishing "needs you"
-// from "done" so it's scannable at a glance; subtitle is the pane's
-// session/window location, so multiple panes of the same CLI stay
-// distinguishable; body is the pane's task label (set by the CLI itself,
-// e.g. its current TODO) or, failing that, the pane's working directory.
+// pane's status change: title leads with a glyph distinguishing "needs you",
+// "done", and "free to type, but a background task is still going" so it's
+// scannable at a glance; subtitle is the pane's session/window location, so
+// multiple panes of the same CLI stay distinguishable; body is the pane's
+// task label (set by the CLI itself, e.g. its current TODO) or, failing
+// that, the pane's working directory.
+//
+// This is only ever called when shouldNotifyAgentTransition has already
+// returned true, so next.Status/HasBackgroundJob are exhaustively one of:
+// Waiting; Idle with HasBackgroundJob (just went idle, task still running);
+// or Idle without HasBackgroundJob (genuinely finished).
 func agentTransitionNotification(next AgentState, pane Pane, sessionByID map[string]string, windowByID map[string]Window) (title, subtitle, body string) {
 	glyph, verb := "✅", "finished"
-	if next.Status == AgentStatusWaiting {
+	switch {
+	case next.Status == AgentStatusWaiting:
 		glyph, verb = "⏳", "waiting for input"
+	case next.Status == AgentStatusIdle && next.HasBackgroundJob:
+		glyph, verb = "🔄", "idle — background task still running"
 	}
 	title = fmt.Sprintf("%s %s %s", glyph, next.Kind.Label(), verb)
 
@@ -168,18 +177,21 @@ func tmuxJumpCommand(pane Pane) string {
 }
 
 // shouldNotifyAgentTransition reports whether an agent pane's state change is
-// one the user asked to be notified about: it started waiting on input, or
-// it just finished working. A fresh pane's first-ever read
-// (prev.Status == AgentStatusUnknown) never notifies, since that's
-// tmux-mover discovering an already-running agent rather than a state
-// change.
+// one the user asked to be notified about: it started waiting on input, it
+// just went idle while a background task is still running (so you're free to
+// type, but something's still in flight), or it's now fully done. A fresh
+// pane's first-ever read (prev.Status == AgentStatusUnknown) never notifies,
+// since that's tmux-mover discovering an already-running agent rather than a
+// state change.
 //
 // "Finished" is defined across both Status and HasBackgroundJob, not Status
 // alone: the pane was doing something (actively rendering busy, or idle with
 // a background task still alive) and is now fully done (idle and no
 // background task) — so a render that goes idle while a run_in_background
-// Bash-tool task is still running does NOT yet count as finished; the
-// notification waits for the task to actually complete.
+// Bash-tool task is still running does NOT yet count as finished on its own;
+// that transition gets its own "idle, background task still running"
+// notification instead, and "finished" only fires once the task later
+// actually completes (whether or not Status ever left Idle in between).
 func shouldNotifyAgentTransition(prev, next AgentState) bool {
 	if prev.Status == AgentStatusUnknown {
 		return false
@@ -187,6 +199,13 @@ func shouldNotifyAgentTransition(prev, next AgentState) bool {
 	if next.Status == AgentStatusWaiting && prev.Status != AgentStatusWaiting {
 		return true
 	}
+
+	prevIdleWithJob := prev.Status == AgentStatusIdle && prev.HasBackgroundJob
+	nextIdleWithJob := next.Status == AgentStatusIdle && next.HasBackgroundJob
+	if nextIdleWithJob && !prevIdleWithJob {
+		return true
+	}
+
 	wasWorking := prev.Status == AgentStatusBusy || prev.HasBackgroundJob
 	isDone := next.Status == AgentStatusIdle && !next.HasBackgroundJob
 	return wasWorking && isDone

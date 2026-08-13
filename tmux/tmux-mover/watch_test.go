@@ -22,15 +22,21 @@ func TestShouldNotifyAgentTransition(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "busy to idle, but a background job is still running: not finished yet",
+			name: "busy to idle, but a background job is still running: notifies (free to type, not finished yet)",
 			prev: AgentState{Status: AgentStatusBusy},
 			next: AgentState{Status: AgentStatusIdle, HasBackgroundJob: true},
-			want: false,
+			want: true,
 		},
 		{
 			name: "render stays idle the whole time, but the background job finishes: finished",
 			prev: AgentState{Status: AgentStatusIdle, HasBackgroundJob: true},
 			next: AgentState{Status: AgentStatusIdle, HasBackgroundJob: false},
+			want: true,
+		},
+		{
+			name: "waiting resolves straight into idle-with-job: notifies",
+			prev: AgentState{Status: AgentStatusWaiting},
+			next: AgentState{Status: AgentStatusIdle, HasBackgroundJob: true},
 			want: true,
 		},
 		{
