@@ -1,4 +1,7 @@
-{ pkgs }:
+{
+  pkgs,
+  llmAgents ? pkgs,
+}:
 with pkgs; [
   atuin
   bat
@@ -52,5 +55,7 @@ with pkgs; [
   terminal-notifier # tmux-mover --watch-agents banners
 
   # ai
+  llmAgents.claude-code
+  codex
   opencode
 ]

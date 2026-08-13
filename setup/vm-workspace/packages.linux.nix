@@ -1,4 +1,7 @@
-{ pkgs }:
+{
+  pkgs,
+  llmAgents ? pkgs,
+}:
 with pkgs; [
   atuin
   bat
@@ -59,5 +62,7 @@ with pkgs; [
   neovim
 
   # ai
+  llmAgents.claude-code
+  codex
   opencode
 ]

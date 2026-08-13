@@ -4,6 +4,7 @@
     bw-nixpkgs.url = "github:NixOS/nixpkgs/0cb2fd7c59fed0cd82ef858cbcbdb552b9a33465";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    llm-agents-nix.url = "github:numtide/llm-agents.nix";
   };
 
   outputs = {
@@ -11,10 +12,14 @@
     nixpkgs,
     bw-nixpkgs,
     home-manager,
+    llm-agents-nix,
     ...
   }: {
     darwinBase = {
-      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+      pkgs = import nixpkgs {
+        system = "aarch64-darwin";
+        config.allowUnfree = true;
+      };
       modules = [
         (
           {
@@ -23,7 +28,10 @@
             ...
           }: {
             home = let
-              packages = import ./packages.nix {inherit pkgs;};
+              packages = import ./packages.nix {
+                inherit pkgs;
+                llmAgents = llm-agents-nix.packages.${pkgs.stdenv.hostPlatform.system};
+              };
             in {
               inherit packages;
               stateVersion = "24.05";
@@ -51,26 +59,25 @@
           modules =
             self.darwinBase.modules
             ++ [
-              ({pkgs, ...}:
-                let
-                  openscad = pkgs.openscad.overrideAttrs (_: {
-                    doCheck = false;
-                    doInstallCheck = false;
-                  });
-                in {
-                  home = {
-                    username = "erdembozkurt";
-                    homeDirectory = "/Users/erdembozkurt";
-                    packages = [
-                      bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
-                      # openscad is provided as macos app, not executable binary
-                      (pkgs.writeShellScriptBin "openscad" ''
-                        exec "${openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
-                      '')
-                      pkgs.syncthing
-                    ];
-                  };
-                })
+              ({pkgs, ...}: let
+                openscad = pkgs.openscad.overrideAttrs (_: {
+                  doCheck = false;
+                  doInstallCheck = false;
+                });
+              in {
+                home = {
+                  username = "erdembozkurt";
+                  homeDirectory = "/Users/erdembozkurt";
+                  packages = [
+                    bw-nixpkgs.legacyPackages.aarch64-darwin.bitwarden-cli
+                    # openscad is provided as macos app, not executable binary
+                    (pkgs.writeShellScriptBin "openscad" ''
+                      exec "${openscad}/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" "$@"
+                    '')
+                    pkgs.syncthing
+                  ];
+                };
+              })
             ];
         });
     };
