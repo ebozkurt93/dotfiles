@@ -454,14 +454,18 @@ func detectAgentStatus(kind AgentKind, content string, prevStatus AgentStatus) A
 }
 
 // applyIdleDebounce ports ccmanager's debounceIdle: a raw busy->idle read is
-// only trusted once the pane's content has stopped changing for
-// AgentIdleDebounce. Any other status (busy/waiting) is trusted immediately.
-func applyIdleDebounce(prev AgentState, content string, rawStatus AgentStatus, now time.Time) AgentState {
+// only trusted once the pane has stopped changing for AgentIdleDebounce. Any
+// other status (busy/waiting) is trusted immediately. settleKey is what
+// "changing" is measured against — see settleKey() below; it's usually the
+// full pane content, but for a Claude pane with a title glyph it's just that
+// glyph, since Claude redraws it every frame while a turn is in progress and
+// freezes it once the turn ends.
+func applyIdleDebounce(prev AgentState, settleKey string, rawStatus AgentStatus, now time.Time) AgentState {
 	next := prev
 	next.Kind = prev.Kind
 
-	if content != prev.LastContent {
-		next.LastContent = content
+	if settleKey != prev.LastContent {
+		next.LastContent = settleKey
 		next.StableSince = now
 	}
 
@@ -496,4 +500,40 @@ func parseAgentTaskLabel(title string) string {
 		return strings.TrimSpace(string(runes[2:]))
 	}
 	return title
+}
+
+// titleGlyph extracts the leading status glyph from a pane title set by the
+// CLI itself — the same leading-glyph convention parseAgentTaskLabel strips
+// off — or "" if the title doesn't have one (no title yet, or a CLI that
+// doesn't set this convention).
+func titleGlyph(title string) string {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return ""
+	}
+	runes := []rune(title)
+	if len(runes) > 1 && runes[0] > 127 && runes[1] == ' ' {
+		return string(runes[0])
+	}
+	return ""
+}
+
+// settleKey returns what applyIdleDebounce should treat as "the pane's
+// current appearance" for busy/idle stability comparison. Claude Code
+// redraws its title's leading glyph every frame while a turn is in progress
+// and freezes it the instant the turn ends (verified live: a pane showed a
+// rotating "◐"/"◑" mid-turn, then froze on a static glyph once settled) —
+// comparing just that one character is a far smaller, more reliable surface
+// than diffing the whole captured screen, which can be kept from ever
+// settling by unrelated content elsewhere in the pane (e.g. a live
+// token-count or elapsed-time line). Falls back to the full pane content for
+// panes/CLIs without an observed title-glyph convention (Codex, Gemini, or a
+// Claude pane with no title set yet).
+func settleKey(kind AgentKind, title, content string) string {
+	if kind == AgentClaude {
+		if glyph := titleGlyph(title); glyph != "" {
+			return glyph
+		}
+	}
+	return content
 }

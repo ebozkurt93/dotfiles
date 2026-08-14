@@ -81,12 +81,12 @@ func runWatchAgents() int {
 					continue
 				}
 				content = ansi.Strip(content)
+				pane := paneByID[paneID]
 				raw := detectAgentStatus(prev.Kind, content, prev.Status)
-				next := applyIdleDebounce(prev, content, raw, now)
+				next := applyIdleDebounce(prev, settleKey(prev.Kind, pane.Title, content), raw, now)
 				next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID) || contentHasBackgroundAgentJob(content)
 				if shouldNotifyAgentTransition(prev, next) {
 					notifySound()
-					pane := paneByID[paneID]
 					title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
 					notifyBanner(title, subtitle, body, tmuxJumpCommand(pane))
 				}

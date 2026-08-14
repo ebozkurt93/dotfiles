@@ -310,6 +310,47 @@ func TestParseAgentTaskLabel(t *testing.T) {
 	}
 }
 
+func TestTitleGlyph(t *testing.T) {
+	cases := []struct {
+		title string
+		want  string
+	}{
+		{"✳ Debug invoice date filter logic", "✳"},
+		{"◑ Design AI CLI session management features", "◑"},
+		{"zsh", ""},
+		{"Erdems-MacBook-Pro.local", ""},
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := titleGlyph(c.title); got != c.want {
+			t.Errorf("titleGlyph(%q) = %q, want %q", c.title, got, c.want)
+		}
+	}
+}
+
+func TestSettleKey(t *testing.T) {
+	cases := []struct {
+		name    string
+		kind    AgentKind
+		title   string
+		content string
+		want    string
+	}{
+		{"claude with glyph uses glyph", AgentClaude, "◑ Design AI CLI session management features", "some pane content", "◑"},
+		{"claude without glyph falls back to content", AgentClaude, "zsh", "some pane content", "some pane content"},
+		{"claude with empty title falls back to content", AgentClaude, "", "some pane content", "some pane content"},
+		{"codex ignores title glyph convention", AgentCodex, "✳ looks like a glyph but isn't Claude", "some pane content", "some pane content"},
+		{"gemini ignores title glyph convention", AgentGemini, "✳ looks like a glyph but isn't Claude", "some pane content", "some pane content"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := settleKey(c.kind, c.title, c.content); got != c.want {
+				t.Errorf("settleKey(%v, %q, %q) = %q, want %q", c.kind, c.title, c.content, got, c.want)
+			}
+		})
+	}
+}
+
 func TestPaneHasActiveBackgroundTask(t *testing.T) {
 	// Mirrors the real tree observed in production: pane shell -> claude ->
 	// {caffeinate keep-awake helper, shell-snapshot wrapper for a
