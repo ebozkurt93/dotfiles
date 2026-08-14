@@ -59,7 +59,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
-		if m.mode == ModeNewSession || m.mode == ModeRenameSession {
+		if m.mode == ModeNewSession || m.mode == ModeRenameSession || m.mode == ModeNewSessionMovePane || m.mode == ModeNewSessionMoveWindow {
 			switch {
 			case keyMatches(msg, m.keys.Cancel):
 				m.mode = ModeList
@@ -171,6 +171,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == ModeList {
 				m.mode = ModePickSession
 				m.targetIndex = initialSessionTargetIndex(m)
+				return m, nil
+			}
+		case keyMatches(msg, m.keys.MovePaneNewSession):
+			if m.mode == ModeList {
+				m.mode = ModeNewSessionMovePane
+				m.input = ""
+				return m, nil
+			}
+		case keyMatches(msg, m.keys.MoveWindowNewSession):
+			if m.mode == ModeList {
+				m.mode = ModeNewSessionMoveWindow
+				m.input = ""
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.CreateSession):
@@ -634,6 +646,73 @@ func acceptAction(m model) (tea.Model, tea.Cmd) {
 		m.mode = ModeList
 		m.input = ""
 		return m, loadStateCmd()
+	case ModeNewSessionMovePane:
+		name := strings.TrimSpace(m.input)
+		selected := selectedPaneIDs(m)
+		if len(selected) == 0 && m.selectedPaneID != "" {
+			selected = []string{m.selectedPaneID}
+		}
+		m.mode = ModeList
+		m.input = ""
+		if len(selected) == 0 {
+			m.status = "No pane selected"
+			return m, nil
+		}
+		sessionID, windowID, placeholderPaneID, err := applySessionCreateWithIDs(name)
+		if err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+			return m, nil
+		}
+		moved, skipped, newWindowID, _, err := movePanesToWindow(m, selected, windowID)
+		if err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+		} else {
+			if moved > 0 {
+				_ = applyPaneKill(placeholderPaneID)
+			}
+			m.status = fmt.Sprintf("Moved %d pane(s) to new session, skipped %d", moved, skipped)
+			m.selectedPanes = map[string]bool{}
+			if newWindowID != "" {
+				m.selfWindowID = newWindowID
+				m.selfSessionID = sessionID
+			}
+			_ = refocusSelf(m.selfPaneID, m.selfSessionID, m.selfWindowID, m.selfClientID)
+		}
+		return m, tea.Batch(loadStateCmd(), loadPreviewCmd(m.selectedPaneID))
+	case ModeNewSessionMoveWindow:
+		name := strings.TrimSpace(m.input)
+		selected := selectedWindowIDsFromPanes(m)
+		if len(selected) == 0 {
+			if windowID := windowIDForPane(m.state, m.selectedPaneID); windowID != "" {
+				selected = []string{windowID}
+			}
+		}
+		m.mode = ModeList
+		m.input = ""
+		if len(selected) == 0 {
+			m.status = "No window selected"
+			return m, nil
+		}
+		sessionID, placeholderWindowID, _, err := applySessionCreateWithIDs(name)
+		if err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+			return m, nil
+		}
+		moved, skipped, newSessionID, err := moveWindowsToSession(m, selected, sessionID)
+		if err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+		} else {
+			if moved > 0 {
+				_ = applyWindowKill(placeholderWindowID)
+			}
+			m.status = fmt.Sprintf("Moved %d window(s) to new session, skipped %d", moved, skipped)
+			m.selectedPanes = map[string]bool{}
+			if newSessionID != "" {
+				m.selfSessionID = newSessionID
+			}
+			_ = refocusSelf(m.selfPaneID, m.selfSessionID, m.selfWindowID, m.selfClientID)
+		}
+		return m, tea.Batch(loadStateCmd(), loadPreviewCmd(m.selectedPaneID))
 	case ModeRenameSession:
 		name := strings.TrimSpace(m.input)
 		sessionID := sessionIDForPane(m.state, m.selectedPaneID)

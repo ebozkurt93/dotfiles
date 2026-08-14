@@ -131,6 +131,10 @@ func renderConfirmDelete(m model, width int, height int) string {
 }
 
 func renderNewSession(m model, width int, height int) string {
+	return renderNewSessionWithIntent(m, width, height, "New session", "Create Session", "Press enter to create or esc to cancel.")
+}
+
+func renderNewSessionWithIntent(m model, width int, height int, heading string, frameTitle string, actionHint string) string {
 	rowWidth := max(10, width-4)
 	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("2"))
 	accentStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Width(rowWidth)
@@ -144,16 +148,16 @@ func renderNewSession(m model, width int, height int) string {
 	}
 
 	lines := []string{}
-	lines = append(lines, accentStyle.Render("New session"))
+	lines = append(lines, accentStyle.Render(heading))
 	lines = append(lines, plain.Render("Name: "+label))
 	lines = append(lines, muted.Render("Leave blank to let tmux choose."))
 	lines = append(lines, "")
-	lines = append(lines, plain.Render("Press enter to create or esc to cancel."))
+	lines = append(lines, plain.Render(actionHint))
 
 	visible := sliceRows(lines, 0, max(1, height-2))
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(rowWidth)
-	return modalFrame("Create Session", content, width, height, headerStyle, separator, lipgloss.Color("2"))
+	return modalFrame(frameTitle, content, width, height, headerStyle, separator, lipgloss.Color("2"))
 }
 
 func renderRenameSession(m model, width int, height int) string {
@@ -206,6 +210,24 @@ func renderModalForMode(m model, availableWidth int) (string, bool) {
 		return renderChoiceList("Move Window -> Session", sessions, m.targetIndex, modalWidth, modalHeight), true
 	case ModeNewSession:
 		return renderNewSession(m, modalWidth, modalHeight), true
+	case ModeNewSessionMovePane:
+		count := len(selectedPaneIDs(m))
+		if count == 0 {
+			count = 1
+		}
+		return renderNewSessionWithIntent(m, modalWidth, modalHeight,
+			fmt.Sprintf("Move %d pane(s) -> new session", count),
+			"New Session (Move Panes)",
+			"Press enter to create and move or esc to cancel."), true
+	case ModeNewSessionMoveWindow:
+		count := len(selectedWindowIDsFromPanes(m))
+		if count == 0 {
+			count = 1
+		}
+		return renderNewSessionWithIntent(m, modalWidth, modalHeight,
+			fmt.Sprintf("Move %d window(s) -> new session", count),
+			"New Session (Move Windows)",
+			"Press enter to create and move or esc to cancel."), true
 	case ModeRenameSession:
 		return renderRenameSession(m, modalWidth, modalHeight), true
 	case ModeConfirmDelete:
@@ -701,6 +723,10 @@ func renderActionsPanel(actions []StagedAction, mode Mode, input string, status 
 		prompt = "select target session"
 	case ModeNewSession:
 		prompt = fmt.Sprintf("new session name (optional): %s", input)
+	case ModeNewSessionMovePane:
+		prompt = fmt.Sprintf("new session name for moved pane(s) (optional): %s", input)
+	case ModeNewSessionMoveWindow:
+		prompt = fmt.Sprintf("new session name for moved window(s) (optional): %s", input)
 	case ModeConfirmDelete:
 		prompt = "confirm delete (y/n)"
 	}
@@ -792,6 +818,8 @@ func keyHintsStyled(keys Keymap, width int) []string {
 		item(joinKeys(keys.DeletePanes), "delete panes"),
 		item(joinKeys(keys.MovePane), "move pane"),
 		item(joinKeys(keys.MoveWindow), "move window"),
+		item(joinKeys(keys.MovePaneNewSession), "pane -> new session"),
+		item(joinKeys(keys.MoveWindowNewSession), "window -> new session"),
 		item(joinKeys(keys.Cancel), "cancel"),
 		item(joinKeys(keys.Quit), "quit"),
 	}

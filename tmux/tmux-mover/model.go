@@ -45,59 +45,65 @@ const (
 	ModeNewSession
 	ModeRenameSession
 	ModeConfirmDelete
+	ModeNewSessionMovePane
+	ModeNewSessionMoveWindow
 )
 
 type Keymap struct {
-	Quit              []string
-	Cancel            []string
-	MoveDown          []string
-	MoveUp            []string
-	MovePane          []string
-	MoveWindow        []string
-	CreateSession     []string
-	RenameSession     []string
-	DeletePanes       []string
-	BreakPane         []string
-	ConfirmYes        []string
-	ConfirmNo         []string
-	ReorderPaneUp     []string
-	ReorderPaneDown   []string
-	ReorderWindowUp   []string
-	ReorderWindowDown []string
-	TogglePaneSelect  []string
-	SelectNext        []string
-	SelectPrev        []string
-	ClearSelection    []string
-	Accept            []string
-	Backspace         []string
-	ToggleAgentView   []string
+	Quit                 []string
+	Cancel               []string
+	MoveDown             []string
+	MoveUp               []string
+	MovePane             []string
+	MoveWindow           []string
+	MovePaneNewSession   []string
+	MoveWindowNewSession []string
+	CreateSession        []string
+	RenameSession        []string
+	DeletePanes          []string
+	BreakPane            []string
+	ConfirmYes           []string
+	ConfirmNo            []string
+	ReorderPaneUp        []string
+	ReorderPaneDown      []string
+	ReorderWindowUp      []string
+	ReorderWindowDown    []string
+	TogglePaneSelect     []string
+	SelectNext           []string
+	SelectPrev           []string
+	ClearSelection       []string
+	Accept               []string
+	Backspace            []string
+	ToggleAgentView      []string
 }
 
 func defaultKeymap() Keymap {
 	return Keymap{
-		Quit:              []string{"q", "ctrl+c"},
-		Cancel:            []string{"esc"},
-		MoveDown:          []string{"j", "down"},
-		MoveUp:            []string{"k", "up"},
-		MovePane:          []string{"m"},
-		MoveWindow:        []string{"M"},
-		CreateSession:     []string{"s"},
-		RenameSession:     []string{"r"},
-		DeletePanes:       []string{"d"},
-		BreakPane:         []string{"b"},
-		ConfirmYes:        []string{"y"},
-		ConfirmNo:         []string{"n"},
-		ReorderPaneUp:     []string{"alt+k", "alt+up"},
-		ReorderPaneDown:   []string{"alt+j", "alt+down"},
-		ReorderWindowUp:   []string{"alt+K", "alt+shift+up"},
-		ReorderWindowDown: []string{"alt+J", "alt+shift+down"},
-		TogglePaneSelect:  []string{" "},
-		SelectNext:        []string{"tab"},
-		SelectPrev:        []string{"shift+tab"},
-		ClearSelection:    []string{"c"},
-		Accept:            []string{"enter"},
-		Backspace:         []string{"backspace"},
-		ToggleAgentView:   []string{"a"},
+		Quit:                 []string{"q", "ctrl+c"},
+		Cancel:               []string{"esc"},
+		MoveDown:             []string{"j", "down"},
+		MoveUp:               []string{"k", "up"},
+		MovePane:             []string{"m"},
+		MoveWindow:           []string{"M"},
+		MovePaneNewSession:   []string{"n"},
+		MoveWindowNewSession: []string{"N"},
+		CreateSession:        []string{"s"},
+		RenameSession:        []string{"r"},
+		DeletePanes:          []string{"d"},
+		BreakPane:            []string{"b"},
+		ConfirmYes:           []string{"y"},
+		ConfirmNo:            []string{"n"},
+		ReorderPaneUp:        []string{"alt+k", "alt+up"},
+		ReorderPaneDown:      []string{"alt+j", "alt+down"},
+		ReorderWindowUp:      []string{"alt+K", "alt+shift+up"},
+		ReorderWindowDown:    []string{"alt+J", "alt+shift+down"},
+		TogglePaneSelect:     []string{" "},
+		SelectNext:           []string{"tab"},
+		SelectPrev:           []string{"shift+tab"},
+		ClearSelection:       []string{"c"},
+		Accept:               []string{"enter"},
+		Backspace:            []string{"backspace"},
+		ToggleAgentView:      []string{"a"},
 	}
 }
 

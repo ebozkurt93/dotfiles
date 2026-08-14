@@ -201,6 +201,35 @@ func applySessionCreate(name string) error {
 	return err
 }
 
+// applySessionCreateWithIDs creates a detached session and returns the IDs of
+// the session, its initial window, and that window's lone placeholder pane.
+// Callers that move other panes/windows into the new session are expected to
+// remove the placeholder afterward so it doesn't linger alongside the moved
+// content.
+func applySessionCreateWithIDs(name string) (string, string, string, error) {
+	args := []string{"new-session", "-d", "-P", "-F", "#{session_id}\t#{window_id}\t#{pane_id}"}
+	if strings.TrimSpace(name) != "" {
+		args = append(args, "-s", name)
+	}
+	out, err := tmuxOutput(args...)
+	if err != nil {
+		return "", "", "", err
+	}
+	parts := strings.SplitN(strings.TrimSpace(out), "\t", 3)
+	if len(parts) != 3 {
+		return "", "", "", fmt.Errorf("unexpected new-session output: %s", strings.TrimSpace(out))
+	}
+	return parts[0], parts[1], parts[2], nil
+}
+
+func applyWindowKill(windowID string) error {
+	if windowID == "" {
+		return fmt.Errorf("missing window")
+	}
+	_, err := tmuxOutput("kill-window", "-t", windowID)
+	return err
+}
+
 func applySessionRename(sessionID string, name string) error {
 	if sessionID == "" || strings.TrimSpace(name) == "" {
 		return fmt.Errorf("missing session or name")
