@@ -122,6 +122,15 @@ func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRec
 	if err != nil {
 		watchLogger.Printf("watch-agents: tick %d: listProcesses failed (background-job detection degraded this tick): %v", tickCount, err)
 	}
+	// viewed is which pane each attached tmux client is actually looking at
+	// right now — checked once per tick (not per pane) since it doesn't
+	// depend on the pane being examined. A nil map here (on error) just
+	// means nothing gets marked seen this tick rather than a crash; map
+	// reads on a nil map are a defined, safe zero-value lookup in Go.
+	viewed, err := currentlyViewedPaneIDs()
+	if err != nil {
+		watchLogger.Printf("watch-agents: tick %d: currentlyViewedPaneIDs failed (unseen-clearing degraded this tick): %v", tickCount, err)
+	}
 	now := time.Now()
 
 	waiting, busy, idle := 0, 0, 0
@@ -143,6 +152,8 @@ func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRec
 		}
 
 		if shouldNotifyAgentTransition(prev, next) {
+			next.Unseen = true
+			next.UnseenSince = now
 			title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
 			watchLogger.Printf("watch-agents: tick %d: NOTIFY pane %s: %q / %q / %q", tickCount, paneID, title, subtitle, body)
 			if soundTool, soundErr := notifySound(); soundErr != nil {
@@ -151,6 +162,14 @@ func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRec
 			if bannerTool, bannerErr := notifyBanner(title, subtitle, body, tmuxJumpCommand(pane)); bannerErr != nil {
 				watchLogger.Printf("watch-agents: tick %d: notifyBanner (%s) failed for pane %s: %v", tickCount, bannerTool, paneID, bannerErr)
 			}
+		}
+
+		// Cleared purely from tmux's own idea of what's on screen right
+		// now — no dependency on tmux-mover's TUI having been opened, so
+		// switching to the pane directly in tmux is enough on its own.
+		if next.Unseen && viewed[paneID] {
+			next.Unseen = false
+			watchLogger.Printf("watch-agents: tick %d: pane %s marked seen (viewed directly in tmux)", tickCount, paneID)
 		}
 
 		switch {
@@ -164,12 +183,59 @@ func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRec
 		agents[paneID] = next
 	}
 
+	if err := writeAgentsStateFile(buildPersistedAgentStatus(agents, paneByID, sessionByID, windowByID)); err != nil {
+		watchLogger.Printf("watch-agents: tick %d: writeAgentsStateFile failed: %v", tickCount, err)
+	}
+
 	if tickCount%watchHeartbeatEvery == 0 {
 		watchLogger.Printf("watch-agents: heartbeat: tick %d, %d agent pane(s) tracked (%d waiting, %d busy, %d idle)",
 			tickCount, len(agents), waiting, busy, idle)
 	}
 
 	return agents, probedNonAgents
+}
+
+// buildPersistedAgentStatus turns the watcher's live agents map into the
+// same agentStatusJSON shape --agents-json returns (cli.go), including
+// Unseen/UnseenSince — written to disk every tick (persist.go) so a
+// one-shot CLI invocation or the TUI can read debounced status and Unseen
+// bookkeeping without reaching into the watcher's own in-memory state.
+func buildPersistedAgentStatus(agents map[string]AgentState, paneByID map[string]Pane, sessionByID map[string]string, windowByID map[string]Window) agentStatusJSON {
+	out := agentStatusJSON{Panes: make([]agentSnapshotJSON, 0, len(agents))}
+	for paneID, state := range agents {
+		pane := paneByID[paneID]
+		window := windowByID[pane.WindowID]
+		unseenSince := ""
+		if state.Unseen {
+			unseenSince = state.UnseenSince.Format(time.RFC3339)
+		}
+		out.Panes = append(out.Panes, agentSnapshotJSON{
+			PaneID:        paneID,
+			Kind:          state.Kind.Slug(),
+			Status:        state.Status.String(),
+			Task:          state.Task,
+			Session:       sessionByID[pane.SessionID],
+			WindowIndex:   window.Index,
+			WindowName:    window.Name,
+			Path:          pane.Path,
+			BackgroundJob: state.HasBackgroundJob,
+			Unseen:        state.Unseen,
+			UnseenSince:   unseenSince,
+		})
+
+		switch {
+		case state.Status == AgentStatusWaiting:
+			out.Counts.Waiting++
+		case state.Status == AgentStatusBusy || state.HasBackgroundJob:
+			out.Counts.Busy++
+		default:
+			out.Counts.Idle++
+		}
+		if state.Unseen {
+			out.Counts.Unseen++
+		}
+	}
+	return out
 }
 
 func paneIndexByID(panes []Pane) map[string]Pane {

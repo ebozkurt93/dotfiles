@@ -86,6 +86,15 @@ type AgentState struct {
 	// reset prevStatus to Unknown and swallow any transition straddling that
 	// gap (see shouldNotifyAgentTransition's fresh-pane check).
 	KindConfirmedAt time.Time
+	// Unseen marks a pane whose most recent notify-worthy transition (see
+	// shouldNotifyAgentTransition — finished, or started waiting for input)
+	// hasn't yet been observed: either by looking at the actual tmux pane
+	// (see tmux.go's currentlyViewedPaneIDs, checked by the --watch-agents
+	// loop regardless of whether tmux-mover's own TUI is open) or, in the
+	// TUI, by having it visible in the agent dashboard. UnseenSince is when
+	// it was set, so consumers can sort/age it.
+	Unseen      bool
+	UnseenSince time.Time
 }
 
 // agentKindGracePeriod is how long reconcileAgentStates keeps a pane's

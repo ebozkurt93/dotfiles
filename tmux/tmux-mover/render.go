@@ -603,12 +603,24 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 			backgroundMarkerWidth = 2
 		}
 
-		primaryWidth := max(1, rowWidth-dotWidth-backgroundMarkerWidth)
+		// Unseen flags a pane whose last notify-worthy transition (finished,
+		// or started waiting on you) hasn't been observed yet — by looking
+		// at it directly in tmux, or here. Read from the --watch-agents
+		// loop's persisted state (see refreshAgentsCmd), so it also
+		// reflects things that finished before this TUI session opened.
+		unseenMarker := ""
+		unseenMarkerWidth := 0
+		if agent.Unseen {
+			unseenMarker = " " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")).Render("NEW")
+			unseenMarkerWidth = 4
+		}
+
+		primaryWidth := max(1, rowWidth-dotWidth-backgroundMarkerWidth-unseenMarkerWidth)
 		primary = truncateRow(primary, primaryWidth)
 		// Width is set to primary's own natural width (not the full
 		// available row width) so the style adds no trailing padding —
-		// otherwise backgroundMarker would land at the far right edge of
-		// the row instead of right next to the text it's describing.
+		// otherwise the markers would land at the far right edge of the
+		// row instead of right next to the text they're describing.
 		line := dot
 		if pane.ID == selectedPaneID {
 			selectedRow = len(rows)
@@ -617,6 +629,7 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 			line += normalStyle.Width(lipgloss.Width(primary)).Render(primary)
 		}
 		line += backgroundMarker
+		line += unseenMarker
 		rows = append(rows, line)
 		rows = append(rows, metaStyle.Render("    "+truncateRow(location, max(1, rowWidth-4))))
 	}
@@ -625,7 +638,18 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 		rows = append(rows, mutedStyle.Render("No AI sessions detected."))
 	}
 
-	return treeRows{header: "AI Dashboard", rows: rows, selectedRow: selectedRow}
+	unseenCount := 0
+	for _, id := range order {
+		if m.agents[id].Unseen {
+			unseenCount++
+		}
+	}
+	header := "AI Dashboard"
+	if unseenCount > 0 {
+		header = fmt.Sprintf("AI Dashboard — %d unseen", unseenCount)
+	}
+
+	return treeRows{header: header, rows: rows, selectedRow: selectedRow}
 }
 
 func deletePaneLabelLocation(state TmuxState, pane Pane) string {

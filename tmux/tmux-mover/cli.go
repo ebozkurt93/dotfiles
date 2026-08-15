@@ -37,6 +37,14 @@ type agentSnapshotJSON struct {
 	WindowName    string `json:"window_name"`
 	Path          string `json:"path"`
 	BackgroundJob bool   `json:"background_job"`
+	// Unseen/UnseenSince are only ever populated when this snapshot came
+	// from the --watch-agents loop's persisted state (see persist.go) — a
+	// one-shot live read (collectAgentSnapshots, used when the watcher isn't
+	// running) has no history to know a pane finished before this exact
+	// invocation, so they're left at their zero values in that fallback
+	// path rather than guessed at.
+	Unseen      bool   `json:"unseen"`
+	UnseenSince string `json:"unseen_since,omitempty"`
 }
 
 type agentStatusJSON struct {
@@ -44,6 +52,7 @@ type agentStatusJSON struct {
 		Waiting int `json:"waiting"`
 		Busy    int `json:"busy"`
 		Idle    int `json:"idle"`
+		Unseen  int `json:"unseen"`
 	} `json:"counts"`
 	Panes []agentSnapshotJSON `json:"panes"`
 }
@@ -97,31 +106,45 @@ func countByStatus(snapshots []agentSnapshot) (waiting, busy, idle int) {
 }
 
 // runStatusCLI implements `tmux-mover --agents-status` (a human-readable
-// sentence) and `tmux-mover --agents-json` (structured data): a one-shot
-// summary of AI-CLI pane status across all tmux sessions, meant to be
-// consumed by a script (e.g. a tmux status-right segment) rather than the
-// interactive TUI.
+// sentence) and `tmux-mover --agents-json` (structured data): a summary of
+// AI-CLI pane status across all tmux sessions, meant to be consumed by a
+// script (e.g. a tmux status-right segment) rather than the interactive TUI.
+//
+// It prefers the --watch-agents loop's persisted snapshot (persist.go) when
+// one is fresh: that's debounced status plus Unseen bookkeeping the watcher
+// derives over time, which a single point-in-time read can't reconstruct
+// (a one-shot invocation has no history — it can't tell "just went idle" from
+// "has been idle for an hour"). Falls back to a live one-shot read via
+// collectAgentSnapshots when the watcher isn't running, same as before this
+// existed; that path just can't report Unseen.
 func runStatusCLI(jsonFormat bool) int {
+	if persisted, ok := loadAgentsStateFile(); ok {
+		return printAgentStatus(persisted, jsonFormat)
+	}
+
 	snapshots, state, err := collectAgentSnapshots()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
+	return printAgentStatus(buildAgentStatusJSON(snapshots, state), jsonFormat)
+}
 
+func printAgentStatus(out agentStatusJSON, jsonFormat bool) int {
 	if jsonFormat {
-		if err := printAgentStatusJSON(snapshots, state); err != nil {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(out); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 		return 0
 	}
-
-	waiting, busy, idle := countByStatus(snapshots)
-	fmt.Println(formatAgentStatusPlain(waiting, busy, idle))
+	fmt.Println(formatAgentStatusPlain(out.Counts.Waiting, out.Counts.Busy, out.Counts.Idle, out.Counts.Unseen))
 	return 0
 }
 
-func formatAgentStatusPlain(waiting, busy, idle int) string {
+func formatAgentStatusPlain(waiting, busy, idle, unseen int) string {
 	if waiting == 0 && busy == 0 && idle == 0 {
 		return "No AI sessions detected."
 	}
@@ -139,10 +162,13 @@ func formatAgentStatusPlain(waiting, busy, idle int) string {
 	for _, p := range parts[1:] {
 		result += ", " + p
 	}
+	if unseen > 0 {
+		result += fmt.Sprintf(" (%d finished unseen)", unseen)
+	}
 	return result
 }
 
-func printAgentStatusJSON(snapshots []agentSnapshot, state TmuxState) error {
+func buildAgentStatusJSON(snapshots []agentSnapshot, state TmuxState) agentStatusJSON {
 	sessionByID := map[string]string{}
 	for _, s := range state.Sessions {
 		sessionByID[s.ID] = s.Name
@@ -177,7 +203,5 @@ func printAgentStatusJSON(snapshots []agentSnapshot, state TmuxState) error {
 		}
 	}
 
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(out)
+	return out
 }

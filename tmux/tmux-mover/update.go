@@ -311,6 +311,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, state.PID) || contentHasBackgroundAgentJob(content)
 			m.agents[paneID] = next
 		}
+		for paneID, since := range msg.unseen {
+			if state, ok := m.agents[paneID]; ok {
+				state.Unseen = true
+				state.UnseenSince = since
+				m.agents[paneID] = state
+			}
+		}
+		if msg.unseenFresh {
+			for paneID, state := range m.agents {
+				if state.Unseen && msg.unseen[paneID].IsZero() {
+					state.Unseen = false
+					m.agents[paneID] = state
+				}
+			}
+		}
 		return m, agentTickCmd()
 	case selfTargetMsg:
 		if msg.err != nil {
@@ -353,8 +368,10 @@ type stateTickMsg struct{}
 type agentTickMsg struct{}
 
 type agentStatusMsg struct {
-	results map[string]string
-	now     time.Time
+	results     map[string]string
+	now         time.Time
+	unseen      map[string]time.Time
+	unseenFresh bool
 }
 
 type selfTargetMsg struct {
@@ -406,7 +423,33 @@ func refreshAgentsCmd(agents map[string]AgentState) tea.Cmd {
 			}
 			results[paneID] = ansi.Strip(text)
 		}
-		return agentStatusMsg{results: results, now: time.Now()}
+
+		// The TUI's own live tracking above has no memory of anything that
+		// finished before it launched (a fresh model always starts with
+		// prevStatus Unknown, and shouldNotifyAgentTransition never flags a
+		// pane on its first-ever read as unseen) — so Unseen state is read
+		// from the --watch-agents loop's persisted snapshot (persist.go)
+		// instead of derived locally. unseenFresh distinguishes "the
+		// watcher is running and says nothing is unseen" from "the watcher
+		// isn't running, so this has nothing to say" — only the former
+		// should be allowed to clear a previously-known Unseen flag.
+		unseen := map[string]time.Time{}
+		unseenFresh := false
+		if persisted, ok := loadAgentsStateFile(); ok {
+			unseenFresh = true
+			for _, p := range persisted.Panes {
+				if !p.Unseen {
+					continue
+				}
+				since, err := time.Parse(time.RFC3339, p.UnseenSince)
+				if err != nil {
+					since = time.Now()
+				}
+				unseen[p.PaneID] = since
+			}
+		}
+
+		return agentStatusMsg{results: results, now: time.Now(), unseen: unseen, unseenFresh: unseenFresh}
 	}
 }
 

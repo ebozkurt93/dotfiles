@@ -11,10 +11,17 @@ type fakeRunner struct {
 	calls  [][]string
 	err    error
 	output string
+	// respond, if set, overrides output/err — used by tests that need
+	// different responses depending on the args (e.g. currentlyViewedPaneIDs,
+	// which calls tmux more than once per invocation with different args).
+	respond func(args []string) (string, error)
 }
 
 func (r *fakeRunner) Run(args ...string) (string, error) {
 	r.calls = append(r.calls, args)
+	if r.respond != nil {
+		return r.respond(args)
+	}
 	return r.output, r.err
 }
 
@@ -253,5 +260,57 @@ func TestTmuxOutputError(t *testing.T) {
 	_, err := tmuxOutput("list-sessions")
 	if err == nil {
 		t.Fatalf("expected error")
+	}
+}
+
+func TestCurrentlyViewedPaneIDs(t *testing.T) {
+	fake := &fakeRunner{
+		respond: func(args []string) (string, error) {
+			switch {
+			case args[0] == "list-clients":
+				return "/dev/ttys001\n/dev/ttys002\n", nil
+			case args[0] == "display-message" && args[3] == "/dev/ttys001":
+				return "%1\n", nil
+			case args[0] == "display-message" && args[3] == "/dev/ttys002":
+				return "%2\n", nil
+			}
+			return "", errors.New("unexpected call: " + strings.Join(args, " "))
+		},
+	}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	got, err := currentlyViewedPaneIDs()
+	if err != nil {
+		t.Fatalf("currentlyViewedPaneIDs error: %v", err)
+	}
+	if !got["%1"] || !got["%2"] || len(got) != 2 {
+		t.Fatalf("expected {%%1, %%2}, got %+v", got)
+	}
+}
+
+func TestCurrentlyViewedPaneIDsSkipsClientsThatFailToResolve(t *testing.T) {
+	fake := &fakeRunner{
+		respond: func(args []string) (string, error) {
+			if args[0] == "list-clients" {
+				return "/dev/ttys001\n/dev/ttys002\n", nil
+			}
+			if args[3] == "/dev/ttys001" {
+				return "", errors.New("client gone")
+			}
+			return "%2\n", nil
+		},
+	}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	got, err := currentlyViewedPaneIDs()
+	if err != nil {
+		t.Fatalf("currentlyViewedPaneIDs error: %v", err)
+	}
+	if got["%1"] || !got["%2"] || len(got) != 1 {
+		t.Fatalf("expected only {%%2}, got %+v", got)
 	}
 }

@@ -156,6 +156,39 @@ func currentTmuxClientID() (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
+// currentlyViewedPaneIDs returns the pane ID each attached tmux client is
+// actually displaying right now: list-clients for every attached client's
+// tty, then display-message -p -t <tty> for the pane it's currently showing
+// (which follows real focus — the client's current session/window, and
+// popups — rather than a per-window "active pane" flag that says nothing
+// about whether any client is actually looking at that window at all).
+//
+// This is how the --watch-agents loop detects "the user looked at this
+// pane" purely from outside tmux state, with no hook or app-side action
+// required — switching to a pane directly in tmux is enough to clear its
+// Unseen flag, same as looking at it through tmux-mover's own dashboard.
+func currentlyViewedPaneIDs() (map[string]bool, error) {
+	out, err := tmuxOutput("list-clients", "-F", "#{client_tty}")
+	if err != nil {
+		return nil, err
+	}
+	viewed := map[string]bool{}
+	for _, tty := range splitLines(out) {
+		tty = strings.TrimSpace(tty)
+		if tty == "" {
+			continue
+		}
+		paneOut, err := tmuxOutput("display-message", "-p", "-t", tty, "#{pane_id}")
+		if err != nil {
+			continue
+		}
+		if paneID := strings.TrimSpace(paneOut); paneID != "" {
+			viewed[paneID] = true
+		}
+	}
+	return viewed, nil
+}
+
 func currentTmuxWindowPopup() (bool, error) {
 	out, err := tmuxOutput("display-message", "-p", "#{window_popup}")
 	if err != nil {

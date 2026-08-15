@@ -9,18 +9,19 @@ import (
 
 func TestFormatAgentStatusPlain(t *testing.T) {
 	cases := []struct {
-		waiting, busy, idle int
-		want                string
+		waiting, busy, idle, unseen int
+		want                        string
 	}{
-		{0, 0, 0, "No AI sessions detected."},
-		{1, 0, 0, "1 waiting for input"},
-		{0, 2, 0, "2 working"},
-		{0, 0, 3, "3 idle"},
-		{1, 2, 3, "1 waiting for input, 2 working, 3 idle"},
+		{0, 0, 0, 0, "No AI sessions detected."},
+		{1, 0, 0, 0, "1 waiting for input"},
+		{0, 2, 0, 0, "2 working"},
+		{0, 0, 3, 0, "3 idle"},
+		{1, 2, 3, 0, "1 waiting for input, 2 working, 3 idle"},
+		{0, 0, 3, 2, "3 idle (2 finished unseen)"},
 	}
 	for _, c := range cases {
-		if got := formatAgentStatusPlain(c.waiting, c.busy, c.idle); got != c.want {
-			t.Errorf("formatAgentStatusPlain(%d,%d,%d) = %q, want %q", c.waiting, c.busy, c.idle, got, c.want)
+		if got := formatAgentStatusPlain(c.waiting, c.busy, c.idle, c.unseen); got != c.want {
+			t.Errorf("formatAgentStatusPlain(%d,%d,%d,%d) = %q, want %q", c.waiting, c.busy, c.idle, c.unseen, got, c.want)
 		}
 	}
 }
@@ -44,11 +45,11 @@ func TestPrintAgentStatusJSONShape(t *testing.T) {
 	os.Stdout = w
 	t.Cleanup(func() { os.Stdout = orig })
 
-	err := printAgentStatusJSON(snapshots, state)
+	exitCode := printAgentStatus(buildAgentStatusJSON(snapshots, state), true)
 	w.Close()
 	os.Stdout = orig
-	if err != nil {
-		t.Fatalf("printAgentStatusJSON error: %v", err)
+	if exitCode != 0 {
+		t.Fatalf("printAgentStatus returned exit code %d", exitCode)
 	}
 	buf.ReadFrom(r)
 

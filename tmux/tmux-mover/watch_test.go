@@ -1,6 +1,38 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestBuildPersistedAgentStatus(t *testing.T) {
+	agents := map[string]AgentState{
+		"%1": {Kind: AgentClaude, Status: AgentStatusWaiting},
+		"%2": {Kind: AgentGemini, Status: AgentStatusIdle, Unseen: true, UnseenSince: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)},
+	}
+	paneByID := map[string]Pane{
+		"%1": {ID: "%1", WindowID: "@1", SessionID: "$0", Path: "/a"},
+		"%2": {ID: "%2", WindowID: "@1", SessionID: "$0", Path: "/b"},
+	}
+	sessionByID := map[string]string{"$0": "work"}
+	windowByID := map[string]Window{"@1": {ID: "@1", Index: "0", Name: "editor"}}
+
+	out := buildPersistedAgentStatus(agents, paneByID, sessionByID, windowByID)
+
+	if out.Counts.Waiting != 1 || out.Counts.Idle != 1 || out.Counts.Unseen != 1 {
+		t.Fatalf("unexpected counts: %+v", out.Counts)
+	}
+	byID := map[string]agentSnapshotJSON{}
+	for _, p := range out.Panes {
+		byID[p.PaneID] = p
+	}
+	if byID["%1"].Unseen {
+		t.Fatalf("expected %%1 to not be unseen")
+	}
+	if !byID["%2"].Unseen || byID["%2"].UnseenSince != "2026-01-01T00:00:00Z" {
+		t.Fatalf("expected %%2 to be unseen with a formatted timestamp, got %+v", byID["%2"])
+	}
+}
 
 func TestShouldNotifyAgentTransition(t *testing.T) {
 	cases := []struct {
