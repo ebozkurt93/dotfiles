@@ -1,7 +1,8 @@
-.PHONY: help build run test fmt vet install watch-start watch-stop watch-restart
+.PHONY: help build run test fmt vet install watch-trim-log watch-start watch-stop watch-restart
 
 WATCH_PIDFILE := $(HOME)/.cache/tmux-mover/watch.pid
 WATCH_LOG := $(HOME)/.cache/tmux-mover/watch.log
+WATCH_LOG_MAX_BYTES := 5242880
 
 help:
 	@printf "%s\n" "make build" "make run" "make test" "make fmt" "make vet" "make install" "make watch-start" "make watch-stop" "make watch-restart"
@@ -35,8 +36,14 @@ watch-stop:
 		rm -f "$(WATCH_PIDFILE)"; \
 	fi
 
-watch-start:
+watch-trim-log:
 	@mkdir -p "$$(dirname "$(WATCH_LOG)")"
+	@if [ -f "$(WATCH_LOG)" ] && [ "$$(wc -c <"$(WATCH_LOG)")" -gt "$(WATCH_LOG_MAX_BYTES)" ]; then \
+		tmp="$(WATCH_LOG).tmp"; \
+		tail -c "$(WATCH_LOG_MAX_BYTES)" "$(WATCH_LOG)" >"$$tmp" && mv "$$tmp" "$(WATCH_LOG)"; \
+	fi
+
+watch-start: watch-trim-log
 	@nohup "$$HOME/bin/tmux-mover" --watch-agents >>"$(WATCH_LOG)" 2>&1 &
 
 # Rebuilds/reinstalls first so this always restarts whatever is newest on
