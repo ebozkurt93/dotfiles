@@ -3,40 +3,102 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestReconcileAgentStatesKeepsResolvedAmbiguousKindSticky(t *testing.T) {
 	panes := []Pane{{ID: "%1", Command: "node", Title: "", PID: "999"}}
+	now := time.Now()
 
 	// Pretend a previous tick already resolved %1 to Gemini via the process-tree probe.
 	agents := map[string]AgentState{"%1": {Kind: AgentGemini}}
-	probed := map[string]string{"%1": "node"}
+	probed := map[string]probeRecord{"%1": {command: "node", lastTry: now}}
 
-	next, nextProbed := reconcileAgentStates(agents, probed, panes)
+	next, nextProbed := reconcileAgentStates(agents, probed, panes, now)
 
 	if next["%1"].Kind != AgentGemini {
 		t.Fatalf("expected sticky Gemini kind, got %v", next["%1"].Kind)
 	}
-	if nextProbed["%1"] != "node" {
-		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"])
+	if nextProbed["%1"].command != "node" {
+		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"].command)
 	}
 }
 
-func TestReconcileAgentStatesDoesNotReProbeSameCommand(t *testing.T) {
+func TestReconcileAgentStatesDoesNotReProbeSameCommandWithinRetryInterval(t *testing.T) {
 	panes := []Pane{{ID: "%1", Command: "node", Title: "", PID: "999"}}
+	now := time.Now()
 
-	// %1 was already probed against "node" and found not to be an agent.
-	probed := map[string]string{"%1": "node"}
+	// %1 was just probed against "node" and found not to be an agent.
+	probed := map[string]probeRecord{"%1": {command: "node", lastTry: now}}
 
-	next, nextProbed := reconcileAgentStates(nil, probed, panes)
+	next, nextProbed := reconcileAgentStates(nil, probed, panes, now.Add(probeRetryInterval/2))
 
 	if _, ok := next["%1"]; ok {
-		t.Fatalf("expected %%1 to stay unresolved without a re-probe")
+		t.Fatalf("expected %%1 to stay unresolved without a re-probe inside the retry interval")
 	}
-	if nextProbed["%1"] != "node" {
-		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"])
+	if nextProbed["%1"].command != "node" {
+		t.Fatalf("expected probed marker preserved, got %q", nextProbed["%1"].command)
+	}
+}
+
+func TestReconcileAgentStatesReProbesAmbiguousCommandAfterRetryInterval(t *testing.T) {
+	// probeAgentKindByProcessTree itself can't resolve to an agent here (no
+	// real process tree to walk in a unit test), but the point of this test
+	// is that reconcileAgentStates actually attempts the probe again once
+	// probeRetryInterval has elapsed — i.e. it updates lastTry — rather than
+	// treating the single earlier AgentNone result as final forever. This is
+	// the fix for a real bug: a pane whose agent process hadn't forked yet
+	// under an ambiguous runtime (e.g. Gemini CLI still starting under
+	// `node`) used to be probed exactly once and then permanently ignored.
+	panes := []Pane{{ID: "%1", Command: "node", Title: "", PID: "999"}}
+	now := time.Now()
+	probed := map[string]probeRecord{"%1": {command: "node", lastTry: now}}
+
+	_, nextProbed := reconcileAgentStates(nil, probed, panes, now.Add(probeRetryInterval*2))
+
+	if !nextProbed["%1"].lastTry.After(now) {
+		t.Fatalf("expected a fresh probe attempt (lastTry updated) after the retry interval elapsed")
+	}
+}
+
+func TestReconcileAgentStatesGracePeriodKeepsStateAcrossOneFailedTick(t *testing.T) {
+	panes := []Pane{{ID: "%1", Command: "zsh", Title: "", PID: "999"}}
+	now := time.Now()
+
+	// %1 was confidently classified as Claude a moment ago (e.g. mid-turn),
+	// but this tick's pane_current_command read is a transient miss —
+	// something other than the CLI's own name. Losing Status here (by
+	// dropping the pane's AgentState outright) would reset it to Unknown and
+	// silently swallow whatever transition happens to land on this tick.
+	agents := map[string]AgentState{
+		"%1": {Kind: AgentClaude, Status: AgentStatusBusy, KindConfirmedAt: now},
+	}
+
+	next, _ := reconcileAgentStates(agents, nil, panes, now.Add(agentKindGracePeriod/2))
+
+	got, ok := next["%1"]
+	if !ok {
+		t.Fatalf("expected %%1's state to survive within the grace period")
+	}
+	if got.Status != AgentStatusBusy {
+		t.Fatalf("expected Status to be preserved as Busy, got %v", got.Status)
+	}
+}
+
+func TestReconcileAgentStatesDropsStateAfterGracePeriodExpires(t *testing.T) {
+	panes := []Pane{{ID: "%1", Command: "zsh", Title: "", PID: "999"}}
+	now := time.Now()
+
+	agents := map[string]AgentState{
+		"%1": {Kind: AgentClaude, Status: AgentStatusBusy, KindConfirmedAt: now},
+	}
+
+	next, _ := reconcileAgentStates(agents, nil, panes, now.Add(agentKindGracePeriod*2))
+
+	if _, ok := next["%1"]; ok {
+		t.Fatalf("expected %%1's state to be dropped once the grace period has expired")
 	}
 }
 

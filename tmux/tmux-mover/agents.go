@@ -77,6 +77,39 @@ type AgentState struct {
 	// after the foreground turn that started it has ended and the render
 	// looks idle.
 	HasBackgroundJob bool
+	// KindConfirmedAt is the last time this pane's Kind was actually
+	// re-derived from pane_current_command (or a process-tree probe) rather
+	// than just carried over from the previous tick. reconcileAgentStates
+	// uses it to give a pane a short grace period (agentKindGracePeriod)
+	// before dropping its whole AgentState — including Status — the instant
+	// a single tick fails to classify it, which would otherwise silently
+	// reset prevStatus to Unknown and swallow any transition straddling that
+	// gap (see shouldNotifyAgentTransition's fresh-pane check).
+	KindConfirmedAt time.Time
+}
+
+// agentKindGracePeriod is how long reconcileAgentStates keeps a pane's
+// AgentState alive after a tick fails to classify it, before actually
+// treating it as gone. Covers a transient pane_current_command misread or a
+// slow ps/pgrep call without masking a pane that's genuinely no longer
+// running an agent for more than a few ticks.
+const agentKindGracePeriod = 5 * time.Second
+
+// probeRetryInterval bounds how often reconcileAgentStates re-runs
+// probeAgentKindByProcessTree against a pane whose pane_current_command is
+// an ambiguous runtime (agents.go's isAmbiguousRuntimeCommand) but hasn't
+// resolved to a known CLI yet. Without this, a single failed probe — e.g.
+// racing the CLI's own child process forking under `node` right at startup —
+// used to be cached as final forever (see reconcileAgentStates), silently
+// hiding that pane from detection for its entire lifetime.
+const probeRetryInterval = 3 * time.Second
+
+// probeRecord tracks, per pane ID, the pane_current_command value
+// reconcileAgentStates last probed against and when — so a still-unresolved
+// ambiguous pane gets re-probed periodically instead of exactly once.
+type probeRecord struct {
+	command string
+	lastTry time.Time
 }
 
 func detectAgentKind(command string) AgentKind {

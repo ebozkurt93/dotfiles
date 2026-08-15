@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -18,6 +19,21 @@ import (
 // (update.go) so notifications fire at the same responsiveness whether
 // tmux-mover is open or running headless via --watch-agents.
 const watchInterval = 1 * time.Second
+
+// watchHeartbeatEvery is how often (in ticks) runWatchAgents logs a summary
+// line even when nothing notable happened, so the log can answer "was the
+// watcher even alive and polling at time X" — the question that used to be
+// unanswerable, since watch.log stayed empty for the watcher's entire
+// lifetime unless something failed outright.
+const watchHeartbeatEvery = 60
+
+// watchLogger is the destination for every diagnostic line runWatchAgents
+// emits: per-tick errors, status transitions, notification attempts and
+// their outcomes, and periodic heartbeats. It writes to stderr, which
+// `make watch-start`/`watch-restart` already redirect to
+// ~/.cache/tmux-mover/watch.log — so this is the one place to look after a
+// notification that should have fired didn't.
+var watchLogger = log.New(os.Stderr, "", log.LstdFlags)
 
 // watchPIDPath returns a fixed, OS-agnostic location for the watcher's
 // pidfile — `make watch-stop`/`watch-restart` read this same path to find
@@ -56,44 +72,104 @@ func runWatchAgents() int {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	agents := map[string]AgentState{}
-	probedNonAgents := map[string]string{}
+	probedNonAgents := map[string]probeRecord{}
 
 	ticker := time.NewTicker(watchInterval)
 	defer ticker.Stop()
 
+	watchLogger.Printf("watch-agents: started (pid %d, poll interval %s)", os.Getpid(), watchInterval)
+
+	tickCount := 0
 	for {
 		select {
 		case <-sigCh:
+			watchLogger.Printf("watch-agents: received signal, exiting")
 			return 0
 		case <-ticker.C:
-			state, err := loadTmuxState()
-			if err != nil {
-				continue
-			}
-			agents, probedNonAgents = reconcileAgentStates(agents, probedNonAgents, state.Panes)
-			paneByID := paneIndexByID(state.Panes)
-			sessionByID, windowByID := sessionAndWindowIndex(state)
-			procs, _ := listProcesses()
-			now := time.Now()
-			for paneID, prev := range agents {
-				content, err := capturePane(paneID)
-				if err != nil {
-					continue
-				}
-				content = ansi.Strip(content)
-				pane := paneByID[paneID]
-				raw := detectAgentStatus(prev.Kind, content, prev.Status)
-				next := applyIdleDebounce(prev, settleKey(prev.Kind, pane.Title, content), raw, now)
-				next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID) || contentHasBackgroundAgentJob(content)
-				if shouldNotifyAgentTransition(prev, next) {
-					notifySound()
-					title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
-					notifyBanner(title, subtitle, body, tmuxJumpCommand(pane))
-				}
-				agents[paneID] = next
-			}
+			tickCount++
+			agents, probedNonAgents = watchTick(agents, probedNonAgents, tickCount)
 		}
 	}
+}
+
+// watchTick runs one poll/notify cycle and returns the updated agent and
+// probe-cache state. It recovers from any panic so a single bad pane or an
+// unexpected tmux/ps output shape can't silently kill the whole long-running
+// watcher — the panic is logged (with a stack-free summary; see
+// recover()'s value) instead, and the loop just tries again next tick.
+func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRecord, tickCount int) (map[string]AgentState, map[string]probeRecord) {
+	defer func() {
+		if r := recover(); r != nil {
+			watchLogger.Printf("watch-agents: recovered from panic in tick %d: %v", tickCount, r)
+		}
+	}()
+
+	state, err := loadTmuxState()
+	if err != nil {
+		watchLogger.Printf("watch-agents: tick %d: loadTmuxState failed, skipping tick: %v", tickCount, err)
+		return agents, probedNonAgents
+	}
+
+	prevPaneCount := len(agents)
+	agents, probedNonAgents = reconcileAgentStates(agents, probedNonAgents, state.Panes, time.Now())
+	if len(agents) != prevPaneCount {
+		watchLogger.Printf("watch-agents: tick %d: tracking %d agent pane(s) (was %d)", tickCount, len(agents), prevPaneCount)
+	}
+
+	paneByID := paneIndexByID(state.Panes)
+	sessionByID, windowByID := sessionAndWindowIndex(state)
+	procs, err := listProcesses()
+	if err != nil {
+		watchLogger.Printf("watch-agents: tick %d: listProcesses failed (background-job detection degraded this tick): %v", tickCount, err)
+	}
+	now := time.Now()
+
+	waiting, busy, idle := 0, 0, 0
+	for paneID, prev := range agents {
+		content, err := capturePane(paneID)
+		if err != nil {
+			watchLogger.Printf("watch-agents: tick %d: capturePane(%s) failed, keeping prior state: %v", tickCount, paneID, err)
+			continue
+		}
+		content = ansi.Strip(content)
+		pane := paneByID[paneID]
+		raw := detectAgentStatus(prev.Kind, content, prev.Status)
+		next := applyIdleDebounce(prev, settleKey(prev.Kind, pane.Title, content), raw, now)
+		next.HasBackgroundJob = paneHasActiveBackgroundTask(procs, prev.PID) || contentHasBackgroundAgentJob(content)
+
+		if next.Status != prev.Status || next.HasBackgroundJob != prev.HasBackgroundJob {
+			watchLogger.Printf("watch-agents: tick %d: pane %s (%s) status %s->%s bgJob %v->%v",
+				tickCount, paneID, prev.Kind.Label(), prev.Status, next.Status, prev.HasBackgroundJob, next.HasBackgroundJob)
+		}
+
+		if shouldNotifyAgentTransition(prev, next) {
+			title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
+			watchLogger.Printf("watch-agents: tick %d: NOTIFY pane %s: %q / %q / %q", tickCount, paneID, title, subtitle, body)
+			if soundTool, soundErr := notifySound(); soundErr != nil {
+				watchLogger.Printf("watch-agents: tick %d: notifySound (%s) failed for pane %s: %v", tickCount, soundTool, paneID, soundErr)
+			}
+			if bannerTool, bannerErr := notifyBanner(title, subtitle, body, tmuxJumpCommand(pane)); bannerErr != nil {
+				watchLogger.Printf("watch-agents: tick %d: notifyBanner (%s) failed for pane %s: %v", tickCount, bannerTool, paneID, bannerErr)
+			}
+		}
+
+		switch {
+		case next.Status == AgentStatusWaiting:
+			waiting++
+		case next.Status == AgentStatusBusy || next.HasBackgroundJob:
+			busy++
+		default:
+			idle++
+		}
+		agents[paneID] = next
+	}
+
+	if tickCount%watchHeartbeatEvery == 0 {
+		watchLogger.Printf("watch-agents: heartbeat: tick %d, %d agent pane(s) tracked (%d waiting, %d busy, %d idle)",
+			tickCount, len(agents), waiting, busy, idle)
+	}
+
+	return agents, probedNonAgents
 }
 
 func paneIndexByID(panes []Pane) map[string]Pane {

@@ -31,7 +31,7 @@ type model struct {
 	filterActive    bool
 	countBuffer     string
 	agents          map[string]AgentState
-	probedNonAgents map[string]string
+	probedNonAgents map[string]probeRecord
 	agentView       bool
 	frame           int
 }

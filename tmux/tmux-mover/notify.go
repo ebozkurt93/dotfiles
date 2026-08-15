@@ -1,6 +1,10 @@
 package main
 
-import "os/exec"
+import (
+	"fmt"
+	"os/exec"
+	"strings"
+)
 
 // notifyBanner shows an OS notification banner with title/subtitle/body, so
 // an agent state change is visible even when the machine is muted. All three
@@ -19,27 +23,33 @@ import "os/exec"
 // no scripting involved; osascript is the fallback if it's not installed.
 // notify-send (Linux/libnotify) has no subtitle concept, so subtitle and
 // body are folded into one line there. Same auto-detect-by-PATH approach as
-// notifySound; a missing tool or failed call is a silent no-op, consistent
-// with notifySound.
-func notifyBanner(title, subtitle, body, execute string) {
-	if path, err := exec.LookPath("terminal-notifier"); err == nil {
+// notifySound.
+//
+// Unlike a bare Start(), this runs the tool synchronously (CombinedOutput)
+// and returns what happened — the watcher logs the result of every attempt,
+// since a banner that silently fails to display (wrong permissions, dead
+// notification daemon, etc.) with no trace is exactly the kind of gap this
+// is meant to catch. "no notifier binary found" is reported as an error too
+// rather than a silent no-op, for the same reason.
+func notifyBanner(title, subtitle, body, execute string) (tool string, err error) {
+	if path, lookErr := exec.LookPath("terminal-notifier"); lookErr == nil {
 		args := []string{"-title", title, "-subtitle", subtitle, "-message", body}
 		if execute != "" {
 			args = append(args, "-execute", execute)
 		}
-		_ = exec.Command(path, args...).Start()
-		return
+		out, runErr := exec.Command(path, args...).CombinedOutput()
+		return "terminal-notifier", wrapNotifyOutput(runErr, out)
 	}
-	if path, err := exec.LookPath("osascript"); err == nil {
-		_ = exec.Command(path,
+	if path, lookErr := exec.LookPath("osascript"); lookErr == nil {
+		out, runErr := exec.Command(path,
 			"-e", "on run argv",
 			"-e", "display notification (item 3 of argv) with title (item 1 of argv) subtitle (item 2 of argv)",
 			"-e", "end run",
 			title, subtitle, body,
-		).Start()
-		return
+		).CombinedOutput()
+		return "osascript", wrapNotifyOutput(runErr, out)
 	}
-	if path, err := exec.LookPath("notify-send"); err == nil {
+	if path, lookErr := exec.LookPath("notify-send"); lookErr == nil {
 		line := subtitle
 		if body != "" {
 			if line != "" {
@@ -47,9 +57,23 @@ func notifyBanner(title, subtitle, body, execute string) {
 			}
 			line += body
 		}
-		_ = exec.Command(path, title, line).Start()
-		return
+		out, runErr := exec.Command(path, title, line).CombinedOutput()
+		return "notify-send", wrapNotifyOutput(runErr, out)
 	}
+	return "", fmt.Errorf("no notifier binary found on PATH (tried terminal-notifier, osascript, notify-send)")
+}
+
+// wrapNotifyOutput folds a notifier command's combined stdout+stderr into
+// its error, if any, so the caller's log line carries the actual failure
+// reason instead of just an exit code.
+func wrapNotifyOutput(err error, out []byte) error {
+	if err == nil {
+		return nil
+	}
+	if len(out) == 0 {
+		return err
+	}
+	return fmt.Errorf("%w: %s", err, strings.TrimSpace(string(out)))
 }
 
 // soundCandidate is one (command, args) pair notifySound tries in order. Kept
@@ -72,16 +96,17 @@ var soundCandidates = []soundCandidate{
 
 // notifySound plays a short system sound to flag an agent state change. It
 // tries each soundCandidate in order and uses the first one whose binary is
-// on PATH; if none are found (or playback fails) it's a silent no-op rather
-// than an error, since a missed notification sound shouldn't crash the
-// watcher.
-func notifySound() {
+// on PATH. A missed notification sound doesn't crash the watcher, but
+// (unlike before) the outcome is reported rather than discarded, so the
+// watcher can log it.
+func notifySound() (tool string, err error) {
 	for _, c := range soundCandidates {
-		path, err := exec.LookPath(c.bin)
-		if err != nil {
+		path, lookErr := exec.LookPath(c.bin)
+		if lookErr != nil {
 			continue
 		}
-		_ = exec.Command(path, c.args...).Start()
-		return
+		out, runErr := exec.Command(path, c.args...).CombinedOutput()
+		return c.bin, wrapNotifyOutput(runErr, out)
 	}
+	return "", fmt.Errorf("no sound player found on PATH")
 }

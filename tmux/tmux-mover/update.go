@@ -19,7 +19,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = filterPopupState(m.state, m.selfWindowID)
 		}
 		m.selectedPanes = pruneSelectedPanes(m.selectedPanes, m.state.Panes)
-		m.agents, m.probedNonAgents = reconcileAgentStates(m.agents, m.probedNonAgents, m.state.Panes)
+		m.agents, m.probedNonAgents = reconcileAgentStates(m.agents, m.probedNonAgents, m.state.Panes, time.Now())
 		// window selection derived from selected panes
 		m.paneOrder = buildPaneOrder(m.state)
 		if m.selfPaneID != "" {
@@ -412,32 +412,42 @@ func refreshAgentsCmd(agents map[string]AgentState) tea.Cmd {
 
 // reconcileAgentStates re-derives which panes are AI-CLI panes on every fast
 // (100ms) state refresh. probed tracks, per pane ID, the pane_current_command
-// value it was last probed against via probeAgentKindByProcessTree — so an
-// ambiguous runtime pane (see isAmbiguousRuntimeCommand) that isn't an agent
-// only gets that (comparatively expensive) probe once per distinct command
-// value instead of on every tick, and a pane already resolved to a real kind
-// stays resolved even though its pane_current_command keeps reading e.g.
-// "node" rather than "gemini".
-func reconcileAgentStates(agents map[string]AgentState, probed map[string]string, panes []Pane) (map[string]AgentState, map[string]string) {
+// value it was last probed against via probeAgentKindByProcessTree and when
+// — so an ambiguous runtime pane (see isAmbiguousRuntimeCommand) that hasn't
+// resolved yet gets that (comparatively expensive) probe retried every
+// probeRetryInterval instead of exactly once ever, and a pane already
+// resolved to a real kind stays resolved even though its
+// pane_current_command keeps reading e.g. "node" rather than "gemini".
+//
+// A pane that fails to classify on a given tick isn't dropped immediately:
+// it keeps its previous AgentState (Status included) until
+// agentKindGracePeriod has elapsed since Kind was last actually confirmed,
+// so a single transient misread of pane_current_command can't silently
+// reset the pane to Unknown and swallow whatever status transition happens
+// to straddle that tick.
+func reconcileAgentStates(agents map[string]AgentState, probed map[string]probeRecord, panes []Pane, now time.Time) (map[string]AgentState, map[string]probeRecord) {
 	if agents == nil {
 		agents = map[string]AgentState{}
 	}
 	next := make(map[string]AgentState, len(agents))
-	nextProbed := make(map[string]string, len(probed))
+	nextProbed := make(map[string]probeRecord, len(probed))
 	for _, pane := range panes {
 		kind := detectAgentKind(pane.Command)
 		if kind == AgentNone && isAmbiguousRuntimeCommand(pane.Command) {
 			if existing, ok := agents[pane.ID]; ok && existing.Kind != AgentNone {
 				kind = existing.Kind
 				nextProbed[pane.ID] = probed[pane.ID]
-			} else if probed[pane.ID] != pane.Command {
+			} else if rec, ok := probed[pane.ID]; !ok || rec.command != pane.Command || now.Sub(rec.lastTry) >= probeRetryInterval {
 				kind = probeAgentKindByProcessTree(pane.PID)
-				nextProbed[pane.ID] = pane.Command
+				nextProbed[pane.ID] = probeRecord{command: pane.Command, lastTry: now}
 			} else {
 				nextProbed[pane.ID] = probed[pane.ID]
 			}
 		}
 		if kind == AgentNone {
+			if existing, ok := agents[pane.ID]; ok && existing.Kind != AgentNone && now.Sub(existing.KindConfirmedAt) < agentKindGracePeriod {
+				next[pane.ID] = existing
+			}
 			continue
 		}
 		state, existed := agents[pane.ID]
@@ -447,6 +457,7 @@ func reconcileAgentStates(agents map[string]AgentState, probed map[string]string
 		state.Kind = kind
 		state.Task = parseAgentTaskLabel(pane.Title)
 		state.PID = pane.PID
+		state.KindConfirmedAt = now
 		next[pane.ID] = state
 	}
 	return next, nextProbed
