@@ -32,6 +32,6 @@
     ''
       export PATH=${lib.makeBinPath requiredPackages}:$PATH
       cd $HOME/dotfiles/tmux/tmux-mover
-      nix develop -c make install
+      nix develop -c make watch-restart
     '';
 }
