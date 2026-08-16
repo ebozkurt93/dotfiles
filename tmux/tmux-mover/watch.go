@@ -292,10 +292,10 @@ func agentTransitionNotification(next AgentState, pane Pane, sessionByID map[str
 
 // tmuxJumpCommand builds the shell command run (via terminal-notifier
 // -execute, itself invoked through /bin/sh -c) when an agent-transition
-// banner is clicked: select the target window/pane, then switch every
-// attached tmux client over to that session (select-window/select-pane are
-// session-scoped and already visible to every client; switch-client is
-// per-client, so each one needs its own call).
+// banner is clicked: switch every attached tmux client over to the target
+// session, then select the target window/pane. switch-client is per-client,
+// while select-window/select-pane update tmux's active window/pane state for
+// the target session/window.
 //
 // The tmux binary is resolved to an absolute path (via exec.LookPath, using
 // the watcher's own environment) rather than left as a bare "tmux" — macOS
@@ -313,7 +313,7 @@ func tmuxJumpCommand(pane Pane) string {
 		tmuxBin = resolved
 	}
 	return fmt.Sprintf(
-		`%[1]s select-window -t '%[2]s'; %[1]s select-pane -t '%[3]s'; for c in $(%[1]s list-clients -F '#{client_name}'); do %[1]s switch-client -c "$c" -t '%[4]s'; done`,
+		`for c in $(%[1]s list-clients -F '#{client_name}'); do %[1]s switch-client -c "$c" -t '%[4]s'; done; %[1]s select-window -t '%[2]s'; %[1]s select-pane -t '%[3]s'`,
 		tmuxBin, pane.WindowID, pane.ID, pane.SessionID,
 	)
 }

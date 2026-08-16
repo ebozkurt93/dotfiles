@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -31,6 +32,26 @@ func TestBuildPersistedAgentStatus(t *testing.T) {
 	}
 	if !byID["%2"].Unseen || byID["%2"].UnseenSince != "2026-01-01T00:00:00Z" {
 		t.Fatalf("expected %%2 to be unseen with a formatted timestamp, got %+v", byID["%2"])
+	}
+}
+
+func TestTmuxJumpCommandSwitchesBeforeSelectingPane(t *testing.T) {
+	cmd := tmuxJumpCommand(Pane{ID: "%1", WindowID: "@2", SessionID: "$3"})
+
+	if !strings.Contains(cmd, "list-clients -F '#{client_name}'") {
+		t.Fatalf("expected command to enumerate client names: %s", cmd)
+	}
+	if !strings.Contains(cmd, "switch-client -c \"$c\" -t '$3'") {
+		t.Fatalf("expected command to switch clients to target session: %s", cmd)
+	}
+	if !strings.Contains(cmd, "select-window -t '@2'") {
+		t.Fatalf("expected command to select target window: %s", cmd)
+	}
+	if !strings.Contains(cmd, "select-pane -t '%1'") {
+		t.Fatalf("expected command to select target pane: %s", cmd)
+	}
+	if strings.Index(cmd, "switch-client") > strings.Index(cmd, "select-pane") {
+		t.Fatalf("expected clients to switch before selecting pane: %s", cmd)
 	}
 }
 
