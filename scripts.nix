@@ -30,7 +30,12 @@
   in
     # sh
     ''
-      export PATH=${lib.makeBinPath requiredPackages}:$PATH
+      # watch-restart backgrounds tmux-mover --watch-agents, which then runs
+      # for hours/days using whatever PATH it was launched with — so it needs
+      # /usr/bin, /bin (afplay, osascript, ps) and ~/.nix-profile/bin
+      # (terminal-notifier) here explicitly, since home-manager's activation
+      # PATH has none of them.
+      export PATH=${lib.makeBinPath requiredPackages}:/usr/bin:/bin:$HOME/.nix-profile/bin:$PATH
       cd $HOME/dotfiles/tmux/tmux-mover
       nix develop -c make watch-restart
     '';
