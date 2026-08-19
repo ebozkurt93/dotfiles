@@ -14,43 +14,49 @@
     home-manager,
     llm-agents-nix,
     ...
-  }: {
+  }: let
+    # Shared home-manager module: packages + activation scripts common to
+    # every platform. Per-target modules (username, homeDirectory, extra
+    # platform-only packages) get appended on top of this by each target below.
+    homeModule = {
+      pkgs,
+      lib,
+      ...
+    }: {
+      home = let
+        packages = import ./packages.nix {
+          inherit pkgs;
+          llmAgents = llm-agents-nix.packages.${pkgs.stdenv.hostPlatform.system};
+        };
+      in {
+        inherit packages;
+        stateVersion = "24.05";
+        activation = let
+          scripts = import ./scripts.nix {inherit lib pkgs;};
+        in
+          lib.mkMerge [
+            (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
+              installTPM = lib.mkAfter scripts.installTPM;
+            })
+            # installStateSwitcher builds the bitbar/xbar state-switcher plugin,
+            # which isn't stowed on Linux yet (bitbar's Linux replacement is
+            # still undecided). Re-enable here once that's sorted.
+            (lib.optionalAttrs pkgs.stdenv.isDarwin {
+              installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
+            })
+            {
+              installTmuxMover = lib.mkAfter scripts.installTmuxMover;
+            }
+          ];
+      };
+    };
+  in {
     darwinBase = {
       pkgs = import nixpkgs {
         system = "aarch64-darwin";
         config.allowUnfree = true;
       };
-      modules = [
-        (
-          {
-            pkgs,
-            lib,
-            ...
-          }: {
-            home = let
-              packages = import ./packages.nix {
-                inherit pkgs;
-                llmAgents = llm-agents-nix.packages.${pkgs.stdenv.hostPlatform.system};
-              };
-            in {
-              inherit packages;
-              stateVersion = "24.05";
-              activation = let
-                scripts = import ./scripts.nix {inherit lib pkgs;};
-              in
-                lib.mkMerge [
-                  (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
-                    installTPM = lib.mkAfter scripts.installTPM;
-                  })
-                  {
-                    installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
-                    installTmuxMover = lib.mkAfter scripts.installTmuxMover;
-                  }
-                ];
-            };
-          }
-        )
-      ];
+      modules = [homeModule];
     };
 
     homeConfigurations = {
@@ -80,6 +86,25 @@
               })
             ];
         });
+    };
+
+    nixosConfigurations = {
+      utm-aarch64 = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [
+          ./nixos/hosts/utm-aarch64/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.erdembozkurt = {
+              imports = [homeModule];
+              home.username = "erdembozkurt";
+              home.homeDirectory = "/home/erdembozkurt";
+            };
+          }
+        ];
+      };
     };
   };
 }

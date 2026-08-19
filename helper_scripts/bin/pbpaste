@@ -1,5 +1,5 @@
-#!/bin/bash
-if is_macos; then
+#!/usr/bin/env bash
+if [ "$(uname)" = "Darwin" ]; then
   /usr/bin/pbpaste
 else
   xclip -selection clipboard -o
