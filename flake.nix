@@ -5,6 +5,8 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents-nix.url = "github:numtide/llm-agents.nix";
+    quickshell.url = "github:quickshell-mirror/quickshell";
+    quickshell.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -13,6 +15,7 @@
     bw-nixpkgs,
     home-manager,
     llm-agents-nix,
+    quickshell,
     ...
   }: let
     # Shared home-manager module: packages + activation scripts common to
@@ -97,10 +100,13 @@
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.users.erdembozkurt = {
+            home-manager.users.erdembozkurt = {pkgs, ...}: {
               imports = [homeModule];
               home.username = "erdembozkurt";
               home.homeDirectory = "/home/erdembozkurt";
+              # quickshell only makes sense on Linux with Hyprland, kept out
+              # of the shared homeModule so darwin's package set is untouched.
+              home.packages = [quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default];
             };
           }
         ];
