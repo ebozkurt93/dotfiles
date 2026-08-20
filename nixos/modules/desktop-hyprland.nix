@@ -1,6 +1,4 @@
-# Shared Hyprland + quickshell desktop module for Linux hosts. Kept
-# separate from per-host configuration.nix so the x86_64 host (task #4) can
-# reuse it without duplication. Not imported by anything darwin-related.
+# Shared across Linux hosts so the x86_64 host (task #4) can reuse it.
 {pkgs, ...}: {
   programs.hyprland.enable = true;
 

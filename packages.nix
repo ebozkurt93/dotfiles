@@ -63,9 +63,12 @@ with pkgs;
     terminal-notifier # tmux-mover --watch-agents banners
   ]
   ++ lib.optionals stdenv.isLinux [
+    ghostty # installed via Homebrew on macOS instead
+    kitty # installed via Homebrew on macOS instead
     neovim # built from source via setup/build-neovim.sh on macOS instead
     xclip # helper_scripts/bin/pbcopy + pbpaste
     gnumake # telescope-fzf-native.nvim build step
     gcc # telescope-fzf-native.nvim build step
     sqlite # telescope-all-recent.nvim (sqlite.lua)
+    wofi # app launcher, bound in hyprland.conf ($mainMod+D)
   ]
