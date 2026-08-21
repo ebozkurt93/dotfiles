@@ -346,10 +346,44 @@ between sessions/agents.
 
 ## Housekeeping
 
-- Mac's `/nix` store is tight on space (90% full, ~12Gi free as of this
-  session) — user asked for a `nix-collect-garbage` pass to reclaim space.
-  Not urgent, can happen anytime; no VM-side space pressure (VM's `/` was
-  at 23% used, plenty of headroom).
+- Mac's `/nix` store was tight on space (90% full, ~12Gi free) — ran
+  `nix-collect-garbage --delete-older-than 14d`, freed ~49GiB (14,211 store
+  paths). `/nix` now at 44% used, ~64Gi free. **Done.**
+
+## Current session update (3)
+
+- Ported `wg-manager` and `ts-manager` to Linux (task #5 continues):
+  - `wg-manager`: `interfaces_dir` branches on `uname`
+    (`/opt/homebrew/etc/wireguard` Darwin, `/etc/wireguard` Linux).
+    Shebang fixed to `#!/usr/bin/env bash`. Added `wireguard-tools` to
+    `packages.nix`'s Linux set.
+  - `ts-manager`: `_primary_service`/`_configure_dns`/`_restore_dns` branch
+    on `uname`. macOS keeps `networksetup`; Linux resolves the default
+    interface via `ip route show default` and manages a DNS override with
+    openresolv's `resolvconf -a/-d` instead of saving/restoring explicit
+    server lists — `resolvconf` merges automatically so there's nothing to
+    save. **`resolvconf` didn't need adding to `packages.nix`** — it's
+    already provided system-wide by NixOS's default networking module
+    (confirmed via `readlink -f $(which resolvconf)` on the VM before
+    assuming it needed packaging). Shebang fixed.
+  - Verified on the VM: both scripts pass `bash -n`, `wg`/`wg-quick`
+    install and resolve on `$PATH`, `wg-manager status` runs the full path
+    through to `sudo -S wg show` correctly (failed only on an intentionally
+    empty test secret, not a script bug), and a manual
+    `resolvconf -a '<iface>.tailscale' <<< nameserver ...` /
+    `resolvconf -d` round-trip against the VM's real `/etc/resolv.conf`
+    confirmed the override/restore mechanism works exactly as
+    `_configure_dns`/`_restore_dns` expect. No live headscale connection
+    available to test the full `ts-manager up`/`down` flow end-to-end —
+    that's still open for whenever real headscale credentials are on hand.
+  - Still remaining in task #5: `low-power-mode-toggle.sh` (`pmset` →
+    `powerprofilesctl`/`upower`), `list-apps` (`mdfind` → Linux app
+    listing), hammerspoon's window/hotkey logic → Hyprland config,
+    blueutil → `bluetoothctl`, `hs.chooser` UI pattern (~8 hammerspoon
+    files) → a Linux launcher, notifications → reuse
+    `tmux/tmux-mover/notify.go`'s existing cross-platform pattern. User
+    has said hammerspoon itself is the big remaining chunk and explicitly
+    wants it done in a later session, not now.
 
 ## Task list state (see TaskList tool for live status)
 
@@ -359,12 +393,14 @@ between sessions/agents.
    OS-aware `stow.sh`, quickshell bar, workspace switching, and wofi
    launcher all verified working.
 4. Add x86_64-linux host + build-only CI check — **not started**
-5. Port macOS-only pieces to Hyprland/Linux — **in progress**. Keychain →
-   `secret-tool` done (see above). Still remaining: hammerspoon's
-   window/hotkey logic → Hyprland config, blueutil → bluetoothctl, pmset →
-   powerprofilesctl/upower, the macOS-only bodies of `wg-manager`/
-   `ts-manager`/`low-power-mode-toggle.sh`/`list-apps`, `hs.chooser` UI
-   pattern (~8 hammerspoon files) → a Linux launcher, notifications → reuse
+5. Port macOS-only pieces to Hyprland/Linux — **in progress**. Done:
+   Keychain → `secret-tool`, `wg-manager`, `ts-manager` (DNS override via
+   resolvconf; full up/down flow not tested live, no headscale creds on
+   hand). Still remaining: `low-power-mode-toggle.sh` (pmset →
+   powerprofilesctl/upower), `list-apps` (mdfind), hammerspoon's
+   window/hotkey logic → Hyprland config (explicitly deferred to a later
+   session — the big one), blueutil → bluetoothctl, `hs.chooser` UI pattern
+   (~8 hammerspoon files) → a Linux launcher, notifications → reuse
    `tmux/tmux-mover/notify.go`'s existing working cross-platform pattern
    instead of rewriting per-file.
 6. Decide GUI app carryover (Brewfile audit) — **not started**, deferred by
