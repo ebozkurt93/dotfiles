@@ -385,6 +385,86 @@ between sessions/agents.
     has said hammerspoon itself is the big remaining chunk and explicitly
     wants it done in a later session, not now.
 
+## Task #5 remaining work, sized (for picking session order)
+
+Small, mechanical, one script each, no new subsystem:
+- `low-power-mode-toggle.sh`: `pmset` → `powerprofilesctl`/`upower`
+- `list-apps`: `mdfind` → a Linux app-listing equivalent (`.desktop` file
+  scan, or similar)
+- blueutil → `bluetoothctl` (used by `bt_menu.lua`, see below)
+
+Medium:
+- Notifications: reuse `tmux/tmux-mover/notify.go`'s existing working
+  cross-platform pattern for the handful of scripts that currently notify
+  via macOS-only mechanisms — no new design needed, just wiring.
+- Task #4 (separate numbered task, but similar weight): add an
+  x86_64-linux host + build-only CI check. Mostly config, no new logic.
+
+Large — hammerspoon → Hyprland/Linux. Explicitly deferred to its own
+session (2026-08-21: user flagged this as the massive one but noted it's
+not monolithic — worth splitting by kind rather than porting file-by-file).
+Full file inventory as of this session, split by kind:
+
+- **Pure keybinding/window-management** (mechanical translation to Hyprland
+  Lua config, `hl.bind`/`hl.dsp.window.*`, no UI to design):
+  `window_manager.lua` (124 lines), `mouse_snap_window.lua` (172),
+  `scoped_hotkeys.lua` (331 — app-scoped hotkey remapping, check if
+  Hyprland's per-window-rule binds or a small daemon is the right
+  equivalent), `rapid_toggle.lua` (48), `Spoons/ShiftIt.spoon` (window
+  snapping, likely redundant with Hyprland's own tiling — probably drop
+  rather than port).
+- **System-status/menubar widgets** (no macOS menubar on Hyprland — these
+  become quickshell bar widgets, not 1:1 ports): `kb_battery.lua` (62),
+  `weather.lua` (336), `now-playing.lua` (109), `theme_sync.lua` (10),
+  `menubar_colors.lua` (18), `mouse_position_indicator.lua` (115),
+  `bt_menu.lua` (63 — also needs blueutil → bluetoothctl, see above).
+- **`hs.chooser`-based UI (fuzzy-picker popups)** — 8 files, this is the
+  part the user specifically flagged: *"some of them open lists etc, which
+  theoretically can be integrated into other lists, as this is not
+  macOS"*. i.e. don't necessarily build 8 separate wofi invocations — some
+  of these are different data sources feeding the same
+  fuzzy-picker-and-act UX pattern, and could become modes/inputs of one
+  shared Linux launcher instead of independent ports:
+  - `chrome_tab_switcher.lua` (57) / `firefox_tab_switcher.lua` (34) —
+    near-identical shape, browser tab list → switch. Same underlying
+    pattern.
+  - `state_switcher.lua` (122) — already has a portable Go backend
+    (`tmux/tmux-mover`'s sibling, `state-switcher`, already ported and
+    building on Linux per an earlier session) — this one's UI-only work.
+  - `menu_item_search.lua` (97) — searches the focused app's AXMenuBar via
+    accessibility APIs; **macOS-only concept**, no direct Linux equivalent
+    (no universal per-app menu introspection API on Linux) — needs a
+    rethink, not a port, or drop.
+  - `fuzzy_window_switcher.lua` (126) — window list → focus; Hyprland's
+    `hyprctl clients -j` gives the same data natively.
+  - `bt_menu.lua` (63, listed above too — has both a status-widget and a
+    chooser-driven connect/disconnect flow).
+  - `action_menu.lua` (91) — looks like a general command palette; a
+    natural "hub" if choosers do get unified.
+  - `text_expander.lua` (181) — different shape (types text on trigger, not
+    pick-and-act), but similar hs.chooser popup UX; check if it fits the
+    same launcher or wants a separate small daemon.
+- **Supporting/infra files**, not independently portable, get pulled along
+  with whatever depends on them: `helpers.lua` (375), `macos_helpers.lua`
+  (550, name says it all — heavily macOS-specific, expect a lot of this to
+  just not have a Linux equivalent and get dropped rather than ported),
+  `fzy.lua` (300, fuzzy-matching lib — likely reusable as-is, pure Lua
+  logic), `globals.lua` (7), `reload.lua` (5).
+- **Probably drop outright** (macOS-specific concepts with no Linux
+  equivalent, or already covered elsewhere): `amphetamine.lua` (315 — caffeine/
+  sleep-prevention, Linux equivalent would be a systemd inhibit lock, much
+  simpler), `sleepwatcher.lua` (49), `google_meet_mic_toggle.lua` (35),
+  `spotify.lua` (69, check if `now-playing.lua` already subsumes it),
+  `Spoons/EmmyLua.spoon` (Hammerspoon-specific dev tooling, not applicable),
+  `Spoons/MenubarFlag.spoon` (macOS menubar, not applicable).
+
+Recommended order when this session happens: keybinding/window-management
+files first (cheap, mechanical, immediately useful), then decide the
+chooser-unification design (this is where user input on desired shape
+matters most) before touching any of the 8 chooser files, then
+menubar/status widgets last (blocked on quickshell bar being fleshed out
+beyond the current placeholder clock/workspace widget anyway).
+
 ## Task list state (see TaskList tool for live status)
 
 1. Set up UTM aarch64 NixOS VM — **done**
