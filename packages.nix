@@ -66,6 +66,7 @@ with pkgs;
     ghostty # installed via Homebrew on macOS instead
     kitty # installed via Homebrew on macOS instead
     neovim # built from source via setup/build-neovim.sh on macOS instead
+    wl-clipboard # helper_scripts/bin/pbcopy + pbpaste on Wayland
     xclip # helper_scripts/bin/pbcopy + pbpaste
     gnumake # telescope-fzf-native.nvim build step
     gcc # telescope-fzf-native.nvim build step
