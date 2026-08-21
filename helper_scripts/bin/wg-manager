@@ -1,6 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-interfaces_dir='/opt/homebrew/etc/wireguard'
+if [ "$(uname)" = "Darwin" ]; then
+  interfaces_dir='/opt/homebrew/etc/wireguard'
+else
+  interfaces_dir='/etc/wireguard'
+fi
 # assuming interfaces have no space in their names
 interfaces="$(ls $interfaces_dir | sed -e 's/.conf$//')"
 pass=$(~/bin/helpers/pass.sh)
