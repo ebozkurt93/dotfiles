@@ -72,4 +72,5 @@ with pkgs;
     gcc # telescope-fzf-native.nvim build step
     sqlite # telescope-all-recent.nvim (sqlite.lua)
     wofi # app launcher, bound in hyprland.conf ($mainMod+D)
+    libsecret # secret-tool, helper_scripts/bin/helpers/pass.sh on Linux
   ]

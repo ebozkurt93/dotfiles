@@ -19,6 +19,10 @@
 
   security.polkit.enable = true;
   security.rtkit.enable = true;
+
+  # Secret Service backend for secret-tool (helper_scripts/bin/helpers/pass.sh).
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.greetd.enableGnomeKeyring = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
