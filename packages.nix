@@ -75,4 +75,5 @@ with pkgs;
     libsecret # secret-tool, helper_scripts/bin/helpers/pass.sh on Linux
     wireguard-tools # wg, wg-quick; helper_scripts/bin/wg-manager
     power-profiles-daemon # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
+    bluez # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
   ]

@@ -387,11 +387,14 @@ between sessions/agents.
 
 ## Task #5 remaining work, sized (for picking session order)
 
-Small, mechanical, one script each, no new subsystem:
+Small, mechanical, one script each, no new subsystem — **all done**, see
+"Current session update" entries above:
 - `low-power-mode-toggle.sh`: `pmset` → `powerprofilesctl`/`upower`
 - `list-apps`: `mdfind` → a Linux app-listing equivalent (`.desktop` file
   scan, or similar)
-- blueutil → `bluetoothctl` (used by `bt_menu.lua`, see below)
+- blueutil → `bluetoothctl`, for the standalone `tmux_bluetooth.sh` usage.
+  (`bt_menu.lua`'s own blueutil calls are separate and stay with the
+  deferred hammerspoon chunk below.)
 
 Medium:
 - Notifications: reuse `tmux/tmux-mover/notify.go`'s existing working
@@ -507,6 +510,39 @@ beyond the current placeholder clock/workspace widget anyway).
     `homeConfigurations.erdembozkurt.activationPackage` build both still
     pass — darwin path untouched by this change.
 
+## Current session update (5)
+
+- Ported `blueutil` → `bluetoothctl` for
+  `helper_scripts/bin/helpers/tmux_bluetooth.sh` (the tmux status-line
+  Bluetooth icon, called from `tmux_status_right.sh`). This is a standalone
+  script, separate from hammerspoon's `bt_menu.lua`/`macos_helpers.lua`
+  blueutil usages, which stay macOS-only and are part of the deferred
+  hammerspoon chunk (task #5's large item) — not touched this session.
+  - Branches on `uname`, byte-for-byte preserving the nerd-font icon glyphs
+    on both branches (edited via a Python byte-level rewrite rather than
+    the string-match Edit tool, since the icons don't compare reliably as
+    text).
+  - Added `hardware.bluetooth.enable = true;` to
+    `nixos/modules/desktop-hyprland.nix` (bluetoothd won't start without
+    it) and `bluez` to `packages.nix`'s Linux set (for `bluetoothctl` on
+    `$PATH`).
+  - **Real bug caught during VM verification**: the UTM VM has no Bluetooth
+    controller at all (`ConditionPathIsDirectory=/sys/class/bluetooth`
+    fails, confirmed via `systemctl status bluetooth`), and in that state
+    plain `bluetoothctl show`/`bluetoothctl devices Connected` block
+    forever waiting on a D-Bus interface that never appears — not specific
+    to this VM, the same would happen on any real machine with Bluetooth
+    disabled/rfkilled. Since this script feeds the tmux status line, a hang
+    here would freeze the whole status bar. Fixed by wrapping both
+    `bluetoothctl` calls in `timeout 1`.
+  - Verified on the VM after the fix: `bash tmux_bluetooth.sh` returns in
+    ~2s (exit 0) instead of hanging, and its output byte-for-byte matches
+    the macOS "off" branch's icon (`ef 96 b1`), which is the correct state
+    to fall into with no adapter.
+  - `nix flake check --no-build` and the darwin
+    `homeConfigurations.erdembozkurt.activationPackage` build both still
+    pass.
+
 ## Task list state (see TaskList tool for live status)
 
 1. Set up UTM aarch64 NixOS VM — **done**
@@ -520,12 +556,15 @@ beyond the current placeholder clock/workspace widget anyway).
    resolvconf; full up/down flow not tested live, no headscale creds on
    hand), `low-power-mode-toggle.sh` (pmset → powerprofilesctl; fully
    verified both directions via a temporary autologin session, see above),
-   `list-apps` (mdfind → `.desktop` file scan). Still remaining:
-   blueutil → bluetoothctl, hammerspoon's window/hotkey logic → Hyprland
-   config (explicitly deferred to a later session — the big one),
-   `hs.chooser` UI pattern (~8 hammerspoon files) → a Linux launcher,
-   notifications → reuse `tmux/tmux-mover/notify.go`'s existing working
-   cross-platform pattern instead of rewriting per-file.
+   `list-apps` (mdfind → `.desktop` file scan), `tmux_bluetooth.sh`'s
+   standalone blueutil usage → bluetoothctl (real hang bug found + fixed
+   with a `timeout` guard, see above). Still remaining: hammerspoon's
+   window/hotkey logic → Hyprland config (explicitly deferred to a later
+   session — the big one, includes its own separate blueutil usages in
+   `bt_menu.lua`/`macos_helpers.lua`), `hs.chooser` UI pattern
+   (~8 hammerspoon files) → a Linux launcher, notifications → reuse
+   `tmux/tmux-mover/notify.go`'s existing working cross-platform pattern
+   instead of rewriting per-file.
 6. Decide GUI app carryover (Brewfile audit) — **not started**, deferred by
    user request.
 7. Old physical x86 machine real-hardware pass — **not started**, deferred

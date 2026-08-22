@@ -26,6 +26,9 @@
 
   # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
   services.power-profiles-daemon.enable = true;
+
+  # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
+  hardware.bluetooth.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
