@@ -465,6 +465,48 @@ matters most) before touching any of the 8 chooser files, then
 menubar/status widgets last (blocked on quickshell bar being fleshed out
 beyond the current placeholder clock/workspace widget anyway).
 
+## Current session update (4)
+
+- Ported the two small task #5 items: `low-power-mode-toggle.sh` and
+  `list-apps`.
+  - `low-power-mode-toggle.sh`: branches on `uname`. macOS keeps the
+    `pmset`/Keychain flow unchanged. Linux uses `powerprofilesctl`, toggling
+    between `power-saver` and `balanced` (no direct boolean equivalent to
+    macOS's low-power-mode flag, so this is the closest analog). Added
+    `services.power-profiles-daemon.enable = true;` to
+    `nixos/modules/desktop-hyprland.nix` and `power-profiles-daemon` to
+    `packages.nix`'s Linux set (for `powerprofilesctl` on `$PATH` outside the
+    systemd service context too).
+  - `list-apps`: branches on `uname`. macOS keeps `mdfind`/`find` unchanged.
+    Linux scans `.desktop` files across
+    `/run/current-system/sw/share/applications` (Nix-installed apps),
+    `/usr/share/applications`, Flatpak's system/user export dirs, and
+    `~/.nix-profile` / `~/.local/share/applications`. No callers found
+    elsewhere in the repo (only referenced from this file), so this is a
+    standalone listing tool, not wired into anything yet.
+  - Verified on the VM (back up after the disk-hang incident, see above):
+    `nixos-rebuild switch` succeeded, `list-apps` lists real `.desktop`
+    entries. `low-power-mode-toggle.sh` initially failed when run over SSH
+    with a polkit `AccessDenied` on
+    `org.freedesktop.UPower.PowerProfiles.switch-profile` — `pkaction
+    --verbose` showed this action is `implicit active: yes`, i.e.
+    auto-authorized only for an active local seat session, and an SSH login
+    has no seat. Confirmed this by fully testing it properly instead of
+    accepting the gap: added a temporary `services.greetd.settings.
+    initial_session` (autologin straight into Hyprland as erdembozkurt,
+    VM-only, never committed), rebooted so it took a real seat0 session,
+    then used the same `hyprctl dispatch 'hl.dsp.exec_cmd(...)'` IPC trick
+    from the earlier keyboard-input debugging session to run the toggle
+    script *inside* that session over SSH (inheriting its seat instead of
+    SSH's own). Confirmed both directions cleanly:
+    `balanced` → `power-saver` → `balanced`, no errors. Reverted the
+    autologin config and rebooted again immediately after — confirmed back
+    to the normal tuigreet prompt (`loginctl list-sessions` shows only the
+    greeter on seat0 again). **Fully verified working, both directions.**
+  - `nix flake check --no-build` and the darwin
+    `homeConfigurations.erdembozkurt.activationPackage` build both still
+    pass — darwin path untouched by this change.
+
 ## Task list state (see TaskList tool for live status)
 
 1. Set up UTM aarch64 NixOS VM — **done**
@@ -476,13 +518,14 @@ beyond the current placeholder clock/workspace widget anyway).
 5. Port macOS-only pieces to Hyprland/Linux — **in progress**. Done:
    Keychain → `secret-tool`, `wg-manager`, `ts-manager` (DNS override via
    resolvconf; full up/down flow not tested live, no headscale creds on
-   hand). Still remaining: `low-power-mode-toggle.sh` (pmset →
-   powerprofilesctl/upower), `list-apps` (mdfind), hammerspoon's
-   window/hotkey logic → Hyprland config (explicitly deferred to a later
-   session — the big one), blueutil → bluetoothctl, `hs.chooser` UI pattern
-   (~8 hammerspoon files) → a Linux launcher, notifications → reuse
-   `tmux/tmux-mover/notify.go`'s existing working cross-platform pattern
-   instead of rewriting per-file.
+   hand), `low-power-mode-toggle.sh` (pmset → powerprofilesctl; fully
+   verified both directions via a temporary autologin session, see above),
+   `list-apps` (mdfind → `.desktop` file scan). Still remaining:
+   blueutil → bluetoothctl, hammerspoon's window/hotkey logic → Hyprland
+   config (explicitly deferred to a later session — the big one),
+   `hs.chooser` UI pattern (~8 hammerspoon files) → a Linux launcher,
+   notifications → reuse `tmux/tmux-mover/notify.go`'s existing working
+   cross-platform pattern instead of rewriting per-file.
 6. Decide GUI app carryover (Brewfile audit) — **not started**, deferred by
    user request.
 7. Old physical x86 machine real-hardware pass — **not started**, deferred

@@ -74,4 +74,5 @@ with pkgs;
     wofi # app launcher, bound in hyprland.conf ($mainMod+D)
     libsecret # secret-tool, helper_scripts/bin/helpers/pass.sh on Linux
     wireguard-tools # wg, wg-quick; helper_scripts/bin/wg-manager
+    power-profiles-daemon # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
   ]

@@ -1,12 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Fast but dependent on Spotlight
-echo "--- Spotlight Indexed Apps ---"
-mdfind "kMDItemContentType == 'com.apple.application-bundle'" | sort
+if [ "$(uname)" = "Darwin" ]; then
+  # Fast but dependent on Spotlight
+  echo "--- Spotlight Indexed Apps ---"
+  mdfind "kMDItemContentType == 'com.apple.application-bundle'" | sort
 
-echo -e "\n--- Common Application Directories ---"
-find /Applications /Users/*/Applications -maxdepth 2 -name "*.app" -prune | sort
+  echo -e "\n--- Common Application Directories ---"
+  find /Applications /Users/*/Applications -maxdepth 2 -name "*.app" -prune | sort
 
-# Slower but most comprehensive (uncomment to use)
-# echo -e "\n--- System Profiler (Comprehensive) ---"
-# system_profiler SPApplicationsDataType | grep "Location:" | sed 's/Location: //' | sort
+  # Slower but most comprehensive (uncomment to use)
+  # echo -e "\n--- System Profiler (Comprehensive) ---"
+  # system_profiler SPApplicationsDataType | grep "Location:" | sed 's/Location: //' | sort
+else
+  echo "--- Desktop Entries ---"
+  find /run/current-system/sw/share/applications \
+    /usr/share/applications \
+    /var/lib/flatpak/exports/share/applications \
+    "$HOME/.nix-profile/share/applications" \
+    "$HOME/.local/share/applications" \
+    "$HOME/.local/share/flatpak/exports/share/applications" \
+    -maxdepth 1 -name "*.desktop" 2>/dev/null | sort -u
+fi

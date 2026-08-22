@@ -23,6 +23,9 @@
   # Secret Service backend for secret-tool (helper_scripts/bin/helpers/pass.sh).
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.greetd.enableGnomeKeyring = true;
+
+  # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
+  services.power-profiles-daemon.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
