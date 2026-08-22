@@ -397,9 +397,6 @@ Small, mechanical, one script each, no new subsystem — **all done**, see
   deferred hammerspoon chunk below.)
 
 Medium:
-- Notifications: reuse `tmux/tmux-mover/notify.go`'s existing working
-  cross-platform pattern for the handful of scripts that currently notify
-  via macOS-only mechanisms — no new design needed, just wiring.
 - Task #4 (separate numbered task, but similar weight): add an
   x86_64-linux host + build-only CI check. Mostly config, no new logic.
 
@@ -510,6 +507,24 @@ beyond the current placeholder clock/workspace widget anyway).
     `homeConfigurations.erdembozkurt.activationPackage` build both still
     pass — darwin path untouched by this change.
 
+## Current session update (6)
+
+- Went looking for the "notifications" medium task item (reuse
+  `tmux/tmux-mover/notify.go`'s cross-platform pattern for scripts that
+  notify via macOS-only mechanisms) and found it isn't a standalone task:
+  grepped the whole repo for `osascript`/`terminal-notifier`/`hs.notify`
+  outside `tmux-mover` (which already has working cross-platform notify
+  logic, confirmed portable in an earlier session) and the only real
+  notification call sites are 4 `hs.notify.new(...)` mute-toggle banners in
+  `hammerspoon/.hammerspoon/scoped_hotkeys.lua` — already inside the
+  deferred hammerspoon chunk (that file is one of the keybind-port files
+  listed there). Everything else `osascript`-related
+  (`set_wallpaper.sh`, `get-focus-mode`, `macos-now-playing.js`) does
+  something unrelated to notifications (wallpaper, Focus-mode status,
+  now-playing info) and isn't in scope for this item. Removed the
+  standalone "Notifications" line from the sized-remaining-work list below
+  since it has no work outside hammerspoon.
+
 ## Current session update (5)
 
 - Ported `blueutil` → `bluetoothctl` for
@@ -561,10 +576,11 @@ beyond the current placeholder clock/workspace widget anyway).
    with a `timeout` guard, see above). Still remaining: hammerspoon's
    window/hotkey logic → Hyprland config (explicitly deferred to a later
    session — the big one, includes its own separate blueutil usages in
-   `bt_menu.lua`/`macos_helpers.lua`), `hs.chooser` UI pattern
-   (~8 hammerspoon files) → a Linux launcher, notifications → reuse
-   `tmux/tmux-mover/notify.go`'s existing working cross-platform pattern
-   instead of rewriting per-file.
+   `bt_menu.lua`/`macos_helpers.lua`, and the 4 `hs.notify.new(...)`
+   mute-toggle banners in `scoped_hotkeys.lua` — that's the entirety of
+   the "notifications" surface, `tmux-mover` already handles its own via
+   `notify.go`), `hs.chooser` UI pattern (~8 hammerspoon files) → a Linux
+   launcher.
 6. Decide GUI app carryover (Brewfile audit) — **not started**, deferred by
    user request.
 7. Old physical x86 machine real-hardware pass — **not started**, deferred
