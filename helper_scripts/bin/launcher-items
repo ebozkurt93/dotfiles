@@ -3,6 +3,7 @@
 set -euo pipefail
 
 mode="all"
+query=""
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 default_actions_file="${XDG_CONFIG_HOME:-$HOME/.config}/launcher/actions.json"
@@ -10,7 +11,7 @@ fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs]
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--calculator QUERY]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
 Quickshell and future launcher frontends.
@@ -37,6 +38,12 @@ while [ "$#" -gt 0 ]; do
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
     --tabs) mode="tabs"; shift ;;
+    --calculator)
+      mode="calculator"
+      shift
+      query="${1:-}"
+      [ "$#" -gt 0 ] && shift
+      ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 1 ;;
   esac
@@ -255,6 +262,55 @@ tabs_json() {
   ' "$tabs_file"
 }
 
+calculator_json() {
+  if ! have_cmd jq || ! have_cmd qalc; then
+    echo '[]'
+    return
+  fi
+
+  local expression="$query"
+  expression="${expression#"${expression%%[![:space:]]*}"}"
+  expression="${expression%"${expression##*[![:space:]]}"}"
+  if [ -z "$expression" ]; then
+    echo '[]'
+    return
+  fi
+
+  if ! grep -Eq '(^|[[:space:]])[0-9.]+|[+*/^=()%-]|[[:space:]](to|in)[[:space:]]' <<<"$expression"; then
+    echo '[]'
+    return
+  fi
+
+  local result
+  result="$(timeout 2 qalc -t "$expression" 2>/dev/null | head -n 1 || true)"
+  result="${result#"${result%%[![:space:]]*}"}"
+  result="${result%"${result##*[![:space:]]}"}"
+  if [ -z "$result" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq -n \
+    --arg id "calculator:$expression" \
+    --arg title "$result" \
+    --arg subtitle "$expression" \
+    --arg expression "$expression" \
+    --arg copy_result "printf '%s' $(printf '%q' "$result") | wl-copy" \
+    --arg copy_input "printf '%s' $(printf '%q' "$expression") | wl-copy" \
+    '[{
+      id: $id,
+      kind: "calculator",
+      icon: "accessories-calculator",
+      title: $title,
+      subtitle: $subtitle,
+      keywords: ["calculator", "calc", $expression, $title],
+      actions: [
+        {id: "copy-result", title: "Copy Result", command: $copy_result},
+        {id: "copy-input", title: "Copy Input", command: $copy_input}
+      ]
+    }]'
+}
+
 case "$mode" in
   apps) apps_json ;;
   non-apps)
@@ -265,6 +321,7 @@ case "$mode" in
   windows) windows_json ;;
   states) states_json ;;
   tabs) tabs_json ;;
+  calculator) calculator_json ;;
   all)
     require_cmd jq
     jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json)

@@ -14,9 +14,12 @@ ShellRoot {
     property string launcherQuery: ""
     property int launcherSelected: 0
     property var launcherItems: []
+    property var launcherVisibleItems: []
     property var launcherNativeItems: []
     property var launcherHiddenApps: ({})
     property string launcherOutput: ""
+    property string calculatorOutput: ""
+    property int calculatorSerial: 0
     property bool launcherChoosingAction: false
     property int launcherActionItemIndex: -1
 
@@ -55,6 +58,7 @@ ShellRoot {
         var flag = "--" + providerMode
         launcherProvider.command = [home + "/bin/launcher-items", flag]
         launcherProvider.running = true
+        reloadCalculator()
     }
 
     function shellQuote(value) {
@@ -114,6 +118,24 @@ ShellRoot {
         return [item.kind || "", item.title || "", item.subtitle || "", keywords].join(" ").toLowerCase()
     }
 
+    function queryLooksLikeCalculator(query) {
+        var q = String(query || "").trim()
+        if (q.length < 2) return false
+        return /[0-9]/.test(q) && (new RegExp("[+\\-*/^=()%]").test(q) || /\s(to|in)\s/i.test(q))
+    }
+
+    function reloadCalculator() {
+        calculatorSerial += 1
+        calculatorOutput = ""
+        if (!queryLooksLikeCalculator(launcherQuery)) {
+            rebuildLauncherRows()
+            return
+        }
+        calculatorProvider.serial = calculatorSerial
+        calculatorProvider.command = [home + "/bin/launcher-items", "--calculator", launcherQuery]
+        calculatorProvider.running = true
+    }
+
     function fuzzyScore(text, query) {
         if (!query) return 1
         var t = text.toLowerCase()
@@ -136,7 +158,7 @@ ShellRoot {
     function rebuildLauncherRows() {
         launcherRows.clear()
         if (launcherChoosingAction) {
-            var actionItem = launcherItems[launcherActionItemIndex]
+            var actionItem = launcherVisibleItems[launcherActionItemIndex]
             var actions = actionItem && Array.isArray(actionItem.actions) ? actionItem.actions : []
             for (var a = 0; a < actions.length; a++) {
                 var action = actions[a]
@@ -156,8 +178,17 @@ ShellRoot {
 
         var query = launcherQuery.trim().toLowerCase()
         var rows = []
-        for (var i = 0; i < launcherItems.length; i++) {
-            var item = launcherItems[i]
+        var calculatorItems = []
+        try {
+            calculatorItems = calculatorOutput ? JSON.parse(calculatorOutput) : []
+            if (!Array.isArray(calculatorItems)) calculatorItems = []
+        } catch (e) {
+            calculatorItems = []
+        }
+        var allItems = calculatorItems.concat(launcherItems)
+        launcherVisibleItems = allItems
+        for (var i = 0; i < allItems.length; i++) {
+            var item = allItems[i]
             if (!item || !item.title) continue
             var score = fuzzyScore(searchableText(item), query)
             if (query && score < 0) continue
@@ -198,14 +229,24 @@ ShellRoot {
         commandRunner.running = true
     }
 
-    function activateLauncherRow() {
+    function activateLauncherRow(actionOffset) {
         if (launcherRows.count <= 0) return
         var row = launcherRows.get(launcherSelected)
-        var item = launcherItems[row.itemIndex]
+        var item = launcherVisibleItems[row.itemIndex]
         if (!item || !Array.isArray(item.actions) || item.actions.length === 0) return
+
+        if (actionOffset !== undefined && actionOffset >= 0 && item.actions.length > actionOffset) {
+            runLauncherCommand(item.actions[actionOffset].command || "")
+            return
+        }
 
         if (row.actionIndex >= 0) {
             runLauncherCommand(item.actions[row.actionIndex].command || "")
+            return
+        }
+
+        if (item.kind === "calculator") {
+            runLauncherCommand(item.actions[0].command || "")
             return
         }
 
@@ -239,6 +280,14 @@ ShellRoot {
         return launcherMode + " (" + launcherRows.count + ")"
     }
 
+    function launcherFooterText() {
+        if (launcherRows.count <= 0) return launcherStatusText()
+        var row = launcherRows.get(launcherSelected)
+        var item = launcherVisibleItems[row.itemIndex]
+        if (item && item.kind === "calculator") return "Enter: copy result    Ctrl+Enter: copy input"
+        return ""
+    }
+
     ListModel {
         id: launcherRows
     }
@@ -270,6 +319,26 @@ ShellRoot {
 
     Process {
         id: commandRunner
+    }
+
+    Process {
+        id: calculatorProvider
+        property int serial: 0
+        property int runningSerial: 0
+        onRunningChanged: {
+            if (running) runningSerial = serial
+        }
+        stdout: SplitParser {
+            onRead: function(data) {
+                shell.calculatorOutput += data + "\n"
+            }
+        }
+        onStarted: shell.calculatorOutput = ""
+        onExited: function(exitCode, exitStatus) {
+            if (runningSerial !== shell.calculatorSerial) return
+            if (exitCode !== 0 || exitStatus !== 0) shell.calculatorOutput = ""
+            shell.rebuildLauncherRows()
+        }
     }
 
     FileView {
@@ -435,7 +504,7 @@ ShellRoot {
                             if (text !== shell.launcherQuery) {
                                 shell.launcherQuery = text
                                 shell.launcherSelected = 0
-                                shell.rebuildLauncherRows()
+                                shell.reloadCalculator()
                             }
                         }
                         Keys.onPressed: function(event) {
@@ -449,7 +518,11 @@ ShellRoot {
                                 shell.selectLauncher(-1)
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                shell.activateLauncherRow()
+                                if (event.modifiers & Qt.ControlModifier) {
+                                    shell.activateLauncherRow(1)
+                                } else {
+                                    shell.activateLauncherRow()
+                                }
                                 event.accepted = true
                             }
                         }
@@ -467,7 +540,7 @@ ShellRoot {
                 ListView {
                     id: launcherList
                     width: parent.width
-                    height: parent.height - 64
+                    height: parent.height - 92
                     clip: true
                     model: launcherRows
                     spacing: 6
@@ -520,6 +593,16 @@ ShellRoot {
                             }
                         }
                     }
+                }
+
+                Text {
+                    width: parent.width
+                    height: 18
+                    color: "#a6adc8"
+                    text: shell.launcherFooterText()
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
         }
