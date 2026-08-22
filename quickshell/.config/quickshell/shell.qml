@@ -14,6 +14,7 @@ ShellRoot {
     property string launcherQuery: ""
     property int launcherSelected: 0
     property var launcherItems: []
+    property var launcherNativeItems: []
     property string launcherOutput: ""
     property bool launcherChoosingAction: false
     property int launcherActionItemIndex: -1
@@ -39,9 +40,57 @@ ShellRoot {
     function reloadLauncher() {
         launcherLoading = true
         launcherOutput = ""
-        var flag = "--" + (launcherMode || "all")
+        launcherNativeItems = launcherMode === "all" ? desktopAppItems() : []
+        if (launcherMode === "apps") {
+            launcherItems = desktopAppItems()
+            launcherLoading = false
+            rebuildLauncherRows()
+            return
+        }
+        launcherItems = launcherNativeItems
+        rebuildLauncherRows()
+
+        var providerMode = launcherMode === "all" ? "non-apps" : (launcherMode || "all")
+        var flag = "--" + providerMode
         launcherProvider.command = [home + "/bin/launcher-items", flag]
         launcherProvider.running = true
+    }
+
+    function shellQuote(value) {
+        return "'" + String(value || "").replace(/'/g, "'\\''") + "'"
+    }
+
+    function desktopAppItems() {
+        var values = DesktopEntries.applications.values || []
+        var items = []
+        for (var i = 0; i < values.length; i++) {
+            var entry = values[i]
+            if (!entry || entry.noDisplay) continue
+            var id = String(entry.id || "")
+            var name = String(entry.name || id)
+            if (!id || !name) continue
+            var keywords = []
+            try {
+                if (entry.keywords && typeof entry.keywords.join === "function") keywords = entry.keywords
+            } catch (e) {
+            }
+            items.push({
+                id: "app:" + id,
+                kind: "app",
+                icon: String(entry.icon || "application-x-executable"),
+                title: name,
+                subtitle: String(entry.genericName || entry.comment || id),
+                keywords: keywords.concat([id, String(entry.genericName || ""), String(entry.comment || "")]),
+                actions: [
+                    {
+                        id: "open",
+                        title: "Open",
+                        command: home + "/bin/launcher-open-desktop " + shellQuote(id)
+                    }
+                ]
+            })
+        }
+        return items
     }
 
     function searchableText(item) {
@@ -188,16 +237,16 @@ ShellRoot {
         onExited: function(exitCode, exitStatus) {
             shell.launcherLoading = false
             if (exitCode !== 0 || exitStatus !== 0) {
-                shell.launcherItems = []
+                shell.launcherItems = shell.launcherNativeItems
                 shell.rebuildLauncherRows()
                 return
             }
             try {
                 var parsed = JSON.parse(shell.launcherOutput)
-                shell.launcherItems = Array.isArray(parsed) ? parsed : []
+                shell.launcherItems = shell.launcherNativeItems.concat(Array.isArray(parsed) ? parsed : [])
             } catch (e) {
                 console.warn("launcher provider returned invalid JSON:", e)
-                shell.launcherItems = []
+                shell.launcherItems = shell.launcherNativeItems
             }
             shell.rebuildLauncherRows()
         }
@@ -205,6 +254,15 @@ ShellRoot {
 
     Process {
         id: commandRunner
+    }
+
+    Connections {
+        target: DesktopEntries.applications
+        function onValuesChanged() {
+            if (shell.launcherOpen && (shell.launcherMode === "apps" || shell.launcherMode === "all")) {
+                shell.reloadLauncher()
+            }
+        }
     }
 
     IpcHandler {

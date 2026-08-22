@@ -10,7 +10,7 @@ fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--apps|--actions|--windows|--states|--tabs]
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
 Quickshell and future launcher frontends.
@@ -32,6 +32,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --all) mode="all"; shift ;;
     --apps) mode="apps"; shift ;;
+    --non-apps) mode="non-apps"; shift ;;
     --actions) mode="actions"; shift ;;
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
@@ -256,6 +257,10 @@ tabs_json() {
 
 case "$mode" in
   apps) apps_json ;;
+  non-apps)
+    require_cmd jq
+    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json)
+    ;;
   actions) actions_json ;;
   windows) windows_json ;;
   states) states_json ;;

@@ -60,4 +60,4 @@ if [ "$terminal" = "true" ]; then
   exec ghostty -e bash -lc "$clean_exec"
 fi
 
-exec bash -lc "$clean_exec"
+setsid bash -lc "$clean_exec" >/dev/null 2>&1 &

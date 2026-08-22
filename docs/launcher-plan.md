@@ -47,7 +47,7 @@ silent direct commands.
 | Mode | Purpose | Current status |
 | --- | --- | --- |
 | `--all` | General palette. Should stay fast and useful; do not blindly include every slow provider. | Implemented, needs curation |
-| `--apps` | Desktop applications. | Implemented via `.desktop` scan; candidate to move into Quickshell `DesktopEntries` later |
+| `--apps` | Desktop applications. | Implemented in Quickshell via `DesktopEntries` |
 | `--actions` | Static deliberate actions from `actions.json`. | Implemented |
 | `--windows` | Live Hyprland windows. | Implemented |
 | `--states` | Existing state-switcher rows. | Implemented if state-switcher is present |
@@ -57,7 +57,7 @@ silent direct commands.
 
 | Area | Omarchy reference | Our status | Candidate tools | Decision needed |
 | --- | --- | --- | --- | --- |
-| Apps | `apps` provider, `AppLibrary.qml`, `DesktopEntries` | Implemented minimally | current `.desktop` parser; Quickshell `DesktopEntries`; `gtk-launch`/`uwsm-app` | Whether app discovery should move into Quickshell service for icons/speed |
+| Apps | `apps` provider, `AppLibrary.qml`, `DesktopEntries` | Implemented in Quickshell | Quickshell `DesktopEntries`; `launcher-open-desktop` for launch fallback | Improve icons/search later if needed |
 | Windows | Hyprland IPC and menu/panel patterns | Implemented | `hyprctl clients -j`, Lua dispatcher helpers | Whether window actions need more operations: move workspace, pin, fullscreen |
 | Browser tabs | Not a root Omarchy menu item; our own requirement | Hook only | Firefox profile/session parser; browser extension/native messaging; Chrome remote debugging | Pick browser(s) and collection mechanism |
 | Calculator | Omarchy keybind launches `omacalc` | Basic terminal row | `qalc`, custom Quickshell inline result, separate floating terminal | Whether calculator should be inline query provider or standalone |
@@ -110,12 +110,10 @@ Before moving a row from candidate to implemented:
 ## Proposed Sequence
 
 1. Polish current launcher UX: popup geometry, search behavior, mode naming.
-2. Apps provider: decide whether to keep script parser or use Quickshell
-   `DesktopEntries`.
+2. Apps provider: done; Quickshell now uses `DesktopEntries`.
 3. Calculator: decide terminal-only vs inline query result.
 4. Lock: choose `hyprlock` or another locker, then wire manual lock.
 5. Power/session menu: add confirmation UI before logout/suspend/reboot/shutdown.
 6. Bluetooth: decide action vs panel and device-level operations.
 7. Browser tabs: choose Firefox/Chrome collection strategy.
 8. Network/audio/display panels.
-
