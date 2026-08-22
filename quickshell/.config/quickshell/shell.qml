@@ -69,6 +69,7 @@ ShellRoot {
             var id = String(entry.id || "")
             var name = String(entry.name || id)
             if (!id || !name) continue
+            if (entry.terminal === true) continue
             var keywords = []
             try {
                 if (entry.keywords && typeof entry.keywords.join === "function") keywords = entry.keywords
