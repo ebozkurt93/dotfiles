@@ -307,10 +307,12 @@ ShellRoot {
 
         Rectangle {
             id: launcherCard
-            width: Math.min(620, launcherPanel.width - 32)
-            height: Math.min(520, launcherPanel.height - 96)
+            visible: launcherPanel.width > 0 && launcherPanel.height > 0
+            width: Math.min(620, Math.max(320, launcherPanel.width - 32))
+            height: Math.min(520, Math.max(260, launcherPanel.height - 96))
             anchors.horizontalCenter: parent.horizontalCenter
-            y: Math.max(48, Math.round((launcherPanel.height - height) / 3))
+            anchors.top: parent.top
+            anchors.topMargin: 64
             radius: 8
             color: "#181825"
             border.color: "#45475a"

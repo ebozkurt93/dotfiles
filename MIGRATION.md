@@ -829,8 +829,9 @@ beyond the current placeholder clock/workspace widget anyway).
   Linux stow package list. `launcher-items` now reads
   `$XDG_CONFIG_HOME/launcher/actions.json` with a repo fallback for local
   testing. The committed rows are limited to real system/settings/script/tool
-  entries: power profile, Bluetooth, calculator, lock, suspend,
-  Quickshell/Hyprland reloads, shutdown, and reboot.
+  entries we have explicitly wired today: power profile, Bluetooth,
+  calculator, and Quickshell/Hyprland reloads. Lock, suspend, shutdown, and
+  reboot remain launcher candidates to design later, not active actions.
 - Extended the launcher provider model:
   - `--apps` scans `.desktop` entries and emits app rows that open through
     `launcher-open-desktop`;
@@ -839,9 +840,8 @@ beyond the current placeholder clock/workspace widget anyway).
     `${XDG_CACHE_HOME:-$HOME/.cache}/launcher/browser-tabs.json`;
   - `--all` now combines apps, static actions, windows, state-switcher rows,
     and browser tabs.
-- Added `lock-screen` and Linux-aware `bt-toggle` helpers. `lock-screen`
-  prefers `hyprlock` and falls back to `loginctl lock-session`; `hyprlock`
-  and `libqalculate` were added to the Linux package set.
+- Added Linux-aware `bt-toggle` and `libqalculate` for the initial
+  calculator workflow.
 - Extended the Quickshell launcher UI with action selection:
   - selecting a row with one action runs it directly;
   - selecting a row with multiple actions opens an action list;
@@ -849,6 +849,9 @@ beyond the current placeholder clock/workspace widget anyway).
 - Replaced substring filtering with in-QML fuzzy scoring/ranking, so the
   combined list can be searched as one palette without exact contiguous
   matches.
+- Follow-up correction: do not add lock/power-session actions before choosing
+  the underlying tool and confirmation UX. A bare `loginctl lock-session` can
+  exit successfully while doing nothing if no locker is installed.
 - VM verification completed after cleaning stale VM-only launcher package
   files from an earlier experiment:
   - `launcher-items --actions` reads rows from the stowed JSON file;

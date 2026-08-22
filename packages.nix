@@ -65,7 +65,6 @@ with pkgs;
   ++ lib.optionals stdenv.isLinux [
     ghostty # installed via Homebrew on macOS instead
     firefox-devedition # baseline graphical browser for the NixOS VM
-    hyprlock # lock-screen helper and launcher system action
     kitty # installed via Homebrew on macOS instead
     neovim # built from source via setup/build-neovim.sh on macOS instead
     xdg-utils # xdg-open and default-app helpers for the desktop session

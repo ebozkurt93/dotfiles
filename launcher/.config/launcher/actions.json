@@ -35,28 +35,6 @@
     ]
   },
   {
-    "id": "system:lock",
-    "kind": "system",
-    "icon": "lock",
-    "title": "Lock",
-    "subtitle": "Lock the current session",
-    "keywords": ["lock", "screen", "session", "secure"],
-    "actions": [
-      {"id": "lock", "title": "Lock", "command": "~/bin/lock-screen"}
-    ]
-  },
-  {
-    "id": "system:suspend",
-    "kind": "system",
-    "icon": "system-suspend",
-    "title": "Suspend",
-    "subtitle": "Suspend the machine",
-    "keywords": ["sleep", "suspend", "power"],
-    "actions": [
-      {"id": "suspend", "title": "Suspend", "command": "systemctl suspend"}
-    ]
-  },
-  {
     "id": "system:restart-quickshell",
     "kind": "script",
     "icon": "view-refresh",
@@ -76,28 +54,6 @@
     "keywords": ["hyprland", "reload", "wm", "window manager", "config"],
     "actions": [
       {"id": "reload", "title": "Reload", "command": "hyprctl reload"}
-    ]
-  },
-  {
-    "id": "system:shutdown",
-    "kind": "system",
-    "icon": "system-shutdown",
-    "title": "Shutdown",
-    "subtitle": "Power off the machine",
-    "keywords": ["shutdown", "poweroff", "power off"],
-    "actions": [
-      {"id": "shutdown", "title": "Shutdown", "command": "systemctl poweroff"}
-    ]
-  },
-  {
-    "id": "system:reboot",
-    "kind": "system",
-    "icon": "system-reboot",
-    "title": "Reboot",
-    "subtitle": "Restart the machine",
-    "keywords": ["reboot", "restart", "power"],
-    "actions": [
-      {"id": "reboot", "title": "Reboot", "command": "systemctl reboot"}
     ]
   }
 ]

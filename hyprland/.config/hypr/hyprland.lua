@@ -57,7 +57,6 @@ hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("hyprctl dispatch fullscreen 0"))
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"))
 hl.bind(mainMod .. " + ALT + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --all"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(home .. "/bin/lock-screen"))
 
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
