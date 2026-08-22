@@ -862,3 +862,33 @@ beyond the current placeholder clock/workspace widget anyway).
   Walker is no longer installed, no longer stowed, and the old Walker-backed
   demo scripts/keybinds were removed. Vicinae was already absent from active
   config; remaining mentions are historical notes only.
+
+## Next session note: helper script organization
+
+- The growing set of desktop/launcher helper scripts should be organized before
+  adding many more actions.
+- Preferred shape:
+  - `helper_scripts/bin/` contains only stable public commands intended to be
+    called by users, Hyprland binds, launcher actions, or other top-level
+    integrations.
+  - `helper_scripts/libexec/` contains implementation scripts grouped by area.
+- Candidate public commands:
+  - `desktop lock`
+  - `desktop lock-preview`
+  - `desktop idle-status`
+  - `desktop restart-shell`
+  - `launcher open --all`
+  - `launcher items --actions`
+  - `launcher open-desktop <desktop-id>`
+- Candidate internal layout:
+  - `helper_scripts/libexec/desktop/lock`
+  - `helper_scripts/libexec/desktop/lock-preview`
+  - `helper_scripts/libexec/launcher/items`
+  - `helper_scripts/libexec/launcher/open-desktop`
+  - `helper_scripts/libexec/helpers/*`
+- Keep compatibility wrappers such as `lock-screen`, `lock-preview`,
+  `launcher-items`, and `launcher-open-desktop` briefly while migrating active
+  configs. Remove them only after Hyprland binds, launcher actions, and VM
+  verification use the new public commands.
+- This should be a focused organization pass. Avoid changing lock behavior or
+  launcher behavior while moving files.
