@@ -35,6 +35,28 @@
     ]
   },
   {
+    "id": "system:lock",
+    "kind": "system",
+    "icon": "system-lock-screen",
+    "title": "Lock",
+    "subtitle": "Lock the current session",
+    "keywords": ["lock", "screen", "session", "secure", "quickshell"],
+    "actions": [
+      {"id": "lock", "title": "Lock", "command": "~/bin/lock-screen"}
+    ]
+  },
+  {
+    "id": "dev:lock-preview",
+    "kind": "tool",
+    "icon": "system-lock-screen",
+    "title": "Lock Screen Preview",
+    "subtitle": "Show the lock UI without locking",
+    "keywords": ["lock", "screen", "preview", "theme", "style"],
+    "actions": [
+      {"id": "preview", "title": "Preview", "command": "~/bin/lock-preview"}
+    ]
+  },
+  {
     "id": "system:restart-quickshell",
     "kind": "script",
     "icon": "view-refresh",

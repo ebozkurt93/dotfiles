@@ -61,8 +61,8 @@ silent direct commands.
 | Windows | Hyprland IPC and menu/panel patterns | Implemented | `hyprctl clients -j`, Lua dispatcher helpers | Whether window actions need more operations: move workspace, pin, fullscreen |
 | Browser tabs | Not a root Omarchy menu item; our own requirement | Hook only | Firefox profile/session parser; browser extension/native messaging; Chrome remote debugging | Pick browser(s) and collection mechanism |
 | Calculator | Omarchy keybind launches `omacalc` | Basic terminal row | `qalc`, custom Quickshell inline result, separate floating terminal | Whether calculator should be inline query provider or standalone |
-| Lock | `system.lock`, `SUPER+CTRL+L`, `omarchy-system-lock` | Candidate only | `hyprlock`; possibly with `hypridle` for idle lock | Choose locker, theme, manual lock command, idle policy |
-| Idle lock / stay awake | `trigger.toggle.idle-lock`, `SUPER+CTRL+I` | Candidate only | `hypridle`, systemd inhibitor, custom toggle state | Decide idle behavior before adding toggles |
+| Lock | `system.lock`, `SUPER+CTRL+L`, `omarchy-system-lock` | Implemented | Quickshell `WlSessionLock`, `~/bin/lock-screen`; `hyprlock` fallback | Manual lock; lock screen exposes Sleep, Restart, Shutdown controls |
+| Idle lock / stay awake | `trigger.toggle.idle-lock`, `SUPER+CTRL+I` | Basic idle behavior implemented | `hypridle` | Locks after 5 minutes, turns display off after 10 minutes; stay-awake toggle later |
 | Logout | `system.logout` | Candidate only | Hyprland dispatch exit, login manager session end, Quickshell confirmation | Define expected logout behavior and confirmation |
 | Suspend / hibernate | `system.suspend`, `system.hibernate` | Candidate only | `systemctl suspend`, `systemctl hibernate`, inhibitors | Hardware support check and confirmation |
 | Reboot / shutdown | `system.reboot`, `system.shutdown` | Candidate only | `systemctl reboot`, `systemctl poweroff`, custom confirmation UI | Confirmation UI required before adding |
@@ -90,6 +90,7 @@ These are the only actions currently allowed in `actions.json`:
 | Toggle Power Profile | `setting` | `helpers/low-power-mode-toggle.sh`, `powerprofilesctl` | Already ported and verified earlier |
 | Toggle Bluetooth | `setting` | `bt-toggle`, `bluetoothctl` | Needs a better decision: simple toggle vs panel |
 | Calculator | `tool` | `qalc` in Ghostty | Temporary; inline calculator is a separate decision |
+| Lock | `system` | Quickshell lock IPC, `~/bin/lock-screen` | Manual lock from launcher and `SUPER+CTRL+L`; `hyprlock` remains fallback |
 | Restart Quickshell | `script` | `pkill quickshell; quickshell ...` | Useful while developing shell |
 | Reload Hyprland | `script` | `hyprctl reload` | Useful while developing WM config |
 
@@ -112,8 +113,9 @@ Before moving a row from candidate to implemented:
 1. Polish current launcher UX: popup geometry, search behavior, mode naming.
 2. Apps provider: done; Quickshell now uses `DesktopEntries`.
 3. Calculator: decide terminal-only vs inline query result.
-4. Lock: choose `hyprlock` or another locker, then wire manual lock.
-5. Power/session menu: add confirmation UI before logout/suspend/reboot/shutdown.
-6. Bluetooth: decide action vs panel and device-level operations.
-7. Browser tabs: choose Firefox/Chrome collection strategy.
-8. Network/audio/display panels.
+4. Lock: done; Quickshell owns the primary lock screen, with `hyprlock` as fallback.
+5. Idle lock: basic `hypridle` behavior added; stay-awake toggle later.
+6. Power/session menu: add confirmation UI before logout/suspend/reboot/shutdown.
+7. Bluetooth: decide action vs panel and device-level operations.
+8. Browser tabs: choose Firefox/Chrome collection strategy.
+9. Network/audio/display panels.

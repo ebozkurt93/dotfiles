@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+log_file="${TMPDIR:-/tmp}/lock-screen.log"
+
+if command -v quickshell >/dev/null 2>&1 && quickshell ipc call lock lock >>"$log_file" 2>&1; then
+  exit 0
+fi
+
+if pgrep -x hyprlock >/dev/null 2>&1; then
+  exit 0
+fi
+
+export PATH="$HOME/.nix-profile/bin:/etc/profiles/per-user/${USER:-$(id -un)}/bin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
+
+hyprlock_bin="$(command -v hyprlock || true)"
+
+if [ -z "$hyprlock_bin" ] && command -v nix >/dev/null 2>&1; then
+  hyprlock_store_path="$(nix build --print-out-paths nixpkgs#hyprlock --no-link 2>>"$log_file" | tail -n 1 || true)"
+  if [ -n "$hyprlock_store_path" ] && [ -x "$hyprlock_store_path/bin/hyprlock" ]; then
+    hyprlock_bin="$hyprlock_store_path/bin/hyprlock"
+  fi
+fi
+
+if [ -z "$hyprlock_bin" ]; then
+  notify-send "Lock unavailable" "hyprlock is not installed" 2>/dev/null || true
+  echo "missing command: hyprlock" >&2
+  echo "missing command: hyprlock" >>"$log_file"
+  exit 1
+fi
+
+echo "starting $hyprlock_bin $*" >"$log_file"
+exec "$hyprlock_bin" "$@" >>"$log_file" 2>&1

@@ -7,6 +7,7 @@ hl.monitor({
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("quickshell")
+    hl.exec_cmd("hypridle")
 end)
 
 hl.env("XCURSOR_SIZE", "24")
@@ -54,6 +55,7 @@ hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("hyprctl dispatch exit"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(home .. "/bin/launcher --all"))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("hyprctl dispatch fullscreen 0"))
+hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd(home .. "/bin/lock-screen"))
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"))
 hl.bind(mainMod .. " + ALT + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --all"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"))
