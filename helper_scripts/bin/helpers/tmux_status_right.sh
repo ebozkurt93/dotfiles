@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 media() {
-  if ~/Documents/bitbar_plugins/state-switcher.5m is-state-enabled spotify; then
+  local state_switcher="$HOME/Documents/bitbar_plugins/state-switcher.5m"
+  if [ "$(uname)" != "Darwin" ] || [ ! -x "$state_switcher" ]; then
+    return 0
+  fi
+
+  if "$state_switcher" is-state-enabled spotify; then
     json="$(~/bin/helpers/macos-now-playing.js)"
     app_name="$(jq -r '.appName // ""' <<<"$json")"
     icon=""

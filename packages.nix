@@ -64,14 +64,18 @@ with pkgs;
   ]
   ++ lib.optionals stdenv.isLinux [
     ghostty # installed via Homebrew on macOS instead
+    firefox-devedition # baseline graphical browser for the NixOS VM
+    walker # launcher/picker; likely transitional until a quickshell-native UI
     kitty # installed via Homebrew on macOS instead
     neovim # built from source via setup/build-neovim.sh on macOS instead
+    xdg-utils # xdg-open and default-app helpers for the desktop session
+    libnotify # notify-send; tmux-mover notification fallback on Linux
+    pavucontrol # PipeWire/PulseAudio mixer UI
     wl-clipboard # helper_scripts/bin/pbcopy + pbpaste on Wayland
     xclip # helper_scripts/bin/pbcopy + pbpaste
     gnumake # telescope-fzf-native.nvim build step
     gcc # telescope-fzf-native.nvim build step
     sqlite # telescope-all-recent.nvim (sqlite.lua)
-    wofi # app launcher, bound in hyprland.conf ($mainMod+D)
     libsecret # secret-tool, helper_scripts/bin/helpers/pass.sh on Linux
     wireguard-tools # wg, wg-quick; helper_scripts/bin/wg-manager
     power-profiles-daemon # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh

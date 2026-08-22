@@ -612,3 +612,153 @@ beyond the current placeholder clock/workspace widget anyway).
   want a cleaner setup, consider pushing the `nixos` branch to GitHub and
   cloning it on the VM properly (needs deploy key or similar, wasn't set up
   this session to keep the private submodules out of it easily).
+
+## Current session update (7)
+
+- User clarified the near-term goal: **ignore the x86 task for now**. The
+  priority is making the existing UTM aarch64 NixOS desktop VM usable as a
+  practical work machine on this Mac.
+- First VM-usability pass:
+  - Added Linux-only baseline desktop packages: `firefox-devedition`,
+    `xdg-utils`, `libnotify`, and `pavucontrol`.
+  - Made tmux status helpers quieter/portable on Linux:
+    `tmux_battery.sh` now uses `/sys/class/power_supply` and
+    `powerprofilesctl` on Linux while preserving the macOS `pmset` path;
+    `tmux_focus_mode.sh` returns quietly outside macOS; `tmux_state.sh` and
+    the media segment in `tmux_status_right.sh` now skip cleanly when the
+    BitBar/state-switcher UI backend is not installed.
+- Local verification completed:
+  - `bash -n` passes for the touched tmux helper scripts.
+  - `nix flake check --no-build` passes.
+  - `nix build .#homeConfigurations.erdembozkurt.activationPackage --no-link`
+    passes, so the Darwin Home Manager path still builds.
+  - VM home package list evaluates locally.
+- VM-side verification completed after user approved treating the current VM
+  as throwaway:
+  - The VM hit another UTM disk I/O hang during the first build attempt,
+    same class as the 2026-08-21 incident above (`nix-daemon`, a child
+    `bash`, and even `df -h /nix /` stuck in `D` state).
+  - Restarted it with `utmctl stop nixos-utm-aarch64 --kill` and
+    `utmctl start nixos-utm-aarch64`.
+  - Re-synced the touched files, reran `nix build
+    .#nixosConfigurations.utm-aarch64.config.system.build.toplevel
+    --no-link`, and it passed.
+  - Ran `sudo nixos-rebuild switch --flake .#utm-aarch64`; switch completed
+    successfully.
+  - Smoke checks passed: `firefox-devedition`, `xdg-open`, `notify-send`,
+    and `pavucontrol` resolve on the user's profile path; the touched tmux
+    helpers run cleanly on Linux.
+- Important direction from user: **do not treat the VM as stateful**. The VM
+  is disposable for now; work should move toward making the setup
+  reproducible from repo/config/bootstrap steps rather than relying on
+  guest-local hand edits or manually accumulated state.
+
+## Current session update (8)
+
+- Started launcher/picker platform spike based on user clarification: the
+  desired tool is not necessarily a Raycast clone, but a polished reusable
+  fuzzy/picker UI that can be fed arbitrary lists over time. It should handle
+  apps, scripts/actions, files/calculator/translation, and custom lists such
+  as windows or browser tabs, without forcing everything into one global
+  mixed list.
+- Agreed first migrated list should be immediately usable and not depend on
+  unresolved browser integration. Chosen spike list: **Hyprland window
+  switcher**.
+- Added Linux-only packages for comparison:
+  - `walker`
+  - `vicinae`
+- Added `helper_scripts/bin/window-switcher`:
+  - `--list`: formats live Hyprland clients from `hyprctl clients -j`.
+  - `--walker`: pipes the list through `walker --dmenu`, then focuses the
+    selected window with `hyprctl dispatch focuswindow address:<addr>`.
+  - `--vicinae`: pipes the same list through `vicinae dmenu`, then focuses
+    the selected window the same way.
+  - Defensive behavior: when run outside a Hyprland session (e.g. plain SSH
+    where `HYPRLAND_INSTANCE_SIGNATURE` is unset), it exits quietly instead
+    of surfacing `jq` parser errors.
+- Added Hyprland comparison keybinds:
+  - `SUPER+Tab`: `window-switcher --walker`
+  - `SUPER+Shift+Tab`: `window-switcher --vicinae`
+  - Also starts `vicinae server` on Hyprland startup because Vicinae's dmenu
+    CLI requires its server socket; Walker dmenu does not require a separate
+    server for this test.
+- Verification:
+  - Local `bash -n helper_scripts/bin/window-switcher` passes.
+  - Local `nix flake check --no-build` and Darwin activation build passed
+    after adding the Linux-only packages.
+  - VM `nix build
+    .#nixosConfigurations.utm-aarch64.config.system.build.toplevel
+    --no-link` passed; Walker and Vicinae were fetched from cache.
+  - VM `nixos-rebuild switch --flake .#utm-aarch64` completed successfully.
+  - VM command checks: `walker`, `vicinae`, and `~/bin/window-switcher`
+    resolve.
+  - Spawned a Ghostty window via Hyprland IPC and confirmed
+    `window-switcher --list` outputs it correctly.
+  - Walker UI smoke test: launching `window-switcher --walker` from Hyprland
+    starts `walker --dmenu`.
+  - Vicinae UI smoke test: `vicinae dmenu` initially failed until
+    `vicinae server` was started; after starting the server, dmenu opens.
+    Needs hands-on visual/interaction comparison in the VM.
+
+## Current session update (9)
+
+- User clarified the desired launcher architecture further:
+  - Prefer owning our own item/action data model and scripts/CLIs.
+  - Prefer feeding structured data into a reusable picker UI rather than
+    immediately committing to a tool-specific extension system.
+  - Extensions are not ruled out, but should not be the first/default step
+    while the platform choice is still unsettled.
+  - Long-term theming should follow the OS/current dotfiles theme flow, not
+    become an isolated launcher-only theme.
+- Added `helper_scripts/bin/launcher-spike`, a richer adapter spike:
+  - Own neutral JSON model with `id`, `icon`, `title`, `subtitle`,
+    `keywords`, and `actions`.
+  - `--picker walker` and `--picker vicinae` render the same data through
+    the selected CLI picker.
+  - Uses a second picker view for actions after item selection, so we can
+    test multi-action UX without writing Walker/Vicinae extensions yet.
+  - Demo items include power profile, Bluetooth, dotfiles project, state
+    switcher, Hyprland Lua config, and translation placeholder, each with
+    multiple actions.
+- Added Hyprland comparison keybinds for the richer action-flow spike:
+  - `SUPER+Alt+Tab`: `launcher-spike --picker walker --demo`
+  - `SUPER+Alt+Shift+Tab`: `launcher-spike --picker vicinae --demo`
+- Current finding from docs + installed CLI:
+  - Walker has documented quick activation keys (`F1`-style by default and
+    configurable) and dmenu can use richer columns via config.
+  - Vicinae dmenu supports title/placeholder/section/window sizing, but does
+    not expose Raycast-style item action panels or numeric row activation in
+    the simple stdin/dmenu path. Vicinae script commands are one-shot entry
+    points; Vicinae docs explicitly point to full extensions for complex
+    rendered lists/grids/forms.
+  - Therefore, with our preferred CLI-fed model, rich actions currently mean
+    either a chained picker flow (what `launcher-spike` tests) or deeper
+    tool-specific integration later.
+- Visual-theme spike note:
+  - Hand-written Walker and Vicinae theme/config attempts were tried and
+    removed because they broke or looked wrong. Both tools should be tested
+    with defaults for now.
+  - Do not revive those guessed theme files. If launcher theming is revisited,
+    start from real upstream examples or generated config. Long-term,
+    launcher themes should be generated from the same theme source as
+    terminal/nvim/quickshell rather than maintained by hand.
+
+## Current session update (10)
+
+- Vicinae was rejected for now because no documented/source-visible
+  Raycast-style numeric row activation (`Cmd/Super+1..9`) was found.
+- Walker is the chosen transitional picker:
+  - Removed Vicinae from Linux packages and Hyprland startup/binds.
+  - Changed `SUPER+D` from `wofi --show drun` to `walker`.
+  - Kept `SUPER+Tab` as the live Walker-backed Hyprland window switcher.
+  - Kept `SUPER+CTRL+Tab` as the Walker demo window list.
+  - Kept `SUPER+ALT+Tab` as the Walker demo item/action flow.
+  - Added a minimal stowed Walker config under `walker/.config/walker`.
+- Numeric activation note:
+  - Walker supports configurable `quick_activate` keys and valid modifiers
+    include `ctrl`, `alt`, `shift`, and `super`.
+  - Existing Hyprland `SUPER+1..5` workspace bindings were intentionally left
+    unchanged for now. Walker quick activation remains on `F1..F9` until the
+    global keybinding scheme is settled.
+- Direction: keep our own item/action data shape in scripts for now so the UI
+  can later move to quickshell without rewriting the launcher model.

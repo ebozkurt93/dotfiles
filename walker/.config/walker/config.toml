@@ -1,0 +1,6 @@
+# Keep this minimal while Walker is a transitional picker.
+# SUPER+number currently belongs to Hyprland workspaces, so quick activation
+# stays on function keys until the global keybinding scheme is settled.
+
+[keybinds]
+quick_activate = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"]

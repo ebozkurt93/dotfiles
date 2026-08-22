@@ -46,13 +46,17 @@ hl.config({
 })
 
 local mainMod = "SUPER"
+local home = os.getenv("HOME")
 
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd("ghostty"))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("hyprctl dispatch exit"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("wofi --show drun"))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("walker"))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("hyprctl dispatch fullscreen 0"))
+hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/window-switcher --walker"))
+hl.bind(mainMod .. " + CTRL + Tab", hl.dsp.exec_cmd(home .. "/bin/window-switcher --walker --demo"))
+hl.bind(mainMod .. " + ALT + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher-spike --picker walker --demo"))
 
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
