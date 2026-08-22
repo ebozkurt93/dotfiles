@@ -15,6 +15,7 @@ ShellRoot {
     property int launcherSelected: 0
     property var launcherItems: []
     property var launcherNativeItems: []
+    property var launcherHiddenApps: ({})
     property string launcherOutput: ""
     property bool launcherChoosingAction: false
     property int launcherActionItemIndex: -1
@@ -60,6 +61,19 @@ ShellRoot {
         return "'" + String(value || "").replace(/'/g, "'\\''") + "'"
     }
 
+    function loadHiddenApps(text) {
+        var next = ({})
+        var lines = String(text || "").split(/\r?\n/)
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].replace(/#.*/, "").trim()
+            if (!line) continue
+            if (line.slice(-8) === ".desktop") line = line.slice(0, -8)
+            next[line] = true
+        }
+        launcherHiddenApps = next
+        if (launcherOpen && (launcherMode === "apps" || launcherMode === "all")) reloadLauncher()
+    }
+
     function desktopAppItems() {
         var values = DesktopEntries.applications.values || []
         var items = []
@@ -69,6 +83,7 @@ ShellRoot {
             var id = String(entry.id || "")
             var name = String(entry.name || id)
             if (!id || !name) continue
+            if (launcherHiddenApps[id] === true) continue
             if (entry.terminal === true) continue
             var keywords = []
             try {
@@ -255,6 +270,15 @@ ShellRoot {
 
     Process {
         id: commandRunner
+    }
+
+    FileView {
+        path: home + "/.config/launcher/hidden-apps"
+        watchChanges: true
+        printErrors: false
+        onLoaded: shell.loadHiddenApps(text())
+        onFileChanged: reload()
+        onLoadFailed: shell.loadHiddenApps("")
     }
 
     Connections {
