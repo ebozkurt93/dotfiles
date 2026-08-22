@@ -821,3 +821,41 @@ beyond the current placeholder clock/workspace widget anyway).
   missing": the config and startup script no longer hardcode `/bin/zsh`;
   they resolve `zsh` through PATH, including the NixOS profile/system paths.
   Verified `SUPER+Return` opens Ghostty in the VM.
+
+## Current session update (12)
+
+- Moved static launcher rows out of `launcher-items` into
+  `launcher/.config/launcher/actions.json`, and added `launcher` to the
+  Linux stow package list. `launcher-items` now reads
+  `$XDG_CONFIG_HOME/launcher/actions.json` with a repo fallback for local
+  testing. The committed rows are limited to real system/settings/script/tool
+  entries: power profile, Bluetooth, calculator, lock, suspend,
+  Quickshell/Hyprland reloads, shutdown, and reboot.
+- Extended the launcher provider model:
+  - `--apps` scans `.desktop` entries and emits app rows that open through
+    `launcher-open-desktop`;
+  - `--tabs` is a first-class browser-tabs provider hook, backed by either
+    `LAUNCHER_TABS_COMMAND` or
+    `${XDG_CACHE_HOME:-$HOME/.cache}/launcher/browser-tabs.json`;
+  - `--all` now combines apps, static actions, windows, state-switcher rows,
+    and browser tabs.
+- Added `lock-screen` and Linux-aware `bt-toggle` helpers. `lock-screen`
+  prefers `hyprlock` and falls back to `loginctl lock-session`; `hyprlock`
+  and `libqalculate` were added to the Linux package set.
+- Extended the Quickshell launcher UI with action selection:
+  - selecting a row with one action runs it directly;
+  - selecting a row with multiple actions opens an action list;
+  - `Esc` backs out of the action list before closing the launcher.
+- Replaced substring filtering with in-QML fuzzy scoring/ranking, so the
+  combined list can be searched as one palette without exact contiguous
+  matches.
+- VM verification completed after cleaning stale VM-only launcher package
+  files from an earlier experiment:
+  - `launcher-items --actions` reads rows from the stowed JSON file;
+  - Quickshell restarts cleanly with no QML errors;
+  - `launcher --all` opens the `dotfiles-launcher` layer and `launcher
+    --close` hides it.
+- Removed the obsolete Walker/Vicinae experiment surface from active config:
+  Walker is no longer installed, no longer stowed, and the old Walker-backed
+  demo scripts/keybinds were removed. Vicinae was already absent from active
+  config; remaining mentions are historical notes only.

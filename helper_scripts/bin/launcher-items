@@ -3,13 +3,17 @@
 set -euo pipefail
 
 mode="all"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+default_actions_file="${XDG_CONFIG_HOME:-$HOME/.config}/launcher/actions.json"
+fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--actions|--windows|--states]
+Usage: launcher-items [--all|--apps|--actions|--windows|--states|--tabs]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
-Quickshell, Walker/debug scripts, and future launcher frontends.
+Quickshell and future launcher frontends.
 EOF
 }
 
@@ -27,79 +31,112 @@ have_cmd() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --all) mode="all"; shift ;;
+    --apps) mode="apps"; shift ;;
     --actions) mode="actions"; shift ;;
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
+    --tabs) mode="tabs"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 1 ;;
   esac
 done
 
 actions_json() {
-  cat <<'EOF'
-[
-  {
-    "id": "action:power-profile",
-    "kind": "action",
-    "icon": "power",
-    "title": "Toggle Power Profile",
-    "subtitle": "Switch balanced <-> power-saver",
-    "keywords": ["power", "battery", "profile", "low power", "energy"],
-    "actions": [
-      {"id": "run", "title": "Toggle", "command": "~/bin/helpers/low-power-mode-toggle.sh"},
-      {"id": "copy", "title": "Copy Command", "command": "printf '%s' '~/bin/helpers/low-power-mode-toggle.sh' | wl-copy"}
-    ]
-  },
-  {
-    "id": "action:bluetooth-toggle",
-    "kind": "action",
-    "icon": "bluetooth",
-    "title": "Toggle Bluetooth",
-    "subtitle": "Use bluetoothctl wrapper",
-    "keywords": ["bluetooth", "bt", "headphones", "keyboard", "toggle"],
-    "actions": [
-      {"id": "run", "title": "Toggle", "command": "~/bin/bt-toggle"},
-      {"id": "status", "title": "Show Bluetooth Status", "command": "ghostty -e bluetoothctl"}
-    ]
-  },
-  {
-    "id": "project:dotfiles",
-    "kind": "project",
-    "icon": "folder",
-    "title": "dotfiles-nixos",
-    "subtitle": "~/personal-repositories/dotfiles-nixos",
-    "keywords": ["dotfiles", "nixos", "hyprland", "quickshell", "migration"],
-    "actions": [
-      {"id": "terminal", "title": "Open Terminal Here", "command": "ghostty --working-directory=$HOME/personal-repositories/dotfiles-nixos"},
-      {"id": "files", "title": "Open Files", "command": "xdg-open $HOME/personal-repositories/dotfiles-nixos"},
-      {"id": "copy-path", "title": "Copy Path", "command": "printf '%s' '$HOME/personal-repositories/dotfiles-nixos' | wl-copy"}
-    ]
-  },
-  {
-    "id": "doc:hyprland-lua",
-    "kind": "document",
-    "icon": "text-x-script",
-    "title": "Hyprland Lua Config",
-    "subtitle": "~/dotfiles/hyprland/.config/hypr/hyprland.lua",
-    "keywords": ["hyprland", "lua", "config", "window manager", "keybinds"],
-    "actions": [
-      {"id": "edit", "title": "Edit", "command": "ghostty --working-directory=$HOME/dotfiles -e nvim hyprland/.config/hypr/hyprland.lua"},
-      {"id": "copy-path", "title": "Copy Path", "command": "printf '%s' '$HOME/dotfiles/hyprland/.config/hypr/hyprland.lua' | wl-copy"}
-    ]
-  },
-  {
-    "id": "web:translate",
-    "kind": "web",
-    "icon": "accessories-dictionary",
-    "title": "Translate Text",
-    "subtitle": "Open Google Translate",
-    "keywords": ["translate", "translation", "turkish", "english", "language"],
-    "actions": [
-      {"id": "open", "title": "Open Google Translate", "command": "xdg-open https://translate.google.com"}
-    ]
-  }
-]
-EOF
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local actions_file="${LAUNCHER_ACTIONS_FILE:-$default_actions_file}"
+  if [ ! -f "$actions_file" ] && [ -f "$fallback_actions_file" ]; then
+    actions_file="$fallback_actions_file"
+  fi
+  if [ ! -f "$actions_file" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    if type == "array" then . else [] end
+    | map(select(.id and .title and (.actions | type == "array")))
+  ' "$actions_file"
+}
+
+desktop_entry_value() {
+  local file="$1"
+  local key="$2"
+  awk -F= -v key="$key" '
+    /^\[/ { in_entry = ($0 == "[Desktop Entry]") }
+    in_entry && $1 == key { sub(/^[^=]*=/, ""); print; exit }
+  ' "$file"
+}
+
+apps_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local desktop_dirs=(
+    "/run/current-system/sw/share/applications"
+    "/usr/share/applications"
+    "/var/lib/flatpak/exports/share/applications"
+    "$HOME/.nix-profile/share/applications"
+    "$HOME/.local/share/applications"
+    "$HOME/.local/share/flatpak/exports/share/applications"
+  )
+
+  local tmp
+  tmp="$(mktemp)"
+  find "${desktop_dirs[@]}" -maxdepth 1 -name "*.desktop" 2>/dev/null | sort -u >"$tmp" || true
+
+  local first=1
+  printf '['
+  while IFS= read -r desktop_file; do
+    [ -f "$desktop_file" ] || continue
+
+    local type no_display hidden name exec_line icon generic_name keywords terminal desktop_id
+    type="$(desktop_entry_value "$desktop_file" Type)"
+    no_display="$(desktop_entry_value "$desktop_file" NoDisplay)"
+    hidden="$(desktop_entry_value "$desktop_file" Hidden)"
+    name="$(desktop_entry_value "$desktop_file" Name)"
+    exec_line="$(desktop_entry_value "$desktop_file" Exec)"
+    icon="$(desktop_entry_value "$desktop_file" Icon)"
+    generic_name="$(desktop_entry_value "$desktop_file" GenericName)"
+    keywords="$(desktop_entry_value "$desktop_file" Keywords)"
+    terminal="$(desktop_entry_value "$desktop_file" Terminal)"
+    desktop_id="$(basename "$desktop_file" .desktop)"
+
+    [ "${type:-Application}" = "Application" ] || continue
+    [ "$no_display" != "true" ] || continue
+    [ "$hidden" != "true" ] || continue
+    [ -n "$name" ] || continue
+    [ -n "$exec_line" ] || continue
+
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    jq -n \
+      --arg id "app:$desktop_id" \
+      --arg title "$name" \
+      --arg subtitle "${generic_name:-$desktop_id}" \
+      --arg icon "${icon:-application-x-executable}" \
+      --arg keywords "$keywords $desktop_id $generic_name" \
+      --arg command "$HOME/bin/launcher-open-desktop $(printf '%q' "$desktop_file")" \
+      --arg terminal "$terminal" \
+      '{
+        id: $id,
+        kind: "app",
+        icon: $icon,
+        title: $title,
+        subtitle: $subtitle,
+        keywords: (($keywords | split(";") + ($keywords | split(" "))) | map(select(length > 0))),
+        actions: [
+          {id: "open", title: "Open", command: $command}
+        ] + (if $terminal == "true" then [{id: "terminal", title: "Open Terminal App", command: $command}] else [] end)
+      }'
+  done <"$tmp"
+  printf ']'
+  rm -f "$tmp"
 }
 
 windows_json() {
@@ -180,12 +217,51 @@ states_json() {
   '
 }
 
+tabs_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  if [ -n "${LAUNCHER_TABS_COMMAND:-}" ]; then
+    bash -lc "$LAUNCHER_TABS_COMMAND" 2>/dev/null | jq '
+      if type == "array" then . else [] end
+      | map(select(.id and .title and (.actions | type == "array")))
+    ' 2>/dev/null || echo '[]'
+    return
+  fi
+
+  local tabs_file="${LAUNCHER_TABS_FILE:-${XDG_CACHE_HOME:-$HOME/.cache}/launcher/browser-tabs.json}"
+  if [ ! -f "$tabs_file" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    if type == "array" then . else [] end
+    | map(select(.title and .url))
+    | map({
+        id: (.id // ("tab:" + .url)),
+        kind: "tab",
+        icon: (.icon // "browser"),
+        title: .title,
+        subtitle: .url,
+        keywords: ([.browser, .profile, .url, .title] | map(select(. != null))),
+        actions: [
+          {id: "open", title: "Open", command: ("xdg-open " + (.url | @sh))}
+        ]
+      })
+  ' "$tabs_file"
+}
+
 case "$mode" in
+  apps) apps_json ;;
   actions) actions_json ;;
   windows) windows_json ;;
   states) states_json ;;
+  tabs) tabs_json ;;
   all)
     require_cmd jq
-    jq -s 'add' <(actions_json) <(windows_json) <(states_json)
+    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json)
     ;;
 esac

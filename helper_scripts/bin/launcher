@@ -6,7 +6,7 @@ mode="all"
 
 usage() {
   cat <<'EOF'
-Usage: launcher [--all|--actions|--windows|--states] [--open|--toggle|--close|--ping]
+Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs] [--open|--toggle|--close|--ping]
 
 Control the Quickshell launcher surface.
 EOF
@@ -16,9 +16,11 @@ verb="toggle"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --all) mode="all"; shift ;;
+    --apps) mode="apps"; shift ;;
     --actions) mode="actions"; shift ;;
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
+    --tabs) mode="tabs"; shift ;;
     --open) verb="open"; shift ;;
     --toggle) verb="toggle"; shift ;;
     --close) verb="close"; shift ;;

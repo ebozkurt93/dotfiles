@@ -15,11 +15,15 @@ ShellRoot {
     property int launcherSelected: 0
     property var launcherItems: []
     property string launcherOutput: ""
+    property bool launcherChoosingAction: false
+    property int launcherActionItemIndex: -1
 
     function openLauncher(mode) {
         launcherMode = mode || "all"
         launcherQuery = ""
         launcherSelected = 0
+        launcherChoosingAction = false
+        launcherActionItemIndex = -1
         launcherOpen = true
         reloadLauncher()
     }
@@ -45,21 +49,74 @@ ShellRoot {
         return [item.kind || "", item.title || "", item.subtitle || "", keywords].join(" ").toLowerCase()
     }
 
+    function fuzzyScore(text, query) {
+        if (!query) return 1
+        var t = text.toLowerCase()
+        var q = query.toLowerCase()
+        var contiguous = t.indexOf(q)
+        if (contiguous >= 0) return 10000 - contiguous
+
+        var last = -1
+        var score = 0
+        for (var i = 0; i < q.length; i++) {
+            var next = t.indexOf(q[i], last + 1)
+            if (next < 0) return -1
+            score += next === last + 1 ? 18 : 5
+            if (next === 0 || t[next - 1] === " " || t[next - 1] === "-" || t[next - 1] === "_") score += 8
+            last = next
+        }
+        return score - Math.min(last, 200)
+    }
+
     function rebuildLauncherRows() {
         launcherRows.clear()
+        if (launcherChoosingAction) {
+            var actionItem = launcherItems[launcherActionItemIndex]
+            var actions = actionItem && Array.isArray(actionItem.actions) ? actionItem.actions : []
+            for (var a = 0; a < actions.length; a++) {
+                var action = actions[a]
+                if (!action || !action.title) continue
+                launcherRows.append({
+                    itemIndex: launcherActionItemIndex,
+                    actionIndex: a,
+                    title: action.title || "",
+                    subtitle: action.command || "",
+                    kind: "action",
+                    icon: ""
+                })
+            }
+            if (launcherSelected >= launcherRows.count) launcherSelected = Math.max(0, launcherRows.count - 1)
+            return
+        }
+
         var query = launcherQuery.trim().toLowerCase()
+        var rows = []
         for (var i = 0; i < launcherItems.length; i++) {
             var item = launcherItems[i]
             if (!item || !item.title) continue
-            if (query && searchableText(item).indexOf(query) < 0) continue
-            launcherRows.append({
+            var score = fuzzyScore(searchableText(item), query)
+            if (query && score < 0) continue
+            rows.push({
                 itemIndex: i,
+                actionIndex: -1,
                 title: item.title || "",
                 subtitle: item.subtitle || "",
                 kind: item.kind || "",
-                icon: item.icon || ""
+                icon: item.icon || "",
+                score: score
             })
         }
+        rows.sort(function(a, b) {
+            if (b.score !== a.score) return b.score - a.score
+            if (a.kind !== b.kind) {
+                var order = { "app": 0, "action": 1, "tool": 1, "setting": 1, "system": 2, "script": 3, "window": 4, "state": 5, "tab": 6 }
+                var aOrder = order[a.kind] === undefined ? 50 : order[a.kind]
+                var bOrder = order[b.kind] === undefined ? 50 : order[b.kind]
+                return aOrder - bOrder
+            }
+            return a.title.localeCompare(b.title)
+        })
+        for (var r = 0; r < rows.length; r++) launcherRows.append(rows[r])
         if (launcherSelected >= launcherRows.count) launcherSelected = Math.max(0, launcherRows.count - 1)
     }
 
@@ -81,7 +138,40 @@ ShellRoot {
         var row = launcherRows.get(launcherSelected)
         var item = launcherItems[row.itemIndex]
         if (!item || !Array.isArray(item.actions) || item.actions.length === 0) return
+
+        if (row.actionIndex >= 0) {
+            runLauncherCommand(item.actions[row.actionIndex].command || "")
+            return
+        }
+
+        if (item.actions.length > 1) {
+            launcherChoosingAction = true
+            launcherActionItemIndex = row.itemIndex
+            launcherSelected = 0
+            launcherQuery = ""
+            rebuildLauncherRows()
+            return
+        }
+
         runLauncherCommand(item.actions[0].command || "")
+    }
+
+    function backFromActions() {
+        if (!launcherChoosingAction) return false
+        launcherChoosingAction = false
+        launcherActionItemIndex = -1
+        launcherSelected = 0
+        rebuildLauncherRows()
+        return true
+    }
+
+    function launcherStatusText() {
+        if (launcherLoading) return "Loading " + launcherMode + "..."
+        if (launcherChoosingAction) {
+            var item = launcherItems[launcherActionItemIndex]
+            return "Actions for " + ((item && item.title) ? item.title : "item") + " (" + launcherRows.count + ")"
+        }
+        return launcherMode + " (" + launcherRows.count + ")"
     }
 
     ListModel {
@@ -265,7 +355,7 @@ ShellRoot {
                         }
                         Keys.onPressed: function(event) {
                             if (event.key === Qt.Key_Escape) {
-                                shell.launcherOpen = false
+                                if (!shell.backFromActions()) shell.launcherOpen = false
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Down) {
                                 shell.selectLauncher(1)
@@ -284,7 +374,7 @@ ShellRoot {
                 Text {
                     width: parent.width
                     color: "#a6adc8"
-                    text: shell.launcherLoading ? "Loading " + shell.launcherMode + "..." : shell.launcherMode + " (" + launcherRows.count + ")"
+                    text: shell.launcherStatusText()
                     font.pixelSize: 12
                     elide: Text.ElideRight
                 }

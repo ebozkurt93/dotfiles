@@ -40,7 +40,7 @@ case "$(uname)" in
       "${common_directories[@]}"
       hyprland
       quickshell
-      walker
+      launcher
     )
     ;;
   *)

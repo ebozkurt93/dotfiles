@@ -1,0 +1,103 @@
+[
+  {
+    "id": "action:power-profile",
+    "kind": "setting",
+    "icon": "power",
+    "title": "Toggle Power Profile",
+    "subtitle": "Switch balanced <-> power-saver",
+    "keywords": ["power", "battery", "profile", "low power", "energy"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/helpers/low-power-mode-toggle.sh"},
+      {"id": "copy", "title": "Copy Command", "command": "printf '%s' '~/bin/helpers/low-power-mode-toggle.sh' | wl-copy"}
+    ]
+  },
+  {
+    "id": "action:bluetooth-toggle",
+    "kind": "setting",
+    "icon": "bluetooth",
+    "title": "Toggle Bluetooth",
+    "subtitle": "Use bluetoothctl wrapper",
+    "keywords": ["bluetooth", "bt", "headphones", "keyboard", "toggle"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/bt-toggle"},
+      {"id": "status", "title": "Show Bluetooth Status", "command": "ghostty -e bluetoothctl"}
+    ]
+  },
+  {
+    "id": "action:calculator",
+    "kind": "tool",
+    "icon": "accessories-calculator",
+    "title": "Calculator",
+    "subtitle": "Open qalc",
+    "keywords": ["calculator", "calc", "qalc", "math", "convert"],
+    "actions": [
+      {"id": "open", "title": "Open Calculator", "command": "ghostty -e qalc"}
+    ]
+  },
+  {
+    "id": "system:lock",
+    "kind": "system",
+    "icon": "lock",
+    "title": "Lock",
+    "subtitle": "Lock the current session",
+    "keywords": ["lock", "screen", "session", "secure"],
+    "actions": [
+      {"id": "lock", "title": "Lock", "command": "~/bin/lock-screen"}
+    ]
+  },
+  {
+    "id": "system:suspend",
+    "kind": "system",
+    "icon": "system-suspend",
+    "title": "Suspend",
+    "subtitle": "Suspend the machine",
+    "keywords": ["sleep", "suspend", "power"],
+    "actions": [
+      {"id": "suspend", "title": "Suspend", "command": "systemctl suspend"}
+    ]
+  },
+  {
+    "id": "system:restart-quickshell",
+    "kind": "script",
+    "icon": "view-refresh",
+    "title": "Restart Quickshell",
+    "subtitle": "Reload the shell UI",
+    "keywords": ["quickshell", "shell", "restart", "reload", "bar", "launcher"],
+    "actions": [
+      {"id": "restart", "title": "Restart", "command": "pkill quickshell; quickshell >/tmp/quickshell.log 2>&1 &"}
+    ]
+  },
+  {
+    "id": "system:reload-hyprland",
+    "kind": "script",
+    "icon": "view-refresh",
+    "title": "Reload Hyprland",
+    "subtitle": "Apply the current Hyprland config",
+    "keywords": ["hyprland", "reload", "wm", "window manager", "config"],
+    "actions": [
+      {"id": "reload", "title": "Reload", "command": "hyprctl reload"}
+    ]
+  },
+  {
+    "id": "system:shutdown",
+    "kind": "system",
+    "icon": "system-shutdown",
+    "title": "Shutdown",
+    "subtitle": "Power off the machine",
+    "keywords": ["shutdown", "poweroff", "power off"],
+    "actions": [
+      {"id": "shutdown", "title": "Shutdown", "command": "systemctl poweroff"}
+    ]
+  },
+  {
+    "id": "system:reboot",
+    "kind": "system",
+    "icon": "system-reboot",
+    "title": "Reboot",
+    "subtitle": "Restart the machine",
+    "keywords": ["reboot", "restart", "power"],
+    "actions": [
+      {"id": "reboot", "title": "Reboot", "command": "systemctl reboot"}
+    ]
+  }
+]

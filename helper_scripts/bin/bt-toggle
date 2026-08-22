@@ -1,11 +1,34 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-connected=$(blueutil --connected | awk '{print $2}' | tr -d ',')
+set -euo pipefail
 
-blueutil --power toggle
-sleep 2
-blueutil --power toggle
+case "$(uname)" in
+  Darwin)
+    connected=$(blueutil --connected | awk '{print $2}' | tr -d ',')
 
-for item in $connected; do
-	blueutil --connect $item
-done
+    blueutil --power toggle
+    sleep 2
+    blueutil --power toggle
+
+    for item in $connected; do
+      blueutil --connect "$item"
+    done
+    ;;
+  Linux)
+    adapter_status="$(timeout 2 bluetoothctl show 2>/dev/null || true)"
+    if [ -z "$adapter_status" ]; then
+      echo "no Bluetooth adapter available" >&2
+      exit 1
+    fi
+
+    if grep -q "Powered: yes" <<<"$adapter_status"; then
+      bluetoothctl power off
+    else
+      bluetoothctl power on
+    fi
+    ;;
+  *)
+    echo "unsupported platform: $(uname)" >&2
+    exit 1
+    ;;
+esac
