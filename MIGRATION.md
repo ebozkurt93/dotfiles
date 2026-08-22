@@ -762,3 +762,62 @@ beyond the current placeholder clock/workspace widget anyway).
     global keybinding scheme is settled.
 - Direction: keep our own item/action data shape in scripts for now so the UI
   can later move to quickshell without rewriting the launcher model.
+
+## Current session update (11)
+
+- User clarified the launcher direction again: **use Quickshell for this UI**,
+  and build our own small abstractions on top of it rather than adopting
+  Omarchy's plugin system wholesale.
+- Local Omarchy repo is available at
+  `/Users/erdembozkurt/personal-repositories/junk/omarchy/` and should be
+  treated as a reference only. Useful patterns found:
+  - one long-running Quickshell shell with IPC-opened panels/menus;
+  - Hyprland Lua config split by concern;
+  - declarative menu rows plus runtime providers;
+  - Hyprland Lua dispatcher first, classic dispatcher fallback.
+- Added `helper_scripts/bin/launcher-items`, the first local launcher
+  abstraction. It emits UI-neutral item/action JSON for:
+  - static actions/projects/docs;
+  - live Hyprland windows via `hyprctl clients -j`;
+  - existing `state-switcher.5m states-json` rows.
+  Missing optional providers degrade to `[]` instead of failing the whole
+  palette.
+- Added `helper_scripts/bin/launcher`, a small durable wrapper around the
+  Quickshell launcher IPC (`--all`, `--windows`, `--actions`, `--states`).
+  The older `launcher-spike` demo script is intentionally not part of this
+  path.
+- Reworked `quickshell/.config/quickshell/shell.qml` from a bar-only
+  placeholder into a small shell host:
+  - keeps the top workspace/clock bar;
+  - adds a Quickshell overlay command palette;
+  - exposes `IpcHandler { target: "launcher" }`, so
+    `quickshell ipc call launcher toggle all` opens the full palette and
+    `... toggle windows` opens the window provider.
+- Updated Hyprland binds:
+  - `SUPER+D`: Quickshell full launcher;
+  - `SUPER+Tab`: Quickshell window provider;
+  - `SUPER+ALT+Tab`: Quickshell full launcher.
+  Walker remains installed/configured for fallback/debug only.
+- Updated window focus actions to use the Lua dispatcher first, with classic
+  Hyprland dispatch fallback, matching Omarchy's compatibility pattern.
+- Local validation completed on macOS:
+  - `bash -n` passes for `launcher`, `launcher-items`, and `window-switcher`;
+  - `launcher-items --all | jq ...` returns valid rows, including the current
+    local state-switcher states.
+- VM verification completed after syncing the touched files into
+  `~/dotfiles`:
+  - restarted Quickshell inside the running Hyprland session;
+  - `quickshell ipc call launcher ping` returns `ok`;
+  - `quickshell ipc call launcher toggle all` opens a real
+    `dotfiles-launcher` overlay layer in `hyprctl layers`, and `close` hides
+    it;
+  - Quickshell logs show no QML errors after switching the bar from
+    deprecated `height` to `implicitHeight` (only UTM/Mesa EGL warnings);
+  - spawned a temporary Ghostty client, confirmed `launcher-items --windows`
+    sees live Hyprland clients, and ran the generated focus action
+    successfully.
+  The VM client list was cleaned back to empty afterward.
+- Fixed Ghostty's NixOS launch path after manual testing showed "zsh is
+  missing": the config and startup script no longer hardcode `/bin/zsh`;
+  they resolve `zsh` through PATH, including the NixOS profile/system paths.
+  Verified `SUPER+Return` opens Ghostty in the VM.

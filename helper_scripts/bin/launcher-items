@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mode="all"
+
+usage() {
+  cat <<'EOF'
+Usage: launcher-items [--all|--actions|--windows|--states]
+
+Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
+Quickshell, Walker/debug scripts, and future launcher frontends.
+EOF
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "missing command: $1" >&2
+    exit 1
+  }
+}
+
+have_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --all) mode="all"; shift ;;
+    --actions) mode="actions"; shift ;;
+    --windows) mode="windows"; shift ;;
+    --states) mode="states"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 1 ;;
+  esac
+done
+
+actions_json() {
+  cat <<'EOF'
+[
+  {
+    "id": "action:power-profile",
+    "kind": "action",
+    "icon": "power",
+    "title": "Toggle Power Profile",
+    "subtitle": "Switch balanced <-> power-saver",
+    "keywords": ["power", "battery", "profile", "low power", "energy"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/helpers/low-power-mode-toggle.sh"},
+      {"id": "copy", "title": "Copy Command", "command": "printf '%s' '~/bin/helpers/low-power-mode-toggle.sh' | wl-copy"}
+    ]
+  },
+  {
+    "id": "action:bluetooth-toggle",
+    "kind": "action",
+    "icon": "bluetooth",
+    "title": "Toggle Bluetooth",
+    "subtitle": "Use bluetoothctl wrapper",
+    "keywords": ["bluetooth", "bt", "headphones", "keyboard", "toggle"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/bt-toggle"},
+      {"id": "status", "title": "Show Bluetooth Status", "command": "ghostty -e bluetoothctl"}
+    ]
+  },
+  {
+    "id": "project:dotfiles",
+    "kind": "project",
+    "icon": "folder",
+    "title": "dotfiles-nixos",
+    "subtitle": "~/personal-repositories/dotfiles-nixos",
+    "keywords": ["dotfiles", "nixos", "hyprland", "quickshell", "migration"],
+    "actions": [
+      {"id": "terminal", "title": "Open Terminal Here", "command": "ghostty --working-directory=$HOME/personal-repositories/dotfiles-nixos"},
+      {"id": "files", "title": "Open Files", "command": "xdg-open $HOME/personal-repositories/dotfiles-nixos"},
+      {"id": "copy-path", "title": "Copy Path", "command": "printf '%s' '$HOME/personal-repositories/dotfiles-nixos' | wl-copy"}
+    ]
+  },
+  {
+    "id": "doc:hyprland-lua",
+    "kind": "document",
+    "icon": "text-x-script",
+    "title": "Hyprland Lua Config",
+    "subtitle": "~/dotfiles/hyprland/.config/hypr/hyprland.lua",
+    "keywords": ["hyprland", "lua", "config", "window manager", "keybinds"],
+    "actions": [
+      {"id": "edit", "title": "Edit", "command": "ghostty --working-directory=$HOME/dotfiles -e nvim hyprland/.config/hypr/hyprland.lua"},
+      {"id": "copy-path", "title": "Copy Path", "command": "printf '%s' '$HOME/dotfiles/hyprland/.config/hypr/hyprland.lua' | wl-copy"}
+    ]
+  },
+  {
+    "id": "web:translate",
+    "kind": "web",
+    "icon": "accessories-dictionary",
+    "title": "Translate Text",
+    "subtitle": "Open Google Translate",
+    "keywords": ["translate", "translation", "turkish", "english", "language"],
+    "actions": [
+      {"id": "open", "title": "Open Google Translate", "command": "xdg-open https://translate.google.com"}
+    ]
+  }
+]
+EOF
+}
+
+windows_json() {
+  if ! have_cmd hyprctl || ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local clients_json
+  clients_json="$(hyprctl clients -j 2>/dev/null || true)"
+  if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"$clients_json"; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    sort_by(.workspace.id, .class, .title)
+    | map(select(.mapped == true))
+    | map({
+        id: ("window:" + .address),
+        kind: "window",
+        icon: "window",
+        title: ((.title // "untitled") | gsub("[\t\n]"; " ")),
+        subtitle: (((.class // "unknown") | gsub("[\t\n]"; " ")) + " - workspace " + ((.workspace.name // (.workspace.id | tostring)) | tostring)),
+        keywords: [
+          (.class // "unknown"),
+          (.title // "untitled"),
+          ("workspace " + ((.workspace.name // (.workspace.id | tostring)) | tostring))
+        ],
+        actions: [
+          {
+            id: "focus",
+            title: "Focus Window",
+            command: ("hyprctl dispatch \"hl.dsp.focus({ window = \\\"address:" + .address + "\\\" })\" >/dev/null 2>&1 || hyprctl dispatch focuswindow address:" + .address)
+          },
+          {
+            id: "close",
+            title: "Close Window",
+            command: ("hyprctl dispatch \"hl.dsp.window.close({ window = \\\"address:" + .address + "\\\" })\" >/dev/null 2>&1 || hyprctl dispatch closewindow address:" + .address)
+          },
+          {
+            id: "float",
+            title: "Toggle Floating",
+            command: ("hyprctl dispatch \"hl.dsp.window.float({ window = \\\"address:" + .address + "\\\", action = \\\"toggle\\\" })\" >/dev/null 2>&1 || hyprctl dispatch togglefloating address:" + .address)
+          }
+        ]
+      })
+  ' <<<"$clients_json"
+}
+
+states_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local state_switcher="$HOME/Documents/bitbar_plugins/state-switcher.5m"
+  if [ ! -x "$state_switcher" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$state_switcher" states-json 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | sort_by((.enabled | not), .title)
+    | map({
+        id: ("state:" + (.title | ascii_downcase | gsub("[^a-z0-9]+"; "-") | gsub("(^-|-$)"; ""))),
+        kind: "state",
+        icon: (if .enabled then "check-circle" else "circle" end),
+        title: ("State: " + .title),
+        subtitle: (if .enabled then "Enabled" else "Disabled" end),
+        keywords: [.title, (.icon // ""), "state", "toggle", "without hook", "ignore-event"],
+        actions: [
+          {id: "toggle", title: "Toggle", command: ($ENV.HOME + "/Documents/bitbar_plugins/state-switcher.5m toggle " + (.title | @sh))},
+          {id: "toggle-no-hook", title: "Toggle Without Hook", command: ($ENV.HOME + "/Documents/bitbar_plugins/state-switcher.5m toggle " + (.title | @sh) + " ignore-event")}
+        ]
+      })
+  '
+}
+
+case "$mode" in
+  actions) actions_json ;;
+  windows) windows_json ;;
+  states) states_json ;;
+  all)
+    require_cmd jq
+    jq -s 'add' <(actions_json) <(windows_json) <(states_json)
+    ;;
+esac

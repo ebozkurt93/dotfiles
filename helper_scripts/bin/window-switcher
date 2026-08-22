@@ -178,7 +178,8 @@ focus_selected() {
     exit 0
   fi
 
-  hyprctl dispatch focuswindow "address:$address" >/dev/null
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$address\" })" >/dev/null 2>&1 ||
+    hyprctl dispatch focuswindow "address:$address" >/dev/null
 }
 
 case "$backend" in

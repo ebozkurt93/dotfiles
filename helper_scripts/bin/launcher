@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mode="all"
+
+usage() {
+  cat <<'EOF'
+Usage: launcher [--all|--actions|--windows|--states] [--open|--toggle|--close|--ping]
+
+Control the Quickshell launcher surface.
+EOF
+}
+
+verb="toggle"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --all) mode="all"; shift ;;
+    --actions) mode="actions"; shift ;;
+    --windows) mode="windows"; shift ;;
+    --states) mode="states"; shift ;;
+    --open) verb="open"; shift ;;
+    --toggle) verb="toggle"; shift ;;
+    --close) verb="close"; shift ;;
+    --ping) verb="ping"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 1 ;;
+  esac
+done
+
+case "$verb" in
+  open|toggle)
+    quickshell ipc call launcher "$verb" "$mode"
+    ;;
+  close|ping)
+    quickshell ipc call launcher "$verb"
+    ;;
+esac

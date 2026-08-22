@@ -1,7 +1,7 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 
 # Ensure PATH includes Nix profile paths first so we can find tmux and other tools
-export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+export PATH="$HOME/.nix-profile/bin:/etc/profiles/per-user/$USER/bin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Source critical configuration files for environment setup
 if [ -f /etc/profile ]; then
@@ -21,7 +21,7 @@ fi
 if command -v tmux > /dev/null 2>&1; then
   # Try to attach to an existing session.
   # If attachment fails (no session), fall back to a login shell.
-  tmux attach || exec /bin/zsh -l
+  tmux attach || exec zsh -l
 else
-  exec /bin/zsh -l
+  exec zsh -l
 fi
