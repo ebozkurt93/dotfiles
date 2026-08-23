@@ -99,5 +99,10 @@ PanelWindow {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
+
+        Sleep {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 }

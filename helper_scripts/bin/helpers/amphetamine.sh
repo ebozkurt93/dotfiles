@@ -7,7 +7,22 @@ PID_FILE="$STATE_DIR/caffeinate.pid"
 END_FILE="$STATE_DIR/end_epoch"
 FLAGS_FILE="$STATE_DIR/flags"
 DEFAULT_FLAGS_FILE="$STATE_DIR/default_flags"
-DEFAULT_FLAGS="-d -i -m"
+
+if [[ "$(uname)" == "Darwin" ]]; then
+	BACKEND="caffeinate"
+	DEFAULT_FLAGS="-d -i -m"
+else
+	BACKEND="systemd-inhibit"
+	DEFAULT_FLAGS="idle:sleep:handle-lid-switch"
+	# Run as a named transient systemd unit rather than a plain backgrounded
+	# job: quickshell's Process spawns each action in its own short-lived
+	# child, and a plain `nohup ... &` job stays in that child's cgroup, so
+	# it gets killed the instant the child exits (same class of bug as
+	# tailscaled dying when the SSH session that backgrounded it closed).
+	# systemd-run detaches it into its own unit, immune to the caller's
+	# process tree/cgroup lifecycle.
+	UNIT_NAME="amphetamine-inhibit"
+fi
 
 mkdir -p "$STATE_DIR"
 
@@ -81,11 +96,7 @@ validate_flags() {
 		return 1
 	fi
 
-	if [[ "$flags_string" =~ [^[:space:][:alnum:]-] ]]; then
-		return 1
-	fi
-
-	if [[ "$flags_string" != *-* ]]; then
+	if [[ "$flags_string" =~ [^[:space:][:alnum:]:-] ]]; then
 		return 1
 	fi
 
@@ -119,6 +130,11 @@ parse_common_options() {
 }
 
 is_active() {
+	if [[ "$BACKEND" == "systemd-inhibit" ]]; then
+		systemctl --user is-active --quiet "$UNIT_NAME" 2>/dev/null
+		return $?
+	fi
+
 	if [[ ! -f "$PID_FILE" ]]; then
 		return 1
 	fi
@@ -137,7 +153,7 @@ is_active() {
 
 	local command
 	command="$(ps -p "$pid" -o command= 2>/dev/null || true)"
-	if [[ "$command" != *"caffeinate"* ]]; then
+	if [[ "$command" != *"$BACKEND"* ]]; then
 		rm -f "$PID_FILE"
 		return 1
 	fi
@@ -146,9 +162,13 @@ is_active() {
 }
 
 stop_session() {
-	if is_active; then
+	if [[ "$BACKEND" == "systemd-inhibit" ]]; then
+		systemctl --user stop "$UNIT_NAME" >/dev/null 2>&1 || true
+		systemctl --user reset-failed "$UNIT_NAME" >/dev/null 2>&1 || true
+	elif is_active; then
 		local pid
 		pid="$(<"$PID_FILE")"
+		pkill -P "$pid" 2>/dev/null || true
 		kill "$pid" 2>/dev/null || true
 	fi
 	rm -f "$PID_FILE"
@@ -221,18 +241,35 @@ start_session() {
 	read -r -a flags <<<"$flags_string"
 	echo "$flags_string" >"$FLAGS_FILE"
 
-	if [[ -n "$duration_seconds" ]]; then
-		local now
-		now="$(date +%s)"
-		echo $((now + duration_seconds)) >"$END_FILE"
-		nohup caffeinate "${flags[@]}" -t "$duration_seconds" >/dev/null 2>&1 &
-	else
-		rm -f "$END_FILE"
-		nohup caffeinate "${flags[@]}" >/dev/null 2>&1 &
-	fi
+	if [[ "$BACKEND" == "caffeinate" ]]; then
+		if [[ -n "$duration_seconds" ]]; then
+			local now
+			now="$(date +%s)"
+			echo $((now + duration_seconds)) >"$END_FILE"
+			nohup caffeinate "${flags[@]}" -t "$duration_seconds" >/dev/null 2>&1 &
+		else
+			rm -f "$END_FILE"
+			nohup caffeinate "${flags[@]}" >/dev/null 2>&1 &
+		fi
 
-	local pid=$!
-	echo "$pid" >"$PID_FILE"
+		local pid=$!
+		echo "$pid" >"$PID_FILE"
+	else
+		systemctl --user reset-failed "$UNIT_NAME" >/dev/null 2>&1 || true
+
+		local sleep_for="infinity"
+		if [[ -n "$duration_seconds" ]]; then
+			local now
+			now="$(date +%s)"
+			echo $((now + duration_seconds)) >"$END_FILE"
+			sleep_for="$duration_seconds"
+		else
+			rm -f "$END_FILE"
+		fi
+
+		systemd-run --user --unit="$UNIT_NAME" --collect --quiet -- \
+			systemd-inhibit --what="$flags_string" --who="amphetamine" --why="Keep system awake" -- sleep "$sleep_for" >/dev/null 2>&1
+	fi
 }
 
 apply_profile() {

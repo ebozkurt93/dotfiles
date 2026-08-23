@@ -1475,3 +1475,17 @@ still deferred, but this closes the gap on DNS and stats.
   didn't -- looked like a bug, wasn't one. Confirmed by swapping the
   hardcoded default back to `false` and firing a real transition via a
   one-shot `Timer` instead.
+
+## Bar widget cleanup to look at later: duplicated `InfoRow` component
+
+Each bar widget that needs a label/value row (`Power.qml`, `Weather.qml`,
+`Network.qml`, `Sleep.qml`) defines its own inline `component InfoRow: Item
+{...}` -- copy-pasted, not shared. `Power`/`Sleep` are byte-identical to
+each other; `Weather`/`Network` are byte-identical to each other but differ
+from the `Power`/`Sleep` version by one line (`height: visible ?
+labelText.implicitHeight : 0` vs a plain `height: labelText.implicitHeight`
+that doesn't collapse when hidden). Since `Commons/Color.qml` already proves
+plain directory-imported `.qml` files become usable as `Commons.<Filename>`
+with no `qmldir` needed, this could become a real `Commons/InfoRow.qml`
+component shared by all four (and future) widgets instead of four
+copy-pasted definitions.
