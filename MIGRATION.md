@@ -1398,9 +1398,10 @@ rather than mocks, since a real UTM console session was already up.
   `extraGroups` too. Scoped down from Omarchy's network panel on
   purpose: connection icon, IP/gateway info, Wi-Fi list with
   connect/disconnect/forget and an inline password prompt, radio toggle.
-  Left out DNS provider switching, band selection, QR sharing, and speed
-  test -- Omarchy's version of those is a lot of extra surface (its own
-  panel file is ~2000 lines) that didn't seem justified for a first pass.
+  DNS switching and live stats followed in a second pass (below). Still
+  left out: band selection, QR sharing, speed test -- Omarchy's version
+  of those is a lot of extra surface (its own panel file is ~2000 lines)
+  that didn't seem justified yet.
 
 Also added while testing this, not strictly a bar widget:
 - **`mako`** -- no notification daemon existed anywhere in this repo
@@ -1415,3 +1416,62 @@ Also added while testing this, not strictly a bar widget:
   live `hyprctl keyword monitor ...` command this fork's Lua-based config
   layer expects isn't the vanilla-Hyprland syntax, so scale changes here
   go through `hyprland.lua` + `hyprctl reload`, not a one-off dispatch.
+
+## Network widget: DNS switching + live stats (2026-08-23)
+
+Second pass on the Network widget, built for real hardware even though
+testing happened on the VM's single wired NIC -- band selection etc.
+still deferred, but this closes the gap on DNS and stats.
+
+- **DNS switching** -- new `helper_scripts/bin/dns-manager` script
+  (DHCP/Cloudflare/Google/Custom), deliberately *not* a port of
+  Omarchy's `omarchy-dns`. That script writes
+  `/etc/NetworkManager/conf.d/20-omarchy-dns.conf` and `tee`s
+  `/etc/systemd/resolved.conf` directly, both of which assume Arch's
+  mutable `/etc` -- on NixOS `/etc` is normally a read-only symlink into
+  the Nix store, so the same approach wouldn't persist. `dns-manager`
+  only sets `ipv4.dns`/`ipv6.dns` per active NetworkManager connection
+  via `nmcli`, which needed no root: the user's already in the
+  `networkmanager` group, and NetworkManager's polkit rules allow that
+  group to modify its own connections without a password.
+
+  Hit one real infra bug getting there: `nmcli connection modify`
+  failed with "Action org.freedesktop.NetworkManager.settings.modify.
+  system is not registered" even though the policy file (with that
+  exact action ID) was sitting right there in
+  `/run/current-system/sw/share/polkit-1/actions/`. Cause:
+  `polkit.service` had been running since *before* the switch that
+  enabled NetworkManager, and never got restarted -- its in-memory
+  action registry was built from a system generation that didn't have
+  NetworkManager's polkit actions yet. `systemctl restart polkit` fixed
+  it immediately. Worth remembering for any future module enable that
+  ships its own polkit actions: a plain `nixos-rebuild switch` doesn't
+  restart every already-running service that might care about newly
+  added action files, only the ones the module system knows changed.
+
+- **Live stats** -- Ping, Packet Loss, Receiving/Sending rates, Link
+  Speed, MAC Address, Session Total (cumulative bytes since the popup
+  was opened, not since boot), effective DNS servers (read straight
+  from `/etc/resolv.conf`, not just the provider label), and Public IP
+  (`ipinfo.io/ip` through `bkt`, same caching pattern as
+  `helper_scripts/bin/weather`). All built directly against `ip`/`ping`/
+  sysfs rather than porting Omarchy's `omarchy-network-status --verbose`
+  helper script. Ping/throughput poll every 2s while the popup is open;
+  MAC/link-speed are static and only re-read when the interface changes;
+  DNS servers and public IP are fetched once per popup-open. Link Speed
+  correctly stays hidden on this VM -- `/sys/class/net/enp0s1/speed`
+  reports `-1` on the virtio NIC, which is expected and will show a
+  real value on physical hardware.
+
+  One testing-methodology trap worth remembering: forcing
+  `popupOpen: true` as a literal property *default* (e.g. via a quick
+  `sed` for screenshotting without clicking) does not fire
+  `onPopupOpenChanged` -- QML only emits that signal on an actual
+  value transition, and initializing a property to a non-default value
+  at construction isn't one. Timers bound directly to `running:
+  root.popupOpen` still fire fine (direct binding, not signal-based),
+  which is why the ping/throughput stats populated in that test while
+  DNS/public-IP (wired only through the changed-handler) silently
+  didn't -- looked like a bug, wasn't one. Confirmed by swapping the
+  hardcoded default back to `false` and firing a real transition via a
+  one-shot `Timer` instead.
