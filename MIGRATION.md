@@ -1678,6 +1678,31 @@ pacing delay), and the user decided against it given the added complexity
 and this VM's already-demonstrated I/O jitter. Left as an instant snap;
 worth reconsidering once the broader animation pass happens.
 
+**`rowresize` fixed twice more after the initial commit**:
+1. It only handled exactly 2 stacked windows; a 3-window stack was a silent
+   no-op. Fixed by finding whichever neighbor Hyprland will actually pick
+   (previous, above, if one exists, else next) instead of assuming exactly
+   one column-mate.
+2. That fix still had a UX bug: resizing a middle window moved *its own*
+   top edge (since Hyprland's hardcoded default always prefers the
+   neighbor above). Confirmed via testing that the `corner` dispatcher
+   param is silently ignored -- not something a script can override.
+   Worked around by redirecting the resize to the window *below* instead
+   whenever one exists (that window's own "prev" is the originally-focused
+   one, so resizing it moves exactly the boundary wanted), falling back to
+   resizing the focused window directly only for the bottom-most stack
+   member, which has no "below" to redirect to and unavoidably moves its
+   own top edge.
+3. The redirect's internal focus->resize->refocus dance made the mouse
+   cursor visibly jump to the neighbor and back (Hyprland warps the cursor
+   on every focus change by default). Fixed by temporarily toggling
+   `cursor:no_warps` for just that dance via `hyprctl eval` (`hyprctl
+   keyword` doesn't work under the Lua config provider -- "can't work with
+   non-legacy parsers, use eval" is the real error) -- reads the user's
+   actual current setting first and only touches it if warps are currently
+   *on*, restoring it via a `trap ... EXIT` afterward, so a user who
+   disables warps globally later doesn't have this script fight that.
+
 **Not yet decided**: which of the remaining hammerspoon pinned-app binds
 (`hyper+B` Firefox, `+C` Calendar, `+O` Obsidian, `+F` FreeCAD from
 `scoped_hotkeys.lua`) are still wanted on Linux -- user only confirmed
