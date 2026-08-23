@@ -1,8 +1,19 @@
+local hostname = os.getenv("HOSTNAME") or ""
+if hostname == "" then
+    local handle = io.popen("hostname 2>/dev/null")
+    if handle then
+        hostname = handle:read("*l") or ""
+        handle:close()
+    end
+end
+
+local lowSpecDesktop = hostname == "utm-aarch64" or os.getenv("DOTFILES_LOW_SPEC_DESKTOP") == "1"
+
 hl.monitor({
     output = "",
-    mode = "preferred",
+    mode = lowSpecDesktop and "1280x800@60" or "preferred",
     position = "auto",
-    scale = 2.5,
+    scale = lowSpecDesktop and 1.0 or 2.5,
 })
 
 hl.on("hyprland.start", function()
