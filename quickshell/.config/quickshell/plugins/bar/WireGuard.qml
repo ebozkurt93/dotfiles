@@ -62,8 +62,8 @@ Item {
         wgAction.running = true
     }
 
-    implicitWidth: icon.implicitWidth
-    implicitHeight: icon.implicitHeight
+    implicitWidth: icon.visible ? icon.implicitWidth : 0
+    implicitHeight: icon.visible ? icon.implicitHeight : 0
 
     Text {
         id: icon
