@@ -54,8 +54,19 @@ _start_daemon() {
   fi
   _ensure_bins
   mkdir -p "$(dirname "$PERSONAL_SOCKET")" "$PERSONAL_STATE_DIR"
-  echo "$(_pass)" | sudo -S sh -c \
-    "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1 &"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    echo "$(_pass)" | sudo -S sh -c \
+      "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1 &"
+  else
+    # A plain backgrounded job here stays in the caller's cgroup/session and
+    # gets killed the instant this script's parent (an SSH session, a
+    # quickshell Process, etc.) tears down -- same class of bug fixed for
+    # amphetamine.sh's sleep-inhibitor. systemd-run as a system-level unit
+    # (via sudo, not --user) detaches it fully, tracked by PID 1 instead of
+    # any user session.
+    echo "$(_pass)" | sudo -S systemd-run --unit=tailscaled-personal --collect --quiet -- \
+      sh -c "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1"
+  fi
   local i=0
   while [[ ! -S "$PERSONAL_SOCKET" ]] && (( i++ < 20 )); do sleep 0.5; done
   if [[ ! -S "$PERSONAL_SOCKET" ]]; then
@@ -118,11 +129,15 @@ _restore_dns() {
 }
 
 _stop_daemon() {
+  if [[ "$(uname)" != "Darwin" ]]; then
+    echo "$(_pass)" | sudo -S systemctl stop tailscaled-personal 2>/dev/null
+  fi
+
   local pid
   pid=$(pgrep -f "tailscaled.*tailscale-personal" | head -1)
   if [[ -n "$pid" ]]; then
     echo "$(_pass)" | sudo -S kill "$pid"
-  else
+  elif [[ "$(uname)" == "Darwin" ]]; then
     echo "daemon not running"
   fi
 }
