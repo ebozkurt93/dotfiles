@@ -131,14 +131,24 @@ hl.bind(mainMod .. " + SHIFT + up", hl.dsp.layout("promote"), { description = "P
 -- Promote the focused window into a brand new dedicated column.
 hl.bind(mainMod .. " + P", hl.dsp.layout("promote"), { description = "Promote window into a new column" })
 
--- Resize the focused column: CTRL+h/l shrink/grow by 10%, SUPER+C cycles
--- through the explicit_column_widths presets (33/50/67/100%) -- the
+-- Resize the focused column: CTRL+h/l shrink/grow width by 10%, CTRL+C
+-- cycles through the explicit_column_widths presets (33/50/67/100%) -- the
 -- "center at ~70% width" habit lands on the 0.667 preset.
 hl.bind(mainMod .. " + CTRL + h",     hl.dsp.layout("colresize -0.1"), { description = "Shrink column width" })
 hl.bind(mainMod .. " + CTRL + left",  hl.dsp.layout("colresize -0.1"), { description = "Shrink column width" })
 hl.bind(mainMod .. " + CTRL + l",     hl.dsp.layout("colresize +0.1"), { description = "Grow column width" })
 hl.bind(mainMod .. " + CTRL + right", hl.dsp.layout("colresize +0.1"), { description = "Grow column width" })
 hl.bind(mainMod .. " + CTRL + C", hl.dsp.layout("colresize +conf"), { description = "Cycle column width preset" })
+
+-- Resize the focused window's share of its column's stack (CTRL+j/k, shrink/
+-- grow by 10%). The scrolling layout has no native "rowresize" layout
+-- message the way it has "colresize" for width -- helper_scripts/libexec/
+-- desktop/rowresize builds an equivalent on top of the same absolute-size
+-- resize dispatcher the mouse-drag-between-stacked-windows path uses.
+hl.bind(mainMod .. " + CTRL + k",    hl.dsp.exec_cmd(home .. "/bin/desktop rowresize -0.1"), { description = "Shrink row height" })
+hl.bind(mainMod .. " + CTRL + up",   hl.dsp.exec_cmd(home .. "/bin/desktop rowresize -0.1"), { description = "Shrink row height" })
+hl.bind(mainMod .. " + CTRL + j",    hl.dsp.exec_cmd(home .. "/bin/desktop rowresize +0.1"), { description = "Grow row height" })
+hl.bind(mainMod .. " + CTRL + down", hl.dsp.exec_cmd(home .. "/bin/desktop rowresize +0.1"), { description = "Grow row height" })
 
 -- Raise-or-launch pinned apps: focus the most-recently-focused window of
 -- the app if one exists (mirrors hammerspoon's launchOrFocus), else launch it.

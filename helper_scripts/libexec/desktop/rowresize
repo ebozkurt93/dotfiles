@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Hyprland's scrolling layout has no "rowresize" layout message the way it
+# has "colresize" for column width -- row height (a stacked window's share
+# of its column) is only adjustable by mouse-dragging the border between
+# two stacked windows. hl.dsp.window.resize({x, y}) sets an absolute size
+# and, when applied to a window that's part of a column stack, does trigger
+# the same internal row-height rebalancing the mouse drag does (verified:
+# growing one stack member's target height correctly shrinks its neighbor
+# to compensate). This builds a relative-percentage version of that so it
+# behaves like colresize's "+0.1"/"-0.1" from a keybind.
+
+fraction="${1:-}"
+if [ -z "$fraction" ]; then
+  echo "usage: desktop rowresize <+0.1|-0.1|...>" >&2
+  exit 1
+fi
+
+active_json="$(hyprctl activewindow -j)"
+active_addr="$(jq -r '.address // empty' <<<"$active_json")"
+[ -z "$active_addr" ] && exit 0
+
+active_x="$(jq -r '.at[0]' <<<"$active_json")"
+active_w="$(jq -r '.size[0]' <<<"$active_json")"
+active_h="$(jq -r '.size[1]' <<<"$active_json")"
+active_mon="$(jq -r '.monitor' <<<"$active_json")"
+
+# Only meaningful with exactly one other window sharing this column (the
+# common case this session dealt with everywhere else too) -- a safe no-op
+# otherwise rather than guessing how to split among 3+ stack members.
+stackmate_h="$(hyprctl clients -j | jq -r --arg addr "$active_addr" --argjson x "$active_x" --argjson mon "$active_mon" '
+  [.[] | select(.monitor == $mon and .floating == false and .at[0] == $x and .address != $addr)]
+  | if length == 1 then .[0].size[1] else empty end
+')"
+
+[ -z "$stackmate_h" ] && exit 0
+
+total_h=$((active_h + stackmate_h))
+delta_px=$(awk -v total="$total_h" -v frac="$fraction" 'BEGIN { printf "%d", total * frac }')
+new_h=$((active_h + delta_px))
+
+# Keep each stack member at least 10% of the shared height, mirroring
+# Hyprland's own MIN_ROW_HEIGHT/MAX_ROW_HEIGHT fractional bounds.
+min_h=$(awk -v total="$total_h" 'BEGIN { printf "%d", total * 0.1 }')
+max_h=$((total_h - min_h))
+[ "$new_h" -lt "$min_h" ] && new_h="$min_h"
+[ "$new_h" -gt "$max_h" ] && new_h="$max_h"
+
+hyprctl dispatch "hl.dsp.window.resize({ x = $active_w, y = $new_h })" >/dev/null

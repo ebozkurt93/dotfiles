@@ -6,7 +6,7 @@ libexec_dir="$bin_dir/../libexec/desktop"
 
 usage() {
   cat <<'EOF'
-Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window>
+Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window|rowresize>
 
 Control desktop-level Hyprland/Quickshell surfaces.
 EOF
@@ -22,6 +22,7 @@ case "$cmd" in
   keybinds) exec "$libexec_dir/keybinds" "$@" ;;
   swap-window) exec "$libexec_dir/swap-window" "$@" ;;
   stack-window) exec "$libexec_dir/stack-window" "$@" ;;
+  rowresize) exec "$libexec_dir/rowresize" "$@" ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 1 ;;
 esac

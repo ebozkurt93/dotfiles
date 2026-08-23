@@ -1646,6 +1646,38 @@ sluggish to the user. Mouse-button bind labels (`mouse:272`/`273`) now
 render as "Left/Right Mouse Button" instead of raw Linux input event codes
 in the cheat-sheet (the user's reaction: "wtf is mouse272").
 
+**`rowresize` added** (`SUPER+CTRL+j/k`+arrows, shrink/grow the focused
+window's share of its column's stack by 10%) -- the scrolling layout has no
+native row-height layout message the way it has `colresize` for width, only
+confirmed by reading the actual dispatcher source (`layoutMsg` in
+`ScrollingAlgorithm.cpp` has no row/height keyword at all). Found that
+`hl.dsp.window.resize({x, y})` (an absolute-size dispatcher, not a delta)
+*does* trigger the same internal row-height rebalancing the mouse-drag path
+uses when applied to a stacked window -- confirmed via `setTargetSize`
+calls in the source, then verified live by setting one stack member's
+absolute height and watching its neighbor shrink to compensate.
+`helper_scripts/libexec/desktop/rowresize` wraps this into a
+colresize-style `+0.1`/`-0.1` relative-percentage script (safe no-op unless
+the focused window has exactly one column-mate).
+
+**Real, permanent limitation found, not fixable from config**: `rowresize`
+snaps instantly instead of animating like `colresize` does. Traced why by
+reading both code paths directly: `colresize`'s handler (`layoutMsg`) calls
+`m_scrollingData->recalculate()` (animated), while the function backing
+`window.resize` for this layout (`CScrollingAlgorithm::resizeTarget` --
+confirmed this is genuinely the same function used for live mouse-drag
+resize, not just inferred by proximity) unconditionally calls
+`recalculate(true)`, where the parameter is literally named
+`forceInstant`. This is hardcoded in Hyprland's compiled C++, not a config
+option -- would need an upstream native row-height layout message to ever
+animate. Considered faking it with a manual easing loop (many small
+`hyprctl dispatch` calls stepping the size, proposed by the user) --
+measured real overhead first (12 sequential dispatch calls took 176ms with
+*zero* added sleep, already exceeding the 120ms target duration before any
+pacing delay), and the user decided against it given the added complexity
+and this VM's already-demonstrated I/O jitter. Left as an instant snap;
+worth reconsidering once the broader animation pass happens.
+
 **Not yet decided**: which of the remaining hammerspoon pinned-app binds
 (`hyper+B` Firefox, `+C` Calendar, `+O` Obsidian, `+F` FreeCAD from
 `scoped_hotkeys.lua`) are still wanted on Linux -- user only confirmed
