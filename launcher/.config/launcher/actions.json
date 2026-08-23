@@ -56,6 +56,18 @@
     ]
   },
   {
+    "id": "system:exit-hyprland",
+    "kind": "system",
+    "icon": "system-log-out",
+    "title": "Exit Hyprland",
+    "subtitle": "Log out of the current session",
+    "keywords": ["exit", "logout", "log out", "quit", "session", "hyprland"],
+    "actions": [
+      {"id": "confirm", "title": "Yes, exit and log out", "command": "hyprctl dispatch 'hl.dsp.exit()'"},
+      {"id": "cancel", "title": "Cancel", "command": "true"}
+    ]
+  },
+  {
     "id": "system:reload-hyprland",
     "kind": "script",
     "icon": "view-refresh",

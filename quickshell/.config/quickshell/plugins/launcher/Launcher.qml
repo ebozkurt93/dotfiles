@@ -513,7 +513,7 @@ PanelWindow {
                     required property string icon
 
                     width: ListView.view.width
-                    height: 56
+                    height: kind === "keybind" ? 32 : 56
                     radius: 6
                     color: index === root.launcherSelected ? Commons.Color.launcher.selectionBackground : Commons.Color.transparent
                     border.color: index === root.launcherSelected ? Commons.Color.launcher.selectionBorder : Commons.Color.transparent
@@ -526,7 +526,37 @@ PanelWindow {
                         onClicked: root.activateLauncherRow()
                     }
 
+                    // Keybind rows are single-line: description on the left,
+                    // the actual key combo right-aligned on the same row --
+                    // so a cheat-sheet-style list fits many more rows at once
+                    // than the two-line title/subtitle layout below.
+                    Row {
+                        visible: kind === "keybind"
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 12
+
+                        Text {
+                            width: parent.width - keysText.implicitWidth - parent.spacing
+                            text: title
+                            color: Commons.Color.launcher.text
+                            font.pixelSize: 14
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            id: keysText
+                            text: subtitle
+                            color: Commons.Color.launcher.textMuted
+                            font.pixelSize: 12
+                        }
+                    }
+
                     Column {
+                        visible: kind !== "keybind"
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter

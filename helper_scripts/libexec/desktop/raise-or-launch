@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+class_pattern="${1:-}"
+launch_cmd="${2:-}"
+if [ -z "$class_pattern" ] || [ -z "$launch_cmd" ]; then
+  echo "usage: desktop raise-or-launch <class-pattern> <launch-cmd>" >&2
+  exit 1
+fi
+
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+  setsid bash -lc "$launch_cmd" >/dev/null 2>&1 &
+  exit 0
+fi
+
+address="$(hyprctl clients -j | jq -r --arg pat "$class_pattern" '
+  [.[] | select(.class | test($pat; "i"))] | sort_by(.focusHistoryID) | .[0].address // empty
+')"
+
+if [ -n "$address" ]; then
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$address\" })" >/dev/null 2>&1 \
+    || hyprctl dispatch focuswindow "address:$address" >/dev/null
+else
+  setsid bash -lc "$launch_cmd" >/dev/null 2>&1 &
+fi

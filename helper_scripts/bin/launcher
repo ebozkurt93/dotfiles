@@ -14,8 +14,8 @@ mode="all"
 
 usage() {
   cat <<'EOF'
-Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth] [--open|--toggle|--close|--ping]
-       launcher items [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth|--calculator <query>]
+Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--confirm-exit] [--open|--toggle|--close|--ping]
+       launcher items [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--confirm-exit|--calculator <query>]
        launcher open-desktop <desktop-file-or-id>
 
 Control the Quickshell launcher surface.
@@ -32,6 +32,8 @@ while [ "$#" -gt 0 ]; do
     --states) mode="states"; shift ;;
     --tabs) mode="tabs"; shift ;;
     --bluetooth) mode="bluetooth"; shift ;;
+    --keybinds) mode="keybinds"; shift ;;
+    --confirm-exit) mode="confirm-exit"; shift ;;
     --open) verb="open"; shift ;;
     --toggle) verb="toggle"; shift ;;
     --close) verb="close"; shift ;;

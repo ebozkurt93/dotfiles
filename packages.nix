@@ -82,4 +82,5 @@ with pkgs;
     wireguard-tools # wg, wg-quick; helper_scripts/bin/wg-manager
     power-profiles-daemon # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
     bluez # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
+    lua5_4 # sandboxed hyprland.lua replay for helper_scripts/libexec/desktop/keybinds
   ]

@@ -1489,3 +1489,169 @@ plain directory-imported `.qml` files become usable as `Commons.<Filename>`
 with no `qmldir` needed, this could become a real `Commons/InfoRow.qml`
 component shared by all four (and future) widgets instead of four
 copy-pasted definitions.
+
+## Task #5: window_manager.lua/globals.lua slice -- keybinding overhaul (2026-08-23)
+
+Started the "hammerspoon window/hotkey logic -> Hyprland config" chunk of
+task #5, beginning with `window_manager.lua`/`globals.lua` (the ShiftIt-based
+macOS window snapping + modifier constants). Per the "Direction decided"
+note earlier in this file, this was **not** a literal port -- ShiftIt's
+half/quarter-snap/size-cycling exists purely because macOS has no tiling,
+and none of that carries over meaningfully. Ended up doing a from-scratch
+keybinding design session instead, covering far more than the original file.
+
+**Layout switch**: `general.layout` changed from `dwindle` to Hyprland's
+**native `scrolling` layout** (a PaperWM/niri-style horizontal tape of
+columns, each optionally holding a vertical stack -- added natively in
+Hyprland ~0.55/0.56, no plugin needed). Chosen after the user asked for
+"scrolling" behavior specifically; `scrolling = { fullscreen_on_one_column
+= true, column_width = 0.5, explicit_column_widths = "0.333, 0.5, 0.667,
+1.0", direction = "right" }` in `hyprland.lua`.
+
+**Keybinding scheme** (all confirmed both hjkl and arrow-key variants,
+per user preference -- hjkl for a 36-key keyboard, arrows as a fallback):
+- `SUPER+h/j/k/l`+arrows: focus between columns / within a column's stack
+- `SUPER+SHIFT+h/l`+arrows: swap the *focused window specifically* with a
+  neighbor column (not the whole stack) -- `helper_scripts/libexec/desktop/
+  swap-window`, checks a neighbor actually exists before touching anything
+  (`expel` alone would un-stack destructively even with nowhere to swap to)
+- `SUPER+SHIFT+j`+down: stack with a neighboring column, works from either
+  side -- `helper_scripts/libexec/desktop/stack-window`. Native `consume`
+  only pulls from the *next* (rightward) column with no mirrored "pull from
+  previous" message, so this falls back to focusing the previous column and
+  consuming from there when there's no next one, then restores focus.
+- `SUPER+SHIFT+k`+up: pop the *focused* window out of its stack --
+  uses `promote`, not `expel`. Found `expel` always evicts whichever window
+  is *last* in the column regardless of which one is focused (verified: two
+  separate tests focusing top vs bottom of a stack, `expel` removed the
+  bottom one both times); `promote` acts on the actually-focused window and
+  is a safe no-op when it's not stacked.
+- `SUPER+CTRL+h/l`+arrows: resize column width; `SUPER+CTRL+C`: cycle
+  `explicit_column_widths` presets (moved off bare `SUPER+C` at user
+  request, no technical reason, just freed the letter up)
+- `SUPER+ALT+h/j/k/l`+arrows: focus a neighboring monitor (all 4 directions,
+  not just left/right -- user asked "what if monitors are at down etc" for
+  vertical arrangements); `SUPER+ALT+SHIFT+...`: move window to monitor
+- `SUPER+CTRL+ALT+h/j/k/l`+arrows: move the *whole workspace* to a
+  neighboring monitor. Workspace numbers stay global/shared across monitors
+  (not pinned per-screen) -- checked Omarchy's real `bindings/tiling.lua` as
+  a live reference for "how do people generally do this" rather than
+  guessing, and they do the same: global numbering plus an explicit
+  relative-direction "move workspace to monitor" action, not hardcoded
+  monitor-name pinning.
+- `SUPER+ALT+K`: raise-or-launch Ghostty specifically (kept per explicit
+  user request -- "I jump to terminals a lot" -- even though the systemic
+  launcher fix below covers this generically too)
+- `SUPER+CTRL+Q`: lock (moved off `SUPER+CTRL+L` -- collided with
+  `SUPER+CTRL+l` grow-column-width, Hyprland bind matching is
+  case-insensitive on the physical key so `L` and `l` are the same slot;
+  `L` collides with something in nearly every modifier lane in this scheme
+  since it's used for "right" everywhere, so moved to `Q` at user request,
+  landing in a mnemonic Q-cluster: `SUPER+Q` close window, `+SHIFT+Q` exit,
+  `+CTRL+Q` lock)
+- `SUPER+SHIFT+Q`: exit Hyprland -- now opens a confirm/cancel picker
+  (reusing the launcher's existing multi-action UI, `system:exit-hyprland`
+  in `actions.json` + a new `--confirm-exit` launcher-items mode) instead of
+  exiting immediately. User flagged the fat-finger risk of one Shift-key
+  away from `SUPER+Q` (close window) nuking the whole session with no undo.
+- `SUPER+Space`: full launcher (moved off `SUPER+D`, macOS Spotlight muscle
+  memory per user request); dropped the now-redundant `SUPER+ALT+Tab` alias
+  that pointed at the same action.
+
+**Considered and explicitly rejected**: auto-restacking a displaced stack
+partner during `swap-window` (so "swap B with A" would also auto-merge C
+with A in one keypress). Built and verified working via direct dispatch
+calls, but the user hit real flakiness from chaining several `hyprctl
+dispatch` calls back-to-back against live window-move animations ("buggy a
+bit due to all the animation delays etc"). Reverted to the simpler atomic
+swap; restacking stays a manual second `SHIFT+J` press. Lesson for later
+attempts at this: don't chain multiple dispatch calls with no settling time
+between them when real (non-instant) animations are involved.
+
+**Real bug, found and fixed twice**: classic two-word `hyprctl dispatch
+<dispatcher> <arg>` syntax (e.g. `hyprctl dispatch fullscreen 0`) silently
+mis-parses as a Lua expression under this config provider and does nothing
+-- confirmed via the exact error `[string "return hl.dispatch(fullscreen
+0)"]:1: ')' expected near '0'`. This is on top of the earlier-documented
+"`hyprctl dispatch exec ghostty` needs to become `hl.dsp.exec_cmd(...)`"
+finding -- turns out *no* classic multi-word dispatch call is safe here,
+not just `exec`. Hit this twice:
+1. The pre-existing `SUPER+F` fullscreen bind (present since the original
+   Hyprland config, never actually tested until this session) and the
+   monitor-focus/move binds added earlier this same session -- fixed by
+   switching to native dispatchers: `hl.dsp.window.fullscreen({mode=0})`,
+   `hl.dsp.exit()`, `hl.dsp.focus({monitor=...})`,
+   `hl.dsp.window.move({monitor=...})`. All confirmed via direct
+   `hyprctl dispatch 'hl.dsp...'` calls before wiring into binds.
+2. `helper_scripts/libexec/desktop/raise-or-launch`'s "focus the existing
+   window" path used `hyprctl dispatch focuswindow "address:$addr"` --
+   looked like it worked in earlier testing (client count didn't grow,
+   which is also true if focus silently failed and nothing launched), but
+   direct verification showed focus never actually moved. Fixed with
+   `hl.dsp.focus({ window = "address:$addr" })` (discovered via the error
+   message itself: `hl.focus: unrecognized arguments. Expected one of:
+   direction, monitor, window, urgent_or_last, last`), falling back to the
+   classic syntax on failure -- matching a Lua-first/classic-fallback
+   pattern an *earlier* session had already established in `windows_json`
+   or the launcher's window actions, which this session didn't know about
+   going in. **Lesson: "no duplicate spawned" is not proof the focus path
+   works -- verify the actual focus/window state changed, not just the
+   absence of a side effect.**
+
+**Launcher default behavior changed**: `--apps` provider (`SUPER+Space`)
+now raise-or-launches every app by default instead of always spawning a new
+instance -- reads each `.desktop` file's `StartupWMClass` (falling back to
+the desktop-file id) as the window-class match pattern, wraps the open
+command through `desktop raise-or-launch`. `Ctrl+Enter` in the launcher
+(already-existing, previously undocumented here) runs an item's second
+action -- wired the second action to "Open New Window" (always spawns
+fresh) so the escape hatch the user asked for ("hold a modifier to open
+new") turned out to already exist, no QML changes needed.
+
+**New `SUPER+/` keybind cheat-sheet**, built as another launcher provider
+(`--keybinds`) rather than a new panel, so it reuses all existing
+search/select/run machinery:
+- `helper_scripts/libexec/desktop/keybinds` replays the real `hyprland.lua`
+  through a sandboxed Lua interpreter with a mocked `hl` table -- `hl.bind`
+  calls carrying an `opts.description` get recorded instead of really
+  binding. Same technique as Omarchy's own `omarchy-menu-keybindings`
+  (found and adapted, not copied wholesale -- theirs also handles `code:NN`
+  physical-key binds and hyprctl-JSON-format quirks we don't have). Because
+  it's genuine Lua execution, the `for` loops that bind hjkl+arrows to the
+  same action resolve correctly with zero special-casing -- confirmed
+  `opts.description` is a real, working Hyprland Lua API field (not an
+  Omarchy invention) by testing it directly against `hyprctl binds` before
+  trusting it.
+- Every `hl.bind` call in `hyprland.lua` now carries a description.
+- Multiple physical keys bound to the identical action (e.g. `h` and `left`
+  both doing "focus left") collapse into one cheat-sheet row listing both
+  combos, rather than appearing twice.
+- Keys render with standard modifier/arrow glyphs (`⌘⌃⌥⇧` `←→↑↓`
+  `⏎␣⇥`) instead of plain words -- deliberately used well-established
+  standard Unicode (not nerd-font-specific codepoints, unlike the verified
+  VPN icon earlier this migration) to avoid guessing risk.
+- Row layout is single-line (description left, keys right-aligned) rather
+  than the two-line title/subtitle layout other launcher rows use, so more
+  entries fit on screen at once -- user-requested, `Launcher.qml`'s
+  delegate now branches on `kind === "keybind"`.
+- Added `lua5_4` to `packages.nix`'s Linux set for the sandboxed replay
+  (binary is plain `lua`, not `lua5.4` -- nixpkgs's `lua5_4` derivation
+  doesn't version-suffix the binary name, cost one debugging round-trip).
+
+**Also**: bumped the default Hyprland animation speed (`global` speed 8 ->
+10, via `hl.animation({leaf="global", ...})` -- found via
+`hyprctl animations`, syntax confirmed against Omarchy's
+`default/hypr/looknfeel.lua` before use) since the baked-in default felt
+sluggish to the user. Mouse-button bind labels (`mouse:272`/`273`) now
+render as "Left/Right Mouse Button" instead of raw Linux input event codes
+in the cheat-sheet (the user's reaction: "wtf is mouse272").
+
+**Not yet decided**: which of the remaining hammerspoon pinned-app binds
+(`hyper+B` Firefox, `+C` Calendar, `+O` Obsidian, `+F` FreeCAD from
+`scoped_hotkeys.lua`) are still wanted on Linux -- user only confirmed
+Ghostty (`SUPER+ALT+K`) so far, given tmux changes the terminal-jump need
+and Calendar/FreeCAD may not even be relevant here. Still open for a future
+session, along with the rest of task #5's hs.chooser-driven files
+(`action_menu.lua`, `firefox_tab_switcher.lua`, `text_expander.lua`,
+`fuzzy_window_switcher.lua`) and the bar-widget-only files
+(`theme_sync.lua`, `kb_battery.lua`).

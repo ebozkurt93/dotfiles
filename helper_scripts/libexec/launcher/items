@@ -11,7 +11,7 @@ fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--bluetooth|--calculator QUERY]
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--calculator QUERY]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
 Quickshell and future launcher frontends.
@@ -39,6 +39,8 @@ while [ "$#" -gt 0 ]; do
     --states) mode="states"; shift ;;
     --tabs) mode="tabs"; shift ;;
     --bluetooth) mode="bluetooth"; shift ;;
+    --keybinds) mode="keybinds"; shift ;;
+    --confirm-exit) mode="confirm-exit"; shift ;;
     --calculator)
       mode="calculator"
       shift
@@ -104,7 +106,7 @@ apps_json() {
   while IFS= read -r desktop_file; do
     [ -f "$desktop_file" ] || continue
 
-    local type no_display hidden name exec_line icon generic_name keywords terminal desktop_id
+    local type no_display hidden name exec_line icon generic_name keywords terminal desktop_id startup_wm_class class_pattern open_desktop_cmd open_cmd
     type="$(desktop_entry_value "$desktop_file" Type)"
     no_display="$(desktop_entry_value "$desktop_file" NoDisplay)"
     hidden="$(desktop_entry_value "$desktop_file" Hidden)"
@@ -114,6 +116,7 @@ apps_json() {
     generic_name="$(desktop_entry_value "$desktop_file" GenericName)"
     keywords="$(desktop_entry_value "$desktop_file" Keywords)"
     terminal="$(desktop_entry_value "$desktop_file" Terminal)"
+    startup_wm_class="$(desktop_entry_value "$desktop_file" StartupWMClass)"
     desktop_id="$(basename "$desktop_file" .desktop)"
 
     [ "${type:-Application}" = "Application" ] || continue
@@ -121,6 +124,10 @@ apps_json() {
     [ "$hidden" != "true" ] || continue
     [ -n "$name" ] || continue
     [ -n "$exec_line" ] || continue
+
+    class_pattern="${startup_wm_class:-$desktop_id}"
+    open_desktop_cmd="$HOME/bin/launcher-open-desktop $(printf '%q' "$desktop_file")"
+    open_cmd="$HOME/bin/desktop raise-or-launch $(printf '%q' "$class_pattern") $(printf '%q' "$open_desktop_cmd")"
 
     [ "$first" -eq 1 ] || printf ','
     first=0
@@ -130,7 +137,8 @@ apps_json() {
       --arg subtitle "${generic_name:-$desktop_id}" \
       --arg icon "${icon:-application-x-executable}" \
       --arg keywords "$keywords $desktop_id $generic_name" \
-      --arg command "$HOME/bin/launcher-open-desktop $(printf '%q' "$desktop_file")" \
+      --arg open_cmd "$open_cmd" \
+      --arg new_window_cmd "$open_desktop_cmd" \
       --arg terminal "$terminal" \
       '{
         id: $id,
@@ -140,8 +148,9 @@ apps_json() {
         subtitle: $subtitle,
         keywords: (($keywords | split(";") + ($keywords | split(" "))) | map(select(length > 0))),
         actions: [
-          {id: "open", title: "Open", command: $command}
-        ] + (if $terminal == "true" then [{id: "terminal", title: "Open Terminal App", command: $command}] else [] end)
+          {id: "open", title: "Open (or jump to running)", command: $open_cmd},
+          {id: "new-window", title: "Open New Window", command: $new_window_cmd}
+        ] + (if $terminal == "true" then [{id: "terminal", title: "Open Terminal App", command: $new_window_cmd}] else [] end)
       }'
   done <"$tmp"
   printf ']'
@@ -261,6 +270,43 @@ tabs_json() {
         ]
       })
   ' "$tabs_file"
+}
+
+keybinds_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local desktop_bin="$HOME/bin/desktop"
+  if [ ! -x "$desktop_bin" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$desktop_bin" keybinds 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | map(select(.keys and .description and .command))
+    | map({
+        id: ("keybind:" + .keys + ":" + .description),
+        kind: "keybind",
+        icon: "input-keyboard",
+        title: .description,
+        subtitle: .keys,
+        keywords: [.keys, .description],
+        actions: [
+          {id: "run", title: "Run", command: .command}
+        ]
+      })
+  '
+}
+
+confirm_exit_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+  actions_json | jq '[.[] | select(.id == "system:exit-hyprland")]'
 }
 
 bluetooth_json() {
@@ -420,6 +466,8 @@ case "$mode" in
   states) states_json ;;
   tabs) tabs_json ;;
   bluetooth) bluetooth_json ;;
+  keybinds) keybinds_json ;;
+  confirm-exit) confirm_exit_json ;;
   calculator) calculator_json ;;
   all)
     require_cmd jq

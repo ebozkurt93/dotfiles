@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Extracts keybindings from the real hyprland.lua by replaying it through a
+# sandboxed Lua interpreter with a mocked `hl` table: `hl.bind` calls that
+# carry an `opts.description` are recorded instead of really binding a key.
+# Since this is the actual config file (not a text/regex parse of it), Lua
+# control flow -- the for-loops binding hjkl+arrows to the same action --
+# resolves naturally, one record per real iteration.
+
+lua_bin=""
+for candidate in lua lua5.4 lua5.3; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    lua_bin="$candidate"
+    break
+  fi
+done
+
+if [ -z "$lua_bin" ] || ! command -v jq >/dev/null 2>&1; then
+  echo '[]'
+  exit 0
+fi
+
+lua_output="$("$lua_bin" <<'LUA_SCRIPT'
+local function lua_literal(value)
+  local t = type(value)
+  if t == "string" then
+    return string.format("%q", value)
+  elseif t == "number" or t == "boolean" then
+    return tostring(value)
+  elseif t == "table" then
+    local parts = {}
+    for k, v in pairs(value) do
+      local key_expr
+      if type(k) == "string" and k:match("^[%a_][%w_]*$") then
+        key_expr = k .. " = "
+      else
+        key_expr = "[" .. lua_literal(k) .. "] = "
+      end
+      parts[#parts + 1] = key_expr .. lua_literal(v)
+    end
+    return "{ " .. table.concat(parts, ", ") .. " }"
+  else
+    return "nil"
+  end
+end
+
+local function call_expr(path, ...)
+  local n = select("#", ...)
+  local parts = {}
+  for i = 1, n do
+    parts[i] = lua_literal(select(i, ...))
+  end
+  return path .. "(" .. table.concat(parts, ", ") .. ")"
+end
+
+local function dsp_proxy(path)
+  return setmetatable({}, {
+    __index = function(_, key)
+      return dsp_proxy(path .. "." .. key)
+    end,
+    __call = function(_, ...)
+      local first = ...
+      if path == "hl.dsp.exec_cmd" and type(first) == "string" then
+        return { kind = "exec", arg = first }
+      end
+      return { kind = "lua", arg = call_expr(path, ...) }
+    end,
+  })
+end
+
+local noop
+noop = setmetatable({}, {
+  __index = function() return noop end,
+  __call = function() return noop end,
+})
+
+local records = {}
+
+hl = setmetatable({
+  dsp = dsp_proxy("hl.dsp"),
+  bind = function(keys, dispatcher, opts)
+    opts = opts or {}
+    if opts.description and opts.description ~= "" then
+      local kind, arg = "", ""
+      if type(dispatcher) == "table" then
+        kind = dispatcher.kind or ""
+        arg = dispatcher.arg or ""
+      end
+      records[#records + 1] = { keys = tostring(keys), description = opts.description, kind = kind, arg = arg }
+    end
+    return noop
+  end,
+}, {
+  __index = function() return noop end,
+})
+
+local config_path = os.getenv("HOME") .. "/.config/hypr/hyprland.lua"
+local file = io.open(config_path, "r")
+if file then
+  file:close()
+  pcall(dofile, config_path)
+end
+
+for _, r in ipairs(records) do
+  io.write(r.keys, "\t", r.description, "\t", r.kind, "\t", r.arg, "\n")
+end
+LUA_SCRIPT
+)"
+
+printf '%s\n' "$lua_output" | while IFS=$'\t' read -r keys description kind arg; do
+  [ -z "$keys" ] && continue
+
+  # Hyprland bind syntax uses raw Linux input event codes for mouse buttons;
+  # translate the ones we actually bind into something readable. Avoids the
+  # words "left"/"right" here specifically since prettyKeys below turns
+  # those into arrow glyphs for directional keys, which would otherwise also
+  # mangle these.
+  keys="${keys//mouse:272/Mouse 1 Click}"
+  keys="${keys//mouse:273/Mouse 2 Click}"
+  keys="${keys//mouse:274/Mouse 3 Click}"
+
+  case "$kind" in
+    exec) command="$arg" ;;
+    lua)  command="hyprctl dispatch $(printf '%q' "$arg")" ;;
+    *)    continue ;;
+  esac
+
+  jq -n --arg keys "$keys" --arg description "$description" --arg command "$command" \
+    '{keys: $keys, description: $description, command: $command}'
+done | jq -s '
+  def prettyKeys:
+    ascii_upcase
+    | gsub("\\bSUPER\\b"; "⌘")
+    | gsub("\\bCTRL\\b"; "⌃")
+    | gsub("\\bALT\\b"; "⌥")
+    | gsub("\\bSHIFT\\b"; "⇧")
+    | gsub("\\bLEFT\\b"; "←")
+    | gsub("\\bRIGHT\\b"; "→")
+    | gsub("\\bUP\\b"; "↑")
+    | gsub("\\bDOWN\\b"; "↓")
+    | gsub("\\bRETURN\\b"; "⏎")
+    | gsub("\\bSPACE\\b"; "␣")
+    | gsub("\\bTAB\\b"; "⇥")
+    | gsub("\\bSLASH\\b"; "/")
+  ;
+
+  # Multiple physical keys bound to the identical action (e.g. h and left
+  # both doing "focus l") collapse into one entry listing every combo,
+  # rather than showing the same action once per key.
+  group_by([.description, .command])
+  | map({
+      keys: (map(.keys) | join(" / ") | prettyKeys),
+      description: .[0].description,
+      command: .[0].command
+    })
+  | sort_by(.description)
+'

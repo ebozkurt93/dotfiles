@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Hyprland's scrolling layout "consume" message only pulls the *next*
+# (rightward) column into the focused one -- it has no mirrored "pull from
+# previous column" message. So on the rightmost column, plain consume just
+# fails with "no next column", even though merging with the column on your
+# left is an equally reasonable thing to want. This falls back to focusing
+# the previous column and consuming from there instead (which pulls the
+# originally-focused window in, since it's now the "next" column relative
+# to that focus), then restores focus to the window the user actually had
+# selected.
+
+active_json="$(hyprctl activewindow -j)"
+active_addr="$(jq -r '.address // empty' <<<"$active_json")"
+[ -z "$active_addr" ] && exit 0
+
+active_x="$(jq -r '.at[0]' <<<"$active_json")"
+active_mon="$(jq -r '.monitor' <<<"$active_json")"
+
+clients="$(hyprctl clients -j)"
+
+has_next="$(jq -r --argjson x "$active_x" --argjson mon "$active_mon" '
+  [.[] | select(.monitor == $mon and .floating == false and .at[0] > $x)] | length > 0
+' <<<"$clients")"
+
+if [ "$has_next" = "true" ]; then
+  hyprctl dispatch 'hl.dsp.layout("consume")' >/dev/null
+  exit 0
+fi
+
+prev_addr="$(jq -r --argjson x "$active_x" --argjson mon "$active_mon" '
+  [.[] | select(.monitor == $mon and .floating == false and .at[0] < $x)]
+  | sort_by(-.at[0]) | .[0].address // empty
+' <<<"$clients")"
+
+[ -z "$prev_addr" ] && exit 0
+
+hyprctl dispatch "hl.dsp.focus({ window = \"address:$prev_addr\" })" >/dev/null
+hyprctl dispatch 'hl.dsp.layout("consume")' >/dev/null
+hyprctl dispatch "hl.dsp.focus({ window = \"address:$active_addr\" })" >/dev/null
