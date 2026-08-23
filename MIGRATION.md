@@ -1340,3 +1340,78 @@ JS object standing in for `UPower.displayDevice`, since UPower is a
 native binding and can't be faked with a shell script env var the way
 the launcher/WireGuard mocks were) -- purged before committing, same
 mock-then-purge pattern as every other widget this session.
+
+## Audio, Weather, Network bar widgets added (2026-08-23)
+
+Closed out the "in scope now" bar widget list from the entry above.
+Tested live on the VM this time (SSH access + `nixos-rebuild switch` +
+manually restarting `quickshell` with output captured to a log file),
+rather than mocks, since a real UTM console session was already up.
+
+- **Audio** -- `Quickshell.Services.Pipewire` native binding, no shell-outs,
+  no NixOS changes needed (PipeWire/WirePlumber already enabled). Icon +
+  scroll-to-adjust in the bar; popup has an output volume slider, mute,
+  output-device picker, and a mic mute toggle. Omarchy's own audio panel
+  comments that its Material Design speaker glyphs render smaller than the
+  rest of its icon set in JetBrainsMono Nerd Font -- same thing happened
+  here, fixed with an explicit `font.pixelSize` bump on just this icon.
+
+- **Weather** -- polls this repo's own `helper_scripts/bin/weather`
+  (met.no/Yr + `bkt` caching), not Omarchy's wttr.in-based script, so a new
+  symbol_code-to-glyph mapping was needed (met.no's codes like
+  `"clearsky_day"` don't overlap with wttr.in's numeric ones). Popup shows
+  city, condition, temperature, feels-like (only when the wind-chill
+  formula's validity window applies), next-rain ETA, an "Updated Xm ago"
+  line, and an "Open in Yr" link (`xdg-open` on a
+  `yr.no/en/search?q=lat,lon` URL -- simpler than the original
+  Hammerspoon `weather.lua`'s extra HTTP round-trip to resolve the exact
+  forecast page). Double-click force-refreshes (`weather --force`) and
+  fires a `notify-send` ("Refreshing...", auto-expires after 3s via `-t
+  3000`); a 250ms single-click debounce (`Timer` before actually toggling
+  the popup) keeps the first click of a double-click from flashing the
+  popup open before `onDoubleClicked` cancels it.
+
+  Two real bugs found here, both worth remembering:
+  1. The widget's root `Item` had a `property var data: null` holding the
+     fetched JSON. `data` is QtQuick.Item's own built-in default property
+     -- the mechanism QML uses to attach *every* child object (visual or
+     not, including `Process`) to an item -- so declaring a property with
+     that exact name silently shadowed it. Every child in the file failed
+     to attach, with no error logged anywhere, and the whole widget
+     rendered as a zero-width nothing. Cost a long bisection (stripping
+     the file down to a bare `Item` + `Rectangle` and adding pieces back
+     one at a time) to isolate. Renamed to `weatherData`.
+  2. A `MouseArea { anchors.fill: parent }` as a direct child of a `Row`
+     doesn't work -- Row manages its children's horizontal geometry
+     itself, and `fill` conflicts with that (logged as "Cannot specify
+     ...anchors for items inside Row"). Fixed by moving the MouseArea out
+     to be a sibling of the Row, anchored to it by id instead of `parent`.
+
+- **Network** -- built on `Quickshell.Networking`, which only has a
+  NetworkManager backend. This repo had no `networking.networkmanager`
+  anywhere (NixOS's default DHCP handling was in charge), so enabling it
+  was a real infrastructure change, not just a bar widget -- done
+  deliberately even though this VM's one wired NIC can't exercise the
+  Wi-Fi half of it, because the actual target for this config is a
+  laptop with Wi-Fi hardware. `nixos-rebuild switch` survived over the
+  same SSH session with the same IP; added `networkmanager` to the user's
+  `extraGroups` too. Scoped down from Omarchy's network panel on
+  purpose: connection icon, IP/gateway info, Wi-Fi list with
+  connect/disconnect/forget and an inline password prompt, radio toggle.
+  Left out DNS provider switching, band selection, QR sharing, and speed
+  test -- Omarchy's version of those is a lot of extra surface (its own
+  panel file is ~2000 lines) that didn't seem justified for a first pass.
+
+Also added while testing this, not strictly a bar widget:
+- **`mako`** -- no notification daemon existed anywhere in this repo
+  (only `libnotify`'s `notify-send` client), so the Weather widget's
+  refresh notification had nowhere to go. Added `mako` to the Linux
+  package list and launched it alongside `quickshell`/`hypridle` in
+  Hyprland's `hyprland.start` hook.
+- Hyprland monitor `scale` changed from `"auto"` (which had picked 2) to
+  `2.5` -- the VM's UI was hard to read at the auto-picked scale.
+  Hyprland silently snapped the applied value down to `2.25` (the
+  nearest scale that keeps `3600x2178` at integer logical pixels); the
+  live `hyprctl keyword monitor ...` command this fork's Lua-based config
+  layer expects isn't the vanilla-Hyprland syntax, so scale changes here
+  go through `hyprland.lua` + `hyprctl reload`, not a one-off dispatch.

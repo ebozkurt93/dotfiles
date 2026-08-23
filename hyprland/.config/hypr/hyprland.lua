@@ -2,7 +2,7 @@ hl.monitor({
     output = "",
     mode = "preferred",
     position = "auto",
-    scale = "auto",
+    scale = 2.5,
 })
 
 hl.on("hyprland.start", function()
@@ -14,6 +14,7 @@ hl.on("hyprland.start", function()
     -- of truth interactive shells already use.
     hl.exec_cmd("zsh -c 'source \"$HOME/.personal.zshrc\" 2>/dev/null; exec quickshell'")
     hl.exec_cmd("hypridle")
+    hl.exec_cmd("mako")
 end)
 
 hl.env("XCURSOR_SIZE", "24")

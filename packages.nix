@@ -69,6 +69,7 @@ with pkgs;
     neovim # built from source via setup/build-neovim.sh on macOS instead
     xdg-utils # xdg-open and default-app helpers for the desktop session
     libnotify # notify-send; tmux-mover notification fallback on Linux
+    mako # notification daemon that actually renders notify-send calls
     pavucontrol # PipeWire/PulseAudio mixer UI
     hypridle # idle daemon for lock and display sleep behavior
     wl-clipboard # helper_scripts/bin/pbcopy + pbpaste on Wayland

@@ -65,6 +65,11 @@ PanelWindow {
         anchors.rightMargin: 8
         spacing: 10
 
+        Network {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         WireGuard {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
@@ -76,6 +81,16 @@ PanelWindow {
         }
 
         Bluetooth {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Audio {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Weather {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }

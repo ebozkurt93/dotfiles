@@ -35,6 +35,13 @@
 
   # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
   hardware.bluetooth.enable = true;
+
+  # Quickshell's native Quickshell.Networking module (plugins/bar/Network.qml)
+  # only has a NetworkManager backend, so this replaces NixOS's default DHCP
+  # network management. Chosen even though the current VM has one wired NIC
+  # and no Wi-Fi hardware to exercise it with, because this config's actual
+  # target is a laptop with Wi-Fi.
+  networking.networkmanager.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;

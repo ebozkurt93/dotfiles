@@ -1,0 +1,348 @@
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import QtQuick
+
+import "../../Commons" as Commons
+
+Item {
+    id: root
+    property var shell
+    property bool popupOpen: false
+    property string home: Quickshell.env("HOME")
+    // Named weatherData, not data: `data` is QtQuick.Item's own built-in
+    // default property (it's where every child object -- visual or not,
+    // including Process below -- actually gets attached), so declaring a
+    // property with that name silently shadows it and breaks every child
+    // in this file from attaching at all. Cost a long debugging session.
+    property var weatherData: null
+
+    readonly property bool hasData: root.weatherData !== null
+    readonly property real temperatureC: hasData && root.weatherData.temperature_c !== undefined ? root.weatherData.temperature_c : 0
+    readonly property var feelsLikeC: hasData ? root.weatherData.feels_like_c : null
+    readonly property string symbolCode: hasData ? (root.weatherData.symbol_code || "") : ""
+    readonly property string label: hasData ? (root.weatherData.label || "Weather") : "Weather"
+    readonly property var nextRainAt: hasData ? root.weatherData.next_rain_at : null
+    readonly property var nextRainAmountMm: hasData ? root.weatherData.next_rain_amount_mm : null
+    readonly property var fetchedAt: hasData ? root.weatherData.fetched_at : null
+    readonly property var latitude: hasData ? root.weatherData.latitude : null
+    readonly property var longitude: hasData ? root.weatherData.longitude : null
+
+    // helper_scripts/bin/weather emits met.no/Yr's `symbol_code` strings
+    // (e.g. "clearsky_day", "rainshowersandthunder_night") -- a different
+    // vocabulary from Omarchy's wttr.in-derived weather codes, so this is
+    // its own mapping rather than a port of omarchy-weather-icon.
+    function symbolIcon(code) {
+        if (!code) return "󰖐"
+        if (code.indexOf("thunder") !== -1) return "󰙾"
+        if (code.indexOf("sleet") !== -1) return "󰙿"
+        if (code.indexOf("snow") !== -1) return "󰖘"
+        if (code.indexOf("rain") !== -1) return "󰖗"
+        if (code.indexOf("fog") !== -1) return "󰖑"
+        if (code.indexOf("clearsky") !== -1) return code.indexOf("night") !== -1 ? "󰖔" : "󰖙"
+        if (code.indexOf("fair") !== -1 || code.indexOf("partlycloudy") !== -1)
+            return code.indexOf("night") !== -1 ? "󰼱" : "󰖕"
+        return "󰖐"
+    }
+
+    function refresh() {
+        weatherProvider.running = false
+        weatherProvider.command = [home + "/bin/weather"]
+        weatherProvider.running = true
+    }
+
+    property bool forcedRefreshPending: false
+
+    function forceRefresh() {
+        forcedRefreshPending = true
+        weatherProvider.running = false
+        weatherProvider.command = [home + "/bin/weather", "--force"]
+        weatherProvider.running = true
+    }
+
+    function yrUrl() {
+        if (root.latitude === null || root.longitude === null) return ""
+        return "https://www.yr.no/en/search?q=" + root.latitude + "," + root.longitude
+    }
+
+    function openInYr() {
+        var url = yrUrl()
+        if (url === "") return
+        Quickshell.execDetached(["xdg-open", url])
+    }
+
+    Component.onCompleted: refresh()
+
+    // The script itself caches through `bkt` (45m default TTL), so polling
+    // this often just reads the local cache almost every time -- it's here
+    // to pick up the cache expiring, not to hit the network on its own clock.
+    Timer {
+        interval: 900000
+        running: true
+        repeat: true
+        onTriggered: root.refresh()
+    }
+
+    Process {
+        id: weatherProvider
+        property string buffer: ""
+        stdout: SplitParser {
+            onRead: function(data) { weatherProvider.buffer += data }
+        }
+        onStarted: weatherProvider.buffer = ""
+        onExited: function(exitCode, exitStatus) {
+            var wasForced = root.forcedRefreshPending
+            root.forcedRefreshPending = false
+            if (exitCode !== 0 || exitStatus !== 0) {
+                if (wasForced) Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refresh failed"])
+                return
+            }
+            try {
+                root.weatherData = JSON.parse(weatherProvider.buffer)
+            } catch (e) {
+                console.warn("weather returned invalid JSON:", e)
+                if (wasForced) Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refresh failed"])
+            }
+        }
+    }
+
+    function formatTemp(c) {
+        return Math.round(c) + "°"
+    }
+
+    function formatRainEta(iso) {
+        if (!iso) return ""
+        var d = new Date(iso)
+        if (isNaN(d.getTime())) return ""
+        var diffMin = Math.round((d.getTime() - Date.now()) / 60000)
+        if (diffMin <= 0) return "now"
+        if (diffMin < 60) return diffMin + "m"
+        return Math.round(diffMin / 60) + "h"
+    }
+
+    function formatAgo(iso) {
+        if (!iso) return ""
+        var d = new Date(iso)
+        if (isNaN(d.getTime())) return ""
+        var diffMin = Math.round((Date.now() - d.getTime()) / 60000)
+        if (diffMin <= 0) return "just now"
+        if (diffMin < 60) return diffMin + "m ago"
+        return Math.round(diffMin / 60) + "h ago"
+    }
+
+    implicitWidth: row.implicitWidth
+    implicitHeight: row.implicitHeight
+
+    Row {
+        id: row
+        spacing: 4
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            color: Commons.Color.bar.text
+            text: root.symbolIcon(root.symbolCode)
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            color: Commons.Color.bar.text
+            text: root.hasData ? root.formatTemp(root.temperatureC) : "--"
+        }
+    }
+
+    // Single click toggles the popup, but only after this delay expires
+    // without a second click -- otherwise the first click of a double-click
+    // would flash the popup open before onDoubleClicked cancels it.
+    Timer {
+        id: singleClickTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            root.popupOpen = !root.popupOpen
+            if (root.popupOpen) root.refresh()
+        }
+    }
+
+    MouseArea {
+        anchors.fill: row
+        onClicked: singleClickTimer.restart()
+        onDoubleClicked: {
+            singleClickTimer.stop()
+            Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refreshing…"])
+            root.forceRefresh()
+        }
+    }
+
+    PanelWindow {
+        id: popupPanel
+        visible: root.popupOpen
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
+        color: Commons.Color.transparent
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.namespace: "dotfiles-weather-popup"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.popupOpen = false
+        }
+
+        Rectangle {
+            id: popupCard
+            width: 240
+            height: popupColumn.implicitHeight + 24
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.topMargin: 36
+            anchors.rightMargin: 8
+            radius: 8
+            color: Commons.Color.launcher.cardBackground
+            border.color: Commons.Color.launcher.cardBorder
+            border.width: 1
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {}
+            }
+
+            Column {
+                id: popupColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 12
+                spacing: 10
+
+                Item {
+                    id: headerRow
+                    width: parent.width
+                    height: Math.max(headerIcon.implicitHeight, headerText.implicitHeight, headerTemp.implicitHeight)
+
+                    Text {
+                        id: headerIcon
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.symbolIcon(root.symbolCode)
+                        color: Commons.Color.launcher.text
+                        font.pixelSize: 22
+                    }
+
+                    Text {
+                        id: headerTemp
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.hasData ? root.formatTemp(root.temperatureC) + "C" : "--"
+                        color: Commons.Color.launcher.text
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+
+                    Column {
+                        id: headerText
+                        anchors.left: headerIcon.right
+                        anchors.leftMargin: 10
+                        anchors.right: headerTemp.left
+                        anchors.rightMargin: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 1
+
+                        Text {
+                            width: parent.width
+                            text: root.label
+                            color: Commons.Color.launcher.text
+                            font.pixelSize: 14
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: root.hasData ? root.symbolCode.replace(/_/g, " ") : "Loading…"
+                            color: Commons.Color.launcher.textMuted
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                Rectangle {
+                    visible: root.hasData
+                    width: parent.width
+                    height: 1
+                    color: Commons.Color.launcher.cardBorder
+                }
+
+                InfoRow {
+                    visible: root.hasData && root.feelsLikeC !== null
+                    label: "Feels like"
+                    value: root.hasData && root.feelsLikeC !== null ? root.formatTemp(root.feelsLikeC) + "C" : ""
+                }
+
+                InfoRow {
+                    visible: root.hasData && root.nextRainAt !== null
+                    label: "Next rain"
+                    value: root.hasData ? root.formatRainEta(root.nextRainAt)
+                        + (root.nextRainAmountMm !== null ? " (" + root.nextRainAmountMm + "mm)" : "") : ""
+                }
+
+                Text {
+                    visible: root.hasData && root.fetchedAt !== null
+                    width: parent.width
+                    text: "Updated " + root.formatAgo(root.fetchedAt)
+                    color: Commons.Color.launcher.textMuted
+                    font.pixelSize: 10
+                }
+
+                Text {
+                    visible: root.hasData && root.yrUrl() !== ""
+                    width: parent.width
+                    text: "Open in Yr"
+                    color: Commons.Color.launcher.selection
+                    font.pixelSize: 11
+                    font.bold: true
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.openInYr()
+                    }
+                }
+            }
+        }
+    }
+
+    component InfoRow: Item {
+        property string label: ""
+        property string value: ""
+
+        width: parent ? parent.width : 0
+        height: visible ? labelText.implicitHeight : 0
+
+        Text {
+            id: labelText
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: label
+            color: Commons.Color.launcher.textMuted
+            font.pixelSize: 11
+        }
+
+        Text {
+            anchors.left: labelText.right
+            anchors.leftMargin: 8
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            horizontalAlignment: Text.AlignRight
+            text: value
+            color: Commons.Color.launcher.text
+            font.pixelSize: 11
+            elide: Text.ElideRight
+        }
+    }
+}

@@ -16,7 +16,7 @@
 
   users.users.erdembozkurt = {
     isNormalUser = true;
-    extraGroups = ["wheel" "docker"];
+    extraGroups = ["wheel" "docker" "networkmanager"];
     shell = pkgs.zsh;
     initialPassword = "changeme";
     openssh.authorizedKeys.keys = [
