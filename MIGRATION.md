@@ -1062,3 +1062,18 @@ Not yet done for `bt_menu.lua`: the status-widget half (small
 bar/menubar indicator showing bluetooth on/off) -- that's explicitly
 deferred to the "bar widgets last" phase of the plan above, not part of
 this chooser-integration slice.
+
+While testing the bluetooth integration on the VM (via a temporary,
+uncommitted `LAUNCHER_BLUETOOTH_MOCK` env-gated mock in
+`libexec/launcher/items`, since the VM has no real adapter), a launcher
+UX idea came up worth remembering for later: **nested lists**. Right now
+every source (apps, windows, bluetooth devices, etc.) flattens its rows
+directly into the one searchable list. The idea is twofold:
+1. Sources like "Bluetooth Devices" could instead be a drill-down --
+   selecting the source enters its own sub-list, rather than all its rows
+   always being mixed into the top-level search.
+2. But also selectively surface specific items *out of* a nested list
+   into the top-level list when some condition makes them relevant (e.g.
+   a currently-connected device, or a strong search-query match) --
+   not an either/or with (1), both at once. Not designed or scoped yet,
+   just captured so it's not lost before the launcher work continues.

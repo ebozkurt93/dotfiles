@@ -269,6 +269,24 @@ bluetooth_json() {
     return
   fi
 
+  # bluetoothctl blocks on D-Bus for the full timeout when no adapter is
+  # present (confirmed on this VM) -- checking /sys/class/bluetooth first
+  # is instant and avoids paying that cost on every launcher --all/--non-apps
+  # load, not just --bluetooth mode. No "Turn On" action here: running
+  # bluetoothctl at all would hang the same way with no adapter to talk to.
+  if [ ! -d /sys/class/bluetooth ] || [ -z "$(ls -A /sys/class/bluetooth 2>/dev/null)" ]; then
+    jq -n '[{
+      id: "bt:no-adapter",
+      kind: "bluetooth",
+      icon: "bluetooth-disabled",
+      title: "No Bluetooth adapter",
+      subtitle: "Nothing to connect to",
+      keywords: ["bluetooth", "bt"],
+      actions: []
+    }]'
+    return
+  fi
+
   if ! timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
     jq -n '[{
       id: "bt:power-on",
@@ -284,13 +302,20 @@ bluetooth_json() {
 
   local paired
   paired="$(timeout 2 bluetoothctl devices Paired 2>/dev/null || true)"
-  if [ -z "$paired" ]; then
-    echo '[]'
-    return
-  fi
 
   local first=1
   printf '['
+  jq -n '{
+    id: "bt:power-off",
+    kind: "bluetooth",
+    icon: "bluetooth-active",
+    title: "Bluetooth: On",
+    subtitle: "Turn off the adapter",
+    keywords: ["bluetooth", "bt", "power", "off", "disable"],
+    actions: [{id: "power-off", title: "Turn Off", command: "bluetoothctl power off"}]
+  }'
+  first=0
+
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     local mac name connected action action_title
