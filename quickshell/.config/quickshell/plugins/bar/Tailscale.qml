@@ -166,10 +166,16 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         readonly property real iconSize: 14
         readonly property color dotColor: Commons.Color.bar.text
-        readonly property real connectionOpacity: root.connected ? 1.0 : 0.45
         readonly property real dotSize: Math.max(2, iconSize * 0.24)
         readonly property real mid: (iconSize - dotSize) / 2
         readonly property real end: iconSize - dotSize
+
+        // Connected: the real brand shape (corner dots faded, rest solid).
+        // Disconnected: every dot the same flat faded opacity -- no shape
+        // distinction, just a uniformly dim icon.
+        function dotOpacity(shapeValue) {
+            return root.connected ? shapeValue : 0.45
+        }
 
         width: iconSize
         height: iconSize
@@ -178,18 +184,16 @@ Item {
 
         // Native rendering of the Tailscale mark: a 3x3 dot grid with the
         // corner/top-row dots faded, matching the official SVG silhouette
-        // without relying on a nerd-font glyph. Each dot's own opacity is
-        // the grid *shape*; connectionOpacity separately dims the whole
-        // icon when disconnected.
-        Dot { x: 0; y: 0; opacity: 0.24 * icon.connectionOpacity }
-        Dot { x: icon.mid; y: 0; opacity: 0.24 * icon.connectionOpacity }
-        Dot { x: icon.end; y: 0; opacity: 0.24 * icon.connectionOpacity }
-        Dot { x: 0; y: icon.mid; opacity: 1.0 * icon.connectionOpacity }
-        Dot { x: icon.mid; y: icon.mid; opacity: 1.0 * icon.connectionOpacity }
-        Dot { x: icon.end; y: icon.mid; opacity: 1.0 * icon.connectionOpacity }
-        Dot { x: 0; y: icon.end; opacity: 0.24 * icon.connectionOpacity }
-        Dot { x: icon.mid; y: icon.end; opacity: 1.0 * icon.connectionOpacity }
-        Dot { x: icon.end; y: icon.end; opacity: 0.24 * icon.connectionOpacity }
+        // without relying on a nerd-font glyph.
+        Dot { x: 0; y: 0; opacity: icon.dotOpacity(0.24) }
+        Dot { x: icon.mid; y: 0; opacity: icon.dotOpacity(0.24) }
+        Dot { x: icon.end; y: 0; opacity: icon.dotOpacity(0.24) }
+        Dot { x: 0; y: icon.mid; opacity: icon.dotOpacity(1.0) }
+        Dot { x: icon.mid; y: icon.mid; opacity: icon.dotOpacity(1.0) }
+        Dot { x: icon.end; y: icon.mid; opacity: icon.dotOpacity(1.0) }
+        Dot { x: 0; y: icon.end; opacity: icon.dotOpacity(0.24) }
+        Dot { x: icon.mid; y: icon.end; opacity: icon.dotOpacity(1.0) }
+        Dot { x: icon.end; y: icon.end; opacity: icon.dotOpacity(0.24) }
 
         component Dot: Rectangle {
             width: icon.dotSize
