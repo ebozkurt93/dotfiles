@@ -1013,8 +1013,52 @@ exists on Hyprland before porting the binding itself.
     renders, launcher opens/closes via IPC, lock locks/unlocks with the
     power buttons intact.
 
-## Next session note: helper script organization (still pending)
+## Helper script organization -- done (2026-08-23, commit 7711d10)
 
-The helper-script reorg immediately above (public `bin/` vs internal
-`libexec/`) has not been started yet -- this session did the Quickshell
-file-split instead. Still the next queued piece of task #5 cleanup.
+The bin/libexec reorg above is complete: `desktop` (lock, lock-preview)
+and `launcher` (items, open-desktop, plus its existing IPC-control flags)
+are the public commands; implementation lives under
+`helper_scripts/libexec/{desktop,launcher}/`. Old names kept as thin
+compat wrappers. `helper_scripts/bin/helpers` was deliberately left in
+place, not moved -- see the reasoning above.
+
+## `bt_menu.lua` ported -- first proof of the launcher-integration shape
+(2026-08-23)
+
+Ported the hs.chooser device-picker piece of `bt_menu.lua` as the first
+real test of "integrate into the existing launcher" from the direction
+decided above. Added a `bluetooth_json()` provider to
+`helper_scripts/libexec/launcher/items` (`--bluetooth` mode), following
+the exact same shape as `windows_json`/`states_json`: paired devices via
+`bluetoothctl devices Paired`, per-device connected state via
+`bluetoothctl info <mac>`, one `toggle` action per device
+(connect/disconnect). Wrapped every `bluetoothctl` call in `timeout 2`
+-- same class of hang risk found and fixed earlier this migration in
+`tmux_bluetooth.sh` when no adapter is present (confirmed on this VM,
+which has none: gracefully returns a single "Bluetooth is off / Turn On"
+item instead of an empty list or a hang).
+
+Included in both `--all` and `--non-apps` aggregation, plus:
+- a direct keybind, `SUPER+SHIFT+B` -> `launcher --bluetooth`, mirroring
+  the original's standalone `ctrl+shift+alt+b` hotkey (the "some should
+  stay independently keybindable" requirement from the direction above);
+- a static `action:bluetooth-devices` entry in `actions.json` so it's
+  also reachable from the main `SUPER+D` palette, alongside the
+  pre-existing `action:bluetooth-toggle` (adapter power toggle, separate
+  concern from per-device connect/disconnect).
+
+`Launcher.qml` needed zero changes -- its provider-command wiring was
+already generic (`--` + whatever `launcherMode` is set to), confirming
+the launcher's shape genuinely supports adding new integrated sources
+without touching the QML each time.
+
+Verified on the VM: `launcher items --bluetooth` returns the graceful
+off-state item, `launcher items --all` completes in ~2s (timeout guards
+working, not hanging), both new binds registered (`hyprctl binds -j`),
+and `launcher --bluetooth` opens the real Quickshell launcher layer via
+IPC.
+
+Not yet done for `bt_menu.lua`: the status-widget half (small
+bar/menubar indicator showing bluetooth on/off) -- that's explicitly
+deferred to the "bar widgets last" phase of the plan above, not part of
+this chooser-integration slice.

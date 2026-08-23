@@ -59,6 +59,7 @@ hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd(home .. "/bin/desktop lock"))
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"))
 hl.bind(mainMod .. " + ALT + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --all"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"))
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --bluetooth"))
 
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))

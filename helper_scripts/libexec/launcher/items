@@ -11,7 +11,7 @@ fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--calculator QUERY]
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--bluetooth|--calculator QUERY]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
 Quickshell and future launcher frontends.
@@ -38,6 +38,7 @@ while [ "$#" -gt 0 ]; do
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
     --tabs) mode="tabs"; shift ;;
+    --bluetooth) mode="bluetooth"; shift ;;
     --calculator)
       mode="calculator"
       shift
@@ -262,6 +263,78 @@ tabs_json() {
   ' "$tabs_file"
 }
 
+bluetooth_json() {
+  if ! have_cmd jq || ! have_cmd bluetoothctl; then
+    echo '[]'
+    return
+  fi
+
+  if ! timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+    jq -n '[{
+      id: "bt:power-on",
+      kind: "bluetooth",
+      icon: "bluetooth-disabled",
+      title: "Bluetooth is off",
+      subtitle: "Turn on the adapter",
+      keywords: ["bluetooth", "bt", "power", "on", "enable"],
+      actions: [{id: "power-on", title: "Turn On", command: "bluetoothctl power on"}]
+    }]'
+    return
+  fi
+
+  local paired
+  paired="$(timeout 2 bluetoothctl devices Paired 2>/dev/null || true)"
+  if [ -z "$paired" ]; then
+    echo '[]'
+    return
+  fi
+
+  local first=1
+  printf '['
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    local mac name connected action action_title
+    mac="$(awk '{print $2}' <<<"$line")"
+    name="$(cut -d' ' -f3- <<<"$line")"
+    [ -n "$mac" ] || continue
+
+    connected="false"
+    if timeout 2 bluetoothctl info "$mac" 2>/dev/null | grep -q "Connected: yes"; then
+      connected="true"
+    fi
+
+    if [ "$connected" = "true" ]; then
+      action="disconnect"
+      action_title="Disconnect"
+    else
+      action="connect"
+      action_title="Connect"
+    fi
+
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    jq -n \
+      --arg id "bt:$mac" \
+      --arg title "$name" \
+      --arg mac "$mac" \
+      --argjson connected "$connected" \
+      --arg action_title "$action_title" \
+      --arg command "bluetoothctl $action $mac" \
+      '{
+        id: $id,
+        kind: "bluetooth",
+        icon: (if $connected then "bluetooth-active" else "bluetooth" end),
+        title: $title,
+        subtitle: ($mac + " - " + (if $connected then "Connected" else "Disconnected" end)),
+        keywords: ["bluetooth", "bt", $title, $mac],
+        actions: [
+          {id: "toggle", title: $action_title, command: $command}
+        ]
+      }'
+  done <<<"$paired"
+  printf ']'
+}
+
 calculator_json() {
   if ! have_cmd jq || ! have_cmd qalc; then
     echo '[]'
@@ -315,15 +388,16 @@ case "$mode" in
   apps) apps_json ;;
   non-apps)
     require_cmd jq
-    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json)
+    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(bluetooth_json)
     ;;
   actions) actions_json ;;
   windows) windows_json ;;
   states) states_json ;;
   tabs) tabs_json ;;
+  bluetooth) bluetooth_json ;;
   calculator) calculator_json ;;
   all)
     require_cmd jq
-    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json)
+    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(bluetooth_json)
     ;;
 esac

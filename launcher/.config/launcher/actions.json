@@ -24,6 +24,17 @@
     ]
   },
   {
+    "id": "action:bluetooth-devices",
+    "kind": "setting",
+    "icon": "bluetooth",
+    "title": "Bluetooth Devices",
+    "subtitle": "Connect/disconnect paired devices",
+    "keywords": ["bluetooth", "bt", "devices", "connect", "disconnect", "pair"],
+    "actions": [
+      {"id": "run", "title": "Open", "command": "~/bin/launcher --bluetooth"}
+    ]
+  },
+  {
     "id": "action:calculator",
     "kind": "tool",
     "icon": "accessories-calculator",
