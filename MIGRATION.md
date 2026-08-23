@@ -401,69 +401,99 @@ Medium:
   x86_64-linux host + build-only CI check. Mostly config, no new logic.
 
 Large — hammerspoon → Hyprland/Linux. Explicitly deferred to its own
-session (2026-08-21: user flagged this as the massive one but noted it's
-not monolithic — worth splitting by kind rather than porting file-by-file).
-Full file inventory as of this session, split by kind:
+session, started 2026-08-23. The file-count/line-count inventory from
+earlier sessions (below this point until superseded) turned out to be
+unreliable for keep/drop calls — a same-session correction found real
+cross-file callers a shallow read/grep missed (see "Hammerspoon
+call-graph audit" below). Do not judge any file's droppability in
+isolation again; check the audit's per-file caller list first.
 
-- **Pure keybinding/window-management** (mechanical translation to Hyprland
-  Lua config, `hl.bind`/`hl.dsp.window.*`, no UI to design):
-  `window_manager.lua` (124 lines), `mouse_snap_window.lua` (172),
-  `scoped_hotkeys.lua` (331 — app-scoped hotkey remapping, check if
-  Hyprland's per-window-rule binds or a small daemon is the right
-  equivalent), `rapid_toggle.lua` (48), `Spoons/ShiftIt.spoon` (window
-  snapping, likely redundant with Hyprland's own tiling — probably drop
-  rather than port).
-- **System-status/menubar widgets** (no macOS menubar on Hyprland — these
-  become quickshell bar widgets, not 1:1 ports): `kb_battery.lua` (62),
-  `weather.lua` (336), `now-playing.lua` (109), `theme_sync.lua` (10),
-  `menubar_colors.lua` (18), `mouse_position_indicator.lua` (115),
-  `bt_menu.lua` (63 — also needs blueutil → bluetoothctl, see above).
-- **`hs.chooser`-based UI (fuzzy-picker popups)** — 8 files, this is the
-  part the user specifically flagged: *"some of them open lists etc, which
-  theoretically can be integrated into other lists, as this is not
-  macOS"*. i.e. don't necessarily build 8 separate wofi invocations — some
-  of these are different data sources feeding the same
-  fuzzy-picker-and-act UX pattern, and could become modes/inputs of one
-  shared Linux launcher instead of independent ports:
-  - `chrome_tab_switcher.lua` (57) / `firefox_tab_switcher.lua` (34) —
-    near-identical shape, browser tab list → switch. Same underlying
-    pattern.
-  - `state_switcher.lua` (122) — already has a portable Go backend
-    (`tmux/tmux-mover`'s sibling, `state-switcher`, already ported and
-    building on Linux per an earlier session) — this one's UI-only work.
-  - `menu_item_search.lua` (97) — searches the focused app's AXMenuBar via
-    accessibility APIs; **macOS-only concept**, no direct Linux equivalent
-    (no universal per-app menu introspection API on Linux) — needs a
-    rethink, not a port, or drop.
-  - `fuzzy_window_switcher.lua` (126) — window list → focus; Hyprland's
-    `hyprctl clients -j` gives the same data natively.
-  - `bt_menu.lua` (63, listed above too — has both a status-widget and a
-    chooser-driven connect/disconnect flow).
-  - `action_menu.lua` (91) — looks like a general command palette; a
-    natural "hub" if choosers do get unified.
-  - `text_expander.lua` (181) — different shape (types text on trigger, not
-    pick-and-act), but similar hs.chooser popup UX; check if it fits the
-    same launcher or wants a separate small daemon.
-- **Supporting/infra files**, not independently portable, get pulled along
-  with whatever depends on them: `helpers.lua` (375), `macos_helpers.lua`
-  (550, name says it all — heavily macOS-specific, expect a lot of this to
-  just not have a Linux equivalent and get dropped rather than ported),
-  `fzy.lua` (300, fuzzy-matching lib — likely reusable as-is, pure Lua
-  logic), `globals.lua` (7), `reload.lua` (5).
-- **Probably drop outright** (macOS-specific concepts with no Linux
-  equivalent, or already covered elsewhere): `amphetamine.lua` (315 — caffeine/
-  sleep-prevention, Linux equivalent would be a systemd inhibit lock, much
-  simpler), `sleepwatcher.lua` (49), `google_meet_mic_toggle.lua` (35),
-  `spotify.lua` (69, check if `now-playing.lua` already subsumes it),
-  `Spoons/EmmyLua.spoon` (Hammerspoon-specific dev tooling, not applicable),
-  `Spoons/MenubarFlag.spoon` (macOS menubar, not applicable).
+### Hammerspoon call-graph audit (2026-08-23)
 
-Recommended order when this session happens: keybinding/window-management
-files first (cheap, mechanical, immediately useful), then decide the
-chooser-unification design (this is where user input on desired shape
-matters most) before touching any of the 8 chooser files, then
-menubar/status widgets last (blocked on quickshell bar being fleshed out
-beyond the current placeholder clock/workspace widget anyway).
+A background agent read all 27 `.lua` files + 3 Spoons and built a real
+cross-reference (who requires/calls whom, by exact function name, not
+just "file X requires file Y"). Full per-file detail lives in this
+session's transcript, not reproduced here — the load-bearing findings:
+
+- **Confirmed actually dead** (commented out in `init.lua`, zero callers
+  anywhere): `chrome_tab_switcher.lua` (superseded in-repo by
+  `firefox_tab_switcher.lua` + the Firefox native-messaging bridge) and
+  `google_meet_mic_toggle.lua`. Safe to drop outright, no port needed.
+- **`helpers.lua` is the real backbone** — 13 callers
+  (`action_menu`, `bt_menu`, `firefox_tab_switcher`, `fuzzy_window_switcher`,
+  `menu_item_search`, `rapid_toggle`, `scoped_hotkeys`, `sleepwatcher`,
+  `state_switcher`, `text_expander`, `macos_helpers`, `init.lua`, plus the
+  dead `chrome_tab_switcher`). Cannot be dropped; needs function-by-function
+  porting (fuzzy-search glue, app-scoped hotkeys, browser bridge commands,
+  debounce, etc.), not a whole-file judgment.
+- **`macos_helpers.lua` has 6 real callers**, not "mostly droppable" as an
+  earlier same-session pass wrongly guessed: `action_menu`, `bt_menu`,
+  `mouse_snap_window`, `rapid_toggle` (10 of its functions alone),
+  `sleepwatcher`, `theme_sync`. Each exported function needs its own
+  keep/drop/port call, not the file as a whole.
+- **`globals.lua`** — 5 callers, just keybind modifier constants (`hyper`,
+  `ctrl_alt`). Trivial, unblocks nothing risky — good first port.
+- **`fzy.lua`** — only required by `helpers.lua` (single-quote
+  `require('fzy')`, which a double-quote-only grep missed — a live example
+  of why this audit re-read full file contents instead of grepping), but
+  load-bearing for every chooser's fuzzy search since `helpers.lua` sits
+  under nearly everything.
+- **The three Spoons** (`ShiftIt`, `MenubarFlag`, `EmmyLua`) are each used
+  by exactly one file (`window_manager.lua`, `menubar_colors.lua`,
+  `init.lua` respectively) — the original single-file assessment held up
+  for these three specifically.
+- **Everything else is a "leaf"**: reachable from `init.lua`, but no
+  sibling `.lua` file depends on it, so each can be evaluated/ported
+  independently without a cross-file blast radius — `amphetamine`,
+  `bt_menu`, `kb_battery`, `weather`, `spotify`, `now-playing`,
+  `state_switcher`, `scoped_hotkeys`, `mouse_snap_window`,
+  `mouse_position_indicator`, `theme_sync`, `text_expander`, `action_menu`,
+  `menu_item_search`, `firefox_tab_switcher`, `fuzzy_window_switcher`,
+  `reload`, `window_manager`.
+- **No code outside `hammerspoon/` calls into it** (only reference is
+  `scripts/stow.sh` listing it as a stow package name). Hammerspoon files
+  *do* call out extensively to `~/bin/helpers/*` (already-ported scripts)
+  and directly to `~/Documents/bitbar_plugins/state-switcher.5m` (the
+  bitbar/state-switcher binary — still an open "Decisions made" item at
+  the top of this file).
+
+### Direction decided (2026-08-23), supersedes the old "hs.chooser
+unification" and "probably drop" framing above
+
+- **The `hs.chooser`-driven action files are not being dropped.** They get
+  integrated as entries/modes in the existing Quickshell launcher
+  (`SUPER+D` / `launcher --all`, see `helper_scripts/bin/launcher` +
+  `launcher-items` + `quickshell/.config/quickshell/plugins/launcher/`,
+  already built this migration) rather than becoming separate standalone
+  pickers. This covers `bt_menu.lua`, `action_menu.lua`,
+  `firefox_tab_switcher.lua`, `state_switcher.lua` (data path already
+  surfaced via `launcher-items --states`), `text_expander.lua`,
+  `fuzzy_window_switcher.lua` (already covered by `launcher --windows`).
+  `menu_item_search.lua` stays a likely-drop (macOS AXMenuBar
+  introspection, no Linux equivalent) since it doesn't fit the
+  data-source-into-launcher pattern the others do.
+- **Some of these should also stay directly keybindable**, not
+  launcher-only — e.g. a bluetooth toggle callable both as a launcher entry
+  and its own hotkey. Design each integration with both paths in mind
+  rather than assuming launcher-only access.
+- **Status/menubar widgets become Quickshell bar items**, not 1:1 ports:
+  `kb_battery.lua`, `weather.lua`, `now-playing.lua`/`spotify.lua`,
+  `theme_sync.lua`. Look at Omarchy's own equivalents for patterns before
+  building ours — local reference checkout at
+  `/Users/erdembozkurt/personal-repositories/junk/omarchy/`, relevant
+  dirs: `shell/plugins/services/battery/` (Service.qml + BatteryModel.js),
+  `shell/plugins/services/media/` (Service.qml + BarWidget.qml +
+  MediaModel.js — has a ready-made bar widget shape to reference),
+  `shell/plugins/services/nightlight/` and `shell/plugins/services/idle/`
+  (possible `theme_sync.lua`/idle-related analogs). Same "inspiration not
+  adoption" stance as the launcher/Commons.Color work already: borrow the
+  shape, not the plugin-registry machinery.
+
+Recommended order: `globals.lua` first (trivial, unblocks nothing risky),
+then decide the launcher-integration shape for one chooser file end to end
+before doing the rest (same "get one real thing working, then repeat"
+pattern that worked for the launcher itself), then bar widgets last once
+that shape is proven.
 
 ## Current session update (4)
 
