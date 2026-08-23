@@ -495,6 +495,19 @@ before doing the rest (same "get one real thing working, then repeat"
 pattern that worked for the launcher itself), then bar widgets last once
 that shape is proven.
 
+### `reload.lua` -- drop, not port (2026-08-23)
+
+Tried porting `reload.lua` (hyper+R -> `hs.reload()`) as the first small
+`globals.lua`-caller slice: added `SUPER+CTRL+R` -> `hyprctl reload`.
+Removed it again after confirming (Hyprland's own docs/news post, then
+verified empirically on the VM -- editing `hyprland.lua` and watching the
+bind disappear with zero manual reload) that **Hyprland already
+auto-reloads its Lua config on save** via `inotify`. Hammerspoon's
+`hyper+R` existed specifically because Hammerspoon does *not* auto-reload
+-- that need doesn't carry over. Net diff: none, this file is a pure drop.
+Lesson: check whether the *problem* a Hammerspoon binding solves still
+exists on Hyprland before porting the binding itself.
+
 ## Current session update (4)
 
 - Ported the two small task #5 items: `low-power-mode-toggle.sh` and
