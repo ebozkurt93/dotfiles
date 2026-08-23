@@ -58,4 +58,16 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
     }
+
+    Row {
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.rightMargin: 8
+        spacing: 10
+
+        Tailscale {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+    }
 }

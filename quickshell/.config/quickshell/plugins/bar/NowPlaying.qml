@@ -80,7 +80,8 @@ Item {
         Text {
             id: nowPlayingIcon
             anchors.verticalCenter: parent.verticalCenter
-            color: root.activePlayer && root.activePlayer.isPlaying ? Commons.Color.bar.text : Qt.darker(Commons.Color.bar.text, 1.5)
+            color: Commons.Color.bar.text
+            opacity: root.activePlayer && root.activePlayer.isPlaying ? 1.0 : 0.45
             text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
 
             MouseArea {

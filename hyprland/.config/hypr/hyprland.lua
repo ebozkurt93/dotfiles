@@ -6,7 +6,13 @@ hl.monitor({
 })
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("quickshell")
+    -- quickshell is launched directly by Hyprland (not through a login
+    -- shell), so it never sees vars exported only from .zshrc/.personal.zshrc.
+    -- Source .personal.zshrc via a real zsh login shell (matching its
+    -- actual dialect) so Process calls made from quickshell (ts-manager,
+    -- etc.) inherit things like HEADSCALE_URL from the same single source
+    -- of truth interactive shells already use.
+    hl.exec_cmd("zsh -c 'source \"$HOME/.personal.zshrc\" 2>/dev/null; exec quickshell'")
     hl.exec_cmd("hypridle")
 end)
 

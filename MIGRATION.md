@@ -1148,3 +1148,99 @@ it's a Swift/CoreBluetooth script, fully macOS-only, so porting it means
 writing a new Linux BLE battery reader from scratch (BlueZ/D-Bus), not
 a QML-side port -- and this VM has no Bluetooth adapter to test against
 regardless. Deferred, not started.
+
+## Bar widget scope decided (2026-08-23)
+
+Cross-referenced Omarchy's widget catalogue against what we already have
+backend/data for on our side (existing helper scripts, launcher
+providers). User's prioritization for this phase ("normal OS stuff"):
+
+In scope now, no fixed order yet:
+- **Bluetooth** -- reuse `bluetooth_json()` provider + `bt-toggle` (built
+  this session for the launcher). Reference: `omarchy.bluetooth`.
+- **Tailscale** -- reuse `ts-manager` (up/down/status, DNS override,
+  built earlier in the migration). Reference: `omarchy.tailscale`.
+- **WireGuard** -- reuse `wg-manager` (built earlier in the migration,
+  alongside ts-manager). Not in Omarchy's own catalogue (they only cover
+  Tailscale) but same shape/need.
+- **Power/battery** -- reuse `low-power-mode-toggle.sh` +
+  `tmux_battery.sh`'s existing `/sys/class/power_supply` reading.
+  Reference: `omarchy.power`.
+- **Weather** -- reuse `~/bin/weather` (not yet verified portable, was
+  used from macOS `weather.lua`, check before committing to it).
+  Reference: `omarchy.weather`.
+- **Audio** -- no backend yet. Quickshell has a native
+  `Quickshell.Services.Pipewire` module (confirmed -- Omarchy's own
+  media widget already uses it for stream detection), so likely no
+  shell-outs needed, same story as MPRIS working out for now-playing.
+  Reference: `omarchy.audio`.
+- **Network** -- no backend yet, would need NetworkManager D-Bus or
+  `nmcli` wrapping from scratch. Reference: `omarchy.network`.
+
+Explicitly deferred (not this phase):
+- **AI agent quota widget** (`ai_quota` script already exists) -- "much
+  later, after deployment and using things," i.e. once the VM is an
+  actual daily-use machine generating real data to show.
+- **Sleep prevention** (`amphetamine.lua` equivalent, systemd-inhibit
+  per earlier decision) -- later.
+- **System update indicator** -- explicitly not needed. NixOS's
+  rebuild-available concept doesn't map cleanly to Omarchy's Arch
+  package-update indicator anyway.
+- **Keyboard layout** -- nice to have, later.
+
+## Two real bugs found testing the Tailscale widget's login flow (2026-08-23)
+
+Testing `ts-manager up` end to end (first real attempt at a headscale login
+on this VM) surfaced two genuine, unrelated bugs, both worth remembering
+for the eventual physical-machine setup:
+
+**1. Ghostty's `startup.sh` PATH prefix omitted `/run/wrappers/bin`.**
+The earlier "zsh is missing" fix (an earlier session) made
+`ghostty/.config/ghostty/startup.sh` hardcode a PATH prefix
+(`$HOME/.nix-profile/bin:...:/run/current-system/sw/bin:...`) ahead of
+the shell's real PATH. That prefix included `/run/current-system/sw/bin`
+(the plain, unwrapped package binaries) but not `/run/wrappers/bin` (the
+setuid-wrapped ones), so any Ghostty-launched shell had the wrong `sudo`
+shadowing the real one -- `sudo: /run/current-system/sw/bin/sudo must be
+owned by uid 0 and have the setuid bit set`. Confirmed this was NOT
+session-specific (survived a fresh Ghostty window) by checking `which -a
+sudo`'s ordering. NixOS's own `/etc/zshenv` -> `/etc/static/set-environment`
+already does the correct `export PATH="/run/wrappers/bin:$PATH"` prepend
+for every zsh shell unconditionally -- the bug was Ghostty's own script
+re-prepending a second, incomplete PATH ahead of that. Fixed by adding
+`/run/wrappers/bin` to the front of `startup.sh`'s hardcoded list. No
+reboot/Quickshell-restart needed -- Ghostty reads this script fresh on
+every new window.
+
+**2. The gnome-keyring "login" collection was in a broken/unrecoverable
+state.** `~/bin/helpers/pass.sh` (secret-tool lookup) returned empty,
+because no real secret had ever been persisted -- an earlier session's
+verification only stored a *test* secret, confirmed retrieval worked,
+then explicitly cleared it (see "Current session update (9)" above) and
+never replaced it with a real one for daily use. Attempting to store the
+real secret hit "Cannot create an item in a locked collection". Manually
+unlocking via `gnome-keyring-daemon --unlock` (the same trick verified
+working in an earlier session) did not actually unlock the *real* login
+collection the desktop session's own keyring daemon manages -- it
+triggered a GUI "Authentication required: the login keyring did not get
+unlocked when you logged into your computer" dialog instead, and the
+known VM login password ("changeme") was rejected by it. This means the
+keyring's own password had drifted out of sync with the login password
+at some point (a classic gnome-keyring gotcha when the collection isn't
+created via a PAM-synced login) -- not something recoverable by
+guessing. Given the VM is documented as disposable/non-stateful, fixed by
+deleting `~/.local/share/keyrings/{login.keyring,user.keystore}` and
+rebooting via `utmctl stop --kill` + `start`, so a fresh tuigreet login
+creates a new collection properly synced to the login password via
+`security.pam.services.greetd.enableGnomeKeyring` (already configured).
+**Not yet re-verified after reboot** -- needs a real interactive tuigreet
+login (console/UTM window, not SSH) to actually trigger PAM's keyring
+creation/unlock, then re-run `secret-tool store --label="..." purpose
+sudo-password` with the real password and confirm `pass.sh` returns it.
+
+For the eventual physical machine: worth deciding up front whether the
+first real login should go through the graphical greeter (so the keyring
+gets created correctly from the start) before ever touching it over SSH
+or with manual `gnome-keyring-daemon --unlock` workarounds -- that's
+almost certainly what caused this VM's collection to end up out of sync
+in the first place.

@@ -1,7 +1,11 @@
 #!/usr/bin/env zsh
 
-# Ensure PATH includes Nix profile paths first so we can find tmux and other tools
-export PATH="$HOME/.nix-profile/bin:/etc/profiles/per-user/$USER/bin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# Ensure PATH includes Nix profile paths first so we can find tmux and other
+# tools. /run/wrappers/bin must come before /run/current-system/sw/bin --
+# it holds the setuid-wrapped sudo; the sw/bin copy is unwrapped and will
+# fail with "must be owned by uid 0 and have the setuid bit set" if it
+# shadows the real one.
+export PATH="/run/wrappers/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/$USER/bin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Source critical configuration files for environment setup
 if [ -f /etc/profile ]; then

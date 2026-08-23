@@ -3,6 +3,7 @@ export EDITOR=nvim
 export GH_USERNAME=ebozkurt93
 export COPILOT_ENABLED=false
 export COPILOT_ENABLED_PATH=""
+export HEADSCALE_URL="https://hs.erdem-bozkurt.com"
 
 unset LC_ALL
 export LANG="en_GB.UTF-8"

@@ -37,6 +37,16 @@ _ts() {
   "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" "$@"
 }
 
+# tailscaled runs as root (started via sudo in _start_daemon), so its
+# socket is root-owned -- state-changing commands (up/down/set) against it
+# need the same privilege or fail with "Access denied: checkprefs access
+# denied", as tailscale's own error message points out. Read-only commands
+# (status, debug netmap) work fine unprivileged via _ts.
+_ts_sudo() {
+  _ensure_bins
+  echo "$(_pass)" | sudo -S "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" "$@"
+}
+
 _start_daemon() {
   if _running; then
     echo "daemon already running"
@@ -152,7 +162,7 @@ if [[ "$1" == "cli" ]]; then
   shift
   if [[ "$1" == "up" ]] && [[ "$*" != *"--login-server"* ]]; then
     [[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
-    _ts up --login-server "$HEADSCALE_URL" --accept-routes "${@:2}"
+    _ts_sudo up --login-server "$HEADSCALE_URL" --accept-routes "${@:2}"
   else
     _ts "$@"
   fi
@@ -171,7 +181,7 @@ case "$selected" in
     _start_daemon
     state=$(_ts status --json 2>/dev/null | jq -r '.BackendState')
     if [[ "$state" != "Running" ]]; then
-      _ts up --login-server "$HEADSCALE_URL" --accept-routes
+      _ts_sudo up --login-server "$HEADSCALE_URL" --accept-routes
     fi
     _configure_dns
     ;;
@@ -181,7 +191,7 @@ case "$selected" in
       exit 0
     fi
     _restore_dns
-    _ts down
+    _ts_sudo down
     _stop_daemon
     ;;
   status)
@@ -200,9 +210,9 @@ case "$selected" in
     fi
     [[ -z "$selected_node" ]] && exit 0
     if [[ "$selected_node" == "none" ]]; then
-      _ts set --exit-node=
+      _ts_sudo set --exit-node=
     else
-      _ts set --exit-node="$selected_node"
+      _ts_sudo set --exit-node="$selected_node"
     fi
     ;;
   info)
@@ -211,7 +221,7 @@ case "$selected" in
     else
       _ts status --json 2>/dev/null | jq '{
         connected: (.BackendState == "Running"),
-        exit_node: ([.Peer[] | select(.ExitNode == true) | .HostName][0] // null)
+        exit_node: ([(.Peer // {})[] | select(.ExitNode == true) | .HostName][0] // null)
       }'
     fi
     ;;
