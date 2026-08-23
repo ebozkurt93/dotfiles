@@ -79,5 +79,10 @@ PanelWindow {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
+
+        Power {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 }

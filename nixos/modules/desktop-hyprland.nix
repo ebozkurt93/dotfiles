@@ -28,6 +28,11 @@
   # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
   services.power-profiles-daemon.enable = true;
 
+  # org.freedesktop.UPower D-Bus service (battery/device info); separate
+  # from power-profiles-daemon above. Used by Quickshell's native
+  # Quickshell.Services.UPower module (plugins/bar/Power.qml).
+  services.upower.enable = true;
+
   # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
   hardware.bluetooth.enable = true;
   services.pipewire = {

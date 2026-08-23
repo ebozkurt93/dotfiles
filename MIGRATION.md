@@ -1296,3 +1296,47 @@ popup, search/filter for its machine list, and the bigger one --
 concurrent multi-connection support (the user runs Tailscale for work
 and Headscale for personal, sometimes at the same time), which the
 current one-`ts-manager`-instance design doesn't support at all.
+
+## Power/battery bar widget added (2026-08-23)
+
+Icon-only in the bar (battery level icon when a battery is present,
+otherwise the active power-profile icon), popup on click. Unlike
+Bluetooth/Tailscale/WireGuard, this one is built entirely on Quickshell's
+native `Quickshell.Services.UPower` module rather than shelling out --
+`UPower.displayDevice` for the battery, `PowerProfiles` for the
+Balanced/PowerSaver/Performance profile switcher. `PowerProfiles.profile`
+is also directly settable, so the profile picker in the popup writes to
+it straight from a `MouseArea`, no helper script involved.
+
+Found the backend service wasn't actually running on this VM:
+`services.power-profiles-daemon.enable` was already on, but that's a
+separate systemd unit from `services.upower`, which Quickshell's
+`UPower` singleton actually depends on. Added `services.upower.enable =
+true;` to `desktop-hyprland.nix` and rebuilt/switched -- confirmed via
+`busctl --system introspect org.freedesktop.UPower` and Quickshell's
+"Could not launch service org.freedesktop.UPower" warning disappearing
+after restart.
+
+One field -- charge-cycle count -- isn't exposed by Quickshell's native
+UPower binding (not all backends report it, no matching `Q_PROPERTY`),
+so that one value is fetched via a real shell-out to `upower -i`,
+refreshed every 30s. Per the user: shelling out is fine when it's
+meaningful, not a reason to drop a field the Omarchy reference panel
+also shows.
+
+Checked Omarchy's own battery panel for the icon set and popup shape
+(10-step charging/discharging battery glyphs, profile icons) rather than
+guessing codepoints. Two real layout bugs found and fixed along the way:
+the info rows and the header both originally used `Item { width:
+parent.width - <magic number> }` spacers sized for the shortest label,
+which broke ("Charge cycles" is longer than "Health") and left the
+percentage not flush to the popup's right edge. Fixed both by switching
+to anchor-based two-column layouts (label anchored left, value anchored
+right with `elide: Text.ElideRight`) that don't assume a fixed label
+width.
+
+Tested via a temporary, uncommitted `POWER_MOCK` env-gated mock (a plain
+JS object standing in for `UPower.displayDevice`, since UPower is a
+native binding and can't be faked with a shell script env var the way
+the launcher/WireGuard mocks were) -- purged before committing, same
+mock-then-purge pattern as every other widget this session.
