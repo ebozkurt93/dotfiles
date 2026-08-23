@@ -2,11 +2,21 @@
 
 set -euo pipefail
 
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+libexec_dir="$bin_dir/../libexec/launcher"
+
+case "${1:-}" in
+  items) shift; exec "$libexec_dir/items" "$@" ;;
+  open-desktop) shift; exec "$libexec_dir/open-desktop" "$@" ;;
+esac
+
 mode="all"
 
 usage() {
   cat <<'EOF'
 Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs] [--open|--toggle|--close|--ping]
+       launcher items [--all|--apps|--actions|--windows|--states|--tabs|--calculator <query>]
+       launcher open-desktop <desktop-file-or-id>
 
 Control the Quickshell launcher surface.
 EOF

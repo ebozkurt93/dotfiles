@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+libexec_dir="$bin_dir/../libexec/desktop"
+
+usage() {
+  cat <<'EOF'
+Usage: desktop <lock|lock-preview>
+
+Control desktop-level Hyprland/Quickshell surfaces.
+EOF
+}
+
+cmd="${1:-}"
+[ "$#" -gt 0 ] && shift
+
+case "$cmd" in
+  lock) exec "$libexec_dir/lock" "$@" ;;
+  lock-preview) exec "$libexec_dir/lock-preview" "$@" ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage >&2; exit 1 ;;
+esac

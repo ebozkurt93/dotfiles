@@ -42,7 +42,7 @@
     "subtitle": "Lock the current session",
     "keywords": ["lock", "screen", "session", "secure", "quickshell"],
     "actions": [
-      {"id": "lock", "title": "Lock", "command": "~/bin/lock-screen"}
+      {"id": "lock", "title": "Lock", "command": "~/bin/desktop lock"}
     ]
   },
   {
@@ -53,7 +53,7 @@
     "subtitle": "Show the lock UI without locking",
     "keywords": ["lock", "screen", "preview", "theme", "style"],
     "actions": [
-      {"id": "preview", "title": "Preview", "command": "~/bin/lock-preview"}
+      {"id": "preview", "title": "Preview", "command": "~/bin/desktop lock-preview"}
     ]
   },
   {

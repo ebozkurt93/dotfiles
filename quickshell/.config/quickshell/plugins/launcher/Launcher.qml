@@ -78,7 +78,7 @@ PanelWindow {
 
         var providerMode = launcherMode === "all" ? "non-apps" : (launcherMode || "all")
         var flag = "--" + providerMode
-        launcherProvider.command = [home + "/bin/launcher-items", flag]
+        launcherProvider.command = [home + "/bin/launcher", "items", flag]
         launcherProvider.running = true
         reloadCalculator()
     }
@@ -127,7 +127,7 @@ PanelWindow {
                     {
                         id: "open",
                         title: "Open",
-                        command: home + "/bin/launcher-open-desktop " + shellQuote(id)
+                        command: home + "/bin/launcher open-desktop " + shellQuote(id)
                     }
                 ]
             })
@@ -154,7 +154,7 @@ PanelWindow {
             return
         }
         calculatorProvider.serial = calculatorSerial
-        calculatorProvider.command = [home + "/bin/launcher-items", "--calculator", launcherQuery]
+        calculatorProvider.command = [home + "/bin/launcher", "items", "--calculator", launcherQuery]
         calculatorProvider.running = true
     }
 

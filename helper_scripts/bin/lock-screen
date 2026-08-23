@@ -1,13 +1,3 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-log_file="${TMPDIR:-/tmp}/lock-screen.log"
-
-if command -v quickshell >/dev/null 2>&1 && quickshell ipc call lock lock >>"$log_file" 2>&1; then
-  exit 0
-fi
-
-notify-send "Lock unavailable" "quickshell is not running" 2>/dev/null || true
-echo "quickshell ipc call lock lock failed" >&2
-echo "quickshell ipc call lock lock failed" >>"$log_file"
-exit 1
+exec "$(dirname "${BASH_SOURCE[0]}")/desktop" lock "$@"

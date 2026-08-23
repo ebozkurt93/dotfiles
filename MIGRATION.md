@@ -892,3 +892,86 @@ beyond the current placeholder clock/workspace widget anyway).
   verification use the new public commands.
 - This should be a focused organization pass. Avoid changing lock behavior or
   launcher behavior while moving files.
+
+## Current session update (13)
+
+- Removed the dormant `hyprlock` fallback: the real lock screen has been the
+  Quickshell `WlSessionLock` overlay since it was added, and `hyprlock` was
+  never actually reached (`lock-screen` only fell back to it if quickshell
+  was missing, which it never is). Deleted `hyprland/.config/hypr/
+  hyprlock.conf`, removed `programs.hyprlock.enable` and the `hyprlock`
+  package, and trimmed `lock-screen`'s fallback branch to just error out if
+  the Quickshell IPC call fails. Commit `d6ed845`.
+- Diagnosed and fully verified the lock screen's Sleep/Restart/Shutdown
+  power buttons, which the user reported as inert:
+  - Confirmed via `journalctl` that clicking did **not** invoke `systemctl`
+    at all (no login1 activity), i.e. a real click-delivery bug, not a
+    downstream one. Verified the `Process`/`runLockPowerAction` mechanism
+    itself was fine by invoking it directly over a temporary debug IPC
+    function.
+  - After a Quickshell restart (to pick up the debug build), Sleep and
+    Restart **both started working** via real clicks -- root cause never
+    fully isolated, but restarting Quickshell resolved it. Confirmed via
+    journal: `systemctl suspend`/`systemctl reboot` genuinely invoked.
+  - Sleep exposed a separate real VM issue: UTM's Apple Virtualization
+    backend does not cleanly resume a **guest-initiated** `systemctl
+    suspend` (`utmctl start` errors "Operation not available" since UTM's
+    own state machine never saw a UTM-level suspend). Recovery is the same
+    `utmctl stop --kill` + `start` used for the disk-hang incidents.
+    Restart, by contrast, recovered cleanly on its own (real reboot, UTM
+    handles that fine). Shutdown was not separately live-tested but shares
+    the identical code path.
+  - Removed the temporary debug `console.log`/`notify-send` wrapper around
+    `runLockPowerAction` after verification; both local and VM copies
+    confirmed back to matching git HEAD exactly.
+- Split `quickshell/.config/quickshell/shell.qml` (had grown to 1000+ lines
+  mixing bar/lock/launcher) into `plugins/bar/Bar.qml`,
+  `plugins/lock/Lock.qml`, `plugins/launcher/Launcher.qml`, plus a new
+  `Commons/Color.qml`. Commit `71053c5`.
+  - Directory-per-concern layout intentionally mirrors Omarchy's
+    `shell/plugins/<name>/` shape (local reference checkout at
+    `/Users/erdembozkurt/personal-repositories/junk/omarchy/`), without
+    adopting their actual plugin *system* (no `manifest.json`, no
+    `PluginRegistry`, no dynamic `Qt.createComponent` loading -- unneeded
+    complexity for a personal single-user shell). The point is that a
+    component copied from Omarchy later drops into a same-shaped folder
+    with minimal rework.
+  - Each plugin component takes `property var shell` (injected via
+    `Bar { shell: shell }` etc. in `shell.qml`), matching Omarchy's
+    `item.shell = shell` convention, even though nothing reads it yet --
+    it's the ready-made hook for future cross-component/root-level state.
+    This is **property injection**, not a singleton: Omarchy's own
+    `shell.qml` explicitly documents avoiding `pragma Singleton` for
+    mutable app state, because relative-path imports at inconsistent
+    depths can silently resolve to separate singleton instances in their
+    deeper plugin tree. Our plugin files are all at a uniform depth
+    (`plugins/<name>/<Name>.qml`), so this particular failure mode doesn't
+    apply to us, but the convention was kept for consistency/portability.
+  - `Commons/Color.qml` **is** a true singleton (`pragma Singleton`,
+    Quickshell's dedicated `Singleton` root type, imported via
+    `import "../../Commons" as Commons`) -- safe here because it's
+    read-only theme data at a consistent import depth, not live mutable
+    state. Colors are organized **by surface**, not as flat semantic
+    names (`Color.bar.*`, `Color.lock.*`, `Color.launcher.*`, each
+    deriving from shared base tokens like `background`/`foreground`/
+    `accent`/`danger`), matching Omarchy's `Color.lock.background`-style
+    per-surface nesting exactly, since that shape is what supports
+    per-surface re-theming later without a flat-namespace collision.
+  - Explicitly scoped to *organizing* the existing hardcoded Catppuccin
+    Mocha hex values as named tokens -- generating a palette from other
+    sources (the user's actual long-term goal: "colors for everything
+    will change") is deferred as its own, larger, cross-tool effort (would
+    also touch kitty/nvim/wezterm, which each currently pick their own
+    theme independently -- there is no unified theme source yet despite
+    MIGRATION.md's earlier aspirational note about one).
+  - Verified on the VM after every step (including two intermediate fixes:
+    `Color.qml` needed `import QtQuick` for the `color` property type,
+    initially missing): config loads with zero QML errors, bar layer
+    renders, launcher opens/closes via IPC, lock locks/unlocks with the
+    power buttons intact.
+
+## Next session note: helper script organization (still pending)
+
+The helper-script reorg immediately above (public `bin/` vs internal
+`libexec/`) has not been started yet -- this session did the Quickshell
+file-split instead. Still the next queued piece of task #5 cleanup.

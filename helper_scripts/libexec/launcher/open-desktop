@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+target="${1:-}"
+if [ -z "$target" ]; then
+  echo "usage: launcher-open-desktop <desktop-file-or-id>" >&2
+  exit 1
+fi
+
+desktop_dirs=(
+  "/etc/profiles/per-user/$USER/share/applications"
+  "/run/current-system/sw/share/applications"
+  "/usr/share/applications"
+  "/var/lib/flatpak/exports/share/applications"
+  "$HOME/.local/state/nix/profile/share/applications"
+  "$HOME/.nix-profile/share/applications"
+  "$HOME/.local/share/applications"
+  "$HOME/.local/share/flatpak/exports/share/applications"
+)
+
+desktop_file=""
+if [ -f "$target" ]; then
+  desktop_file="$target"
+else
+  id="${target%.desktop}.desktop"
+  for dir in "${desktop_dirs[@]}"; do
+    if [ -f "$dir/$id" ]; then
+      desktop_file="$dir/$id"
+      break
+    fi
+  done
+fi
+
+if [ -z "$desktop_file" ]; then
+  echo "desktop entry not found: $target" >&2
+  exit 1
+fi
+
+desktop_id="$(basename "$desktop_file" .desktop)"
+if command -v gtk-launch >/dev/null 2>&1 && gtk-launch "$desktop_id" >/dev/null 2>&1; then
+  exit 0
+fi
+
+entry_value() {
+  local key="$1"
+  awk -F= -v key="$key" '
+    /^\[/ { in_entry = ($0 == "[Desktop Entry]") }
+    in_entry && $1 == key { sub(/^[^=]*=/, ""); print; exit }
+  ' "$desktop_file"
+}
+
+exec_line="$(entry_value Exec)"
+terminal="$(entry_value Terminal)"
+if [ -z "$exec_line" ]; then
+  echo "desktop entry has no Exec field: $desktop_file" >&2
+  exit 1
+fi
+
+clean_exec="$(printf '%s\n' "$exec_line" | sed -E 's/[[:space:]]+%[fFuUdDnNickvm]//g; s/%[fFuUdDnNickvm]//g')"
+if [ "$terminal" = "true" ]; then
+  exec ghostty -e bash -lc "$clean_exec"
+fi
+
+setsid bash -lc "$clean_exec" >/dev/null 2>&1 &
