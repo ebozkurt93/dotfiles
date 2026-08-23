@@ -1,7 +1,6 @@
 # Shared across Linux hosts so the x86_64 host (task #4) can reuse it.
 {pkgs, ...}: {
   programs.hyprland.enable = true;
-  programs.hyprlock.enable = true;
   security.pam.services.dotfiles-lock = {};
 
   xdg.portal = {

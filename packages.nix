@@ -70,7 +70,6 @@ with pkgs;
     xdg-utils # xdg-open and default-app helpers for the desktop session
     libnotify # notify-send; tmux-mover notification fallback on Linux
     pavucontrol # PipeWire/PulseAudio mixer UI
-    hyprlock # lock screen for Hyprland sessions
     hypridle # idle daemon for lock and display sleep behavior
     wl-clipboard # helper_scripts/bin/pbcopy + pbpaste on Wayland
     xclip # helper_scripts/bin/pbcopy + pbpaste
