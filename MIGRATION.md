@@ -1077,3 +1077,74 @@ directly into the one searchable list. The idea is twofold:
    a currently-connected device, or a strong search-query match) --
    not an either/or with (1), both at once. Not designed or scoped yet,
    just captured so it's not lost before the launcher work continues.
+
+## Now-playing bar widget -- `now-playing.lua`/`spotify.lua` ported (2026-08-23)
+
+First bar-widget port (the plan's "bar widgets" phase, started ahead of
+the remaining chooser files since it's more visual/testable). Replaced
+the macOS AppleScript approach (`macos-now-playing.js`) entirely with
+**MPRIS** via Quickshell's native `Quickshell.Services.Mpris` module --
+no shell-outs, no `playerctl` needed. `Mpris.players.values` gives
+player objects directly with `trackTitle`/`trackArtist`/`trackAlbum`/
+`trackArtUrl`/`isPlaying`/`canGoNext`/`canGoPrevious`/`canSeek`/etc. and
+invokable `next()`/`previous()`/`togglePlaying()`/position assignment
+for seeking.
+
+Design references used (read, not copied wholesale -- same stance as
+the launcher/Commons.Color work):
+- Omarchy's `shell/plugins/services/media/{Service.qml,BarWidget.qml,
+  MediaModel.js}` for the overall shape: active-player selection logic,
+  multi-source player list, disabled/dimmed button states based on
+  `canGoPrevious`/`canGoNext`/`canTogglePlaying`, scrolling marquee for
+  long titles.
+- `bjarneo/cliamp`'s `contrib/quickshell/NowPlaying.qml` (a separate
+  Quickshell now-playing widget project, found via web search when the
+  user asked "isn't there an example we can take from others?" after
+  noticing Omarchy's own widget has **no seek/progress bar** either --
+  confirmed by grepping their BarWidget.qml, zero matches) for the
+  click-to-seek progress bar pattern: poll `player.position` every 250ms
+  while playing (MPRIS position isn't push-reactive), thin background +
+  accent-filled line scaled by `position/length`, small handle dot,
+  `MouseArea` computing `mouse.x / width` on click to seek.
+
+Final feature set: icon = play/pause (click), rest of the label opens a
+popup (click) with album art (`trackArtUrl`, fallback note-glyph), title/
+artist/album, click-to-seek progress bar with mm:ss/mm:ss readout,
+prev/play-pause/next buttons dimmed when the player doesn't support them,
+and a multi-source list (only rendered when 2+ MPRIS players are active
+simultaneously) to switch which one is "active". Bar label is capped to
+a ~30-character-wide window (measured via `FontMetrics` against the
+actual font, not a guessed pixel value) and scrolls the full untruncated
+text through that window when it overflows, static otherwise -- both at
+once, not truncate-vs-scroll as an either/or (initial "max 30 chars" cut
+the scroll entirely; corrected after the user flagged it).
+
+Interaction model was deliberately changed from Omarchy's right-click/
+middle-click/scroll scheme after the user noted they're trackpad-primary
+and those gestures don't work well there: left-click icon = play/pause,
+left-click elsewhere on the widget = toggle popup. No scroll-to-skip or
+right/middle-click bindings.
+
+Extracted into its own `plugins/bar/NowPlaying.qml` (initially built
+inline in `Bar.qml`, which is exactly the "file growing past its single
+concern" problem the shell.qml split fixed earlier -- caught when the
+user asked "why did we build this directly inside Bar.qml?"). `Bar.qml`
+is back to a thin ~55-line file that just composes `NowPlaying {}`
+alongside the workspace/clock widgets, matching the established
+plugins/`<name>`/`<Name>`.qml convention. `NowPlaying.qml`'s root is a
+non-visual `Item` (implicitWidth/Height bound to its inline Row) so it
+participates correctly in `Bar.qml`'s layout `Row`, matching the pattern
+`Lock.qml` already used for hosting multiple top-level pieces (its
+inline bar widget, a tooltip, and a full-screen popup `PanelWindow`)
+under one component file.
+
+Verified on the VM throughout: no QML errors at any step, confirmed via
+`busctl --user list | grep mpris` that Firefox registers a real MPRIS
+interface once a video plays, and the widget picks it up live.
+
+Not done: `kb_battery.lua` was explicitly *not* picked as the next bar
+widget after checking its actual data source (`~/bin/ble_battery`) --
+it's a Swift/CoreBluetooth script, fully macOS-only, so porting it means
+writing a new Linux BLE battery reader from scratch (BlueZ/D-Bus), not
+a QML-side port -- and this VM has no Bluetooth adapter to test against
+regardless. Deferred, not started.

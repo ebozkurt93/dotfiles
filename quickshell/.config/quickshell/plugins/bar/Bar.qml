@@ -38,14 +38,24 @@ PanelWindow {
         }
     }
 
-    Text {
+    Row {
         anchors.centerIn: parent
-        color: Commons.Color.bar.text
-        text: Qt.formatDateTime(clock.date, "ddd MMM d  hh:mm:ss")
+        spacing: 14
 
-        SystemClock {
-            id: clock
-            precision: SystemClock.Seconds
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            color: Commons.Color.bar.text
+            text: Qt.formatDateTime(clock.date, "ddd MMM d  hh:mm:ss")
+
+            SystemClock {
+                id: clock
+                precision: SystemClock.Seconds
+            }
+        }
+
+        NowPlaying {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
         }
     }
 }
