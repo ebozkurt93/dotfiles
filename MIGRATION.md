@@ -1244,3 +1244,55 @@ gets created correctly from the start) before ever touching it over SSH
 or with manual `gnome-keyring-daemon --unlock` workarounds -- that's
 almost certainly what caused this VM's collection to end up out of sync
 in the first place.
+
+Also worth noting for later: tailscaled itself (started via `sudo ... &`
+in `ts-manager`'s `_start_daemon`) died on its own mid-session, most
+likely killed by systemd's session-cleanup when the SSH login that
+spawned it closed -- `nohup`/`disown` protect against SIGHUP but not
+against systemd's cgroup-based session reaping. Recovered by just
+re-running `ts-manager up` (auth state persists on disk, no re-login
+needed), but the daemon should eventually run as a real systemd
+service (or via `systemd-run --scope`) instead of ad-hoc backgrounding,
+so it survives session boundaries.
+
+## Bluetooth and WireGuard bar widgets added (2026-08-23)
+
+Same shape as the Tailscale widget: icon hidden when there's nothing to
+show (no adapter / no configured interfaces), popup on click. Both
+verified structurally on this VM (no QML errors, correct graceful-empty
+state), but neither could be exercised in their "on" state for real --
+this VM has no Bluetooth adapter and no `/etc/wireguard` interfaces.
+Tested via temporary, uncommitted env-gated mocks
+(`LAUNCHER_BLUETOOTH_MOCK`, `WG_STATUS_MOCK` -- both purged before
+committing, same pattern as the earlier launcher bluetooth mock).
+
+- **Bluetooth** reuses `~/bin/launcher items --bluetooth` (the same
+  backend the launcher's bluetooth entry already used), so both surfaces
+  share one source of truth. Redesigned the popup after the user asked
+  it to "look like the omarchy thing with toggles etc" -- checked
+  Omarchy's actual `panels/bluetooth/Panel.qml` for the real UI shape
+  (not code we'd copy, just the layout): header with icon + title +
+  status caption, a real pill-shaped toggle switch for adapter power,
+  then "CONNECTED"/"AVAILABLE" sections with device rows (icon, name,
+  status). Built our own minimal version of the same shape rather than
+  their actual components.
+- **WireGuard**: added `list`/`status-json` non-interactive subcommands
+  to `wg-manager` (`status-json` determines "up" via unprivileged `ip
+  link show <iface>`, not `sudo wg show` -- avoids the same
+  no-adapter-hangs-forever class of bug fixed earlier in
+  `tmux_bluetooth.sh`). Icon was initially a generic WiFi glyph --
+  switched to nerd-fonts' actual `md-vpn` glyph (a real dedicated VPN
+  icon, confirmed via the upstream `glyphnames.json`, not guessed) after
+  the user objected to a wireless symbol representing a VPN tool. User
+  says the WireGuard widget still isn't quite right and wants to revisit
+  it later -- not fully settled, just good enough to commit for now.
+
+Both correctly hide when nothing is configured -- that's intentional
+default behavior per the user, not a bug, though "what's visible when"
+is expected to become configurable later.
+
+Deferred, noted but not started: exit-node picking from the Tailscale
+popup, search/filter for its machine list, and the bigger one --
+concurrent multi-connection support (the user runs Tailscale for work
+and Headscale for personal, sometimes at the same time), which the
+current one-`ts-manager`-instance design doesn't support at all.

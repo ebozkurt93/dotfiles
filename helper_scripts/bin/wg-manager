@@ -56,6 +56,21 @@ elif [[ "$selected" == "status" ]]; then
   else
     exit 1
   fi
+elif [[ "$selected" == "list" ]]; then
+  echo "$interfaces"
+elif [[ "$selected" == "status-json" ]]; then
+  first=1
+  printf '['
+  for interface in $interfaces; do
+    up="false"
+    if ip link show "$interface" &>/dev/null; then
+      up="true"
+    fi
+    [[ "$first" -eq 1 ]] || printf ','
+    first=0
+    printf '{"name":%s,"up":%s}' "$(printf '%s' "$interface" | jq -R .)" "$up"
+  done
+  printf ']'
 else
   echo "invalid, exiting"
 fi

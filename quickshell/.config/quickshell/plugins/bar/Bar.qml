@@ -65,7 +65,17 @@ PanelWindow {
         anchors.rightMargin: 8
         spacing: 10
 
+        WireGuard {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         Tailscale {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Bluetooth {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
