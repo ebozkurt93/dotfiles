@@ -608,26 +608,43 @@ exists on Hyprland before porting the binding itself.
 3. Bring up cross-platform apps on the VM — **done**. Wayland clipboard,
    OS-aware `stow.sh`, quickshell bar, workspace switching, and wofi
    launcher all verified working.
-4. Add x86_64-linux host + build-only CI check — **not started**
-5. Port macOS-only pieces to Hyprland/Linux — **in progress**. Done:
-   Keychain → `secret-tool`, `wg-manager`, `ts-manager` (DNS override via
-   resolvconf; full up/down flow not tested live, no headscale creds on
-   hand), `low-power-mode-toggle.sh` (pmset → powerprofilesctl; fully
-   verified both directions via a temporary autologin session, see above),
-   `list-apps` (mdfind → `.desktop` file scan), `tmux_bluetooth.sh`'s
-   standalone blueutil usage → bluetoothctl (real hang bug found + fixed
-   with a `timeout` guard, see above). Still remaining: hammerspoon's
-   window/hotkey logic → Hyprland config (explicitly deferred to a later
-   session — the big one, includes its own separate blueutil usages in
-   `bt_menu.lua`/`macos_helpers.lua`, and the 4 `hs.notify.new(...)`
-   mute-toggle banners in `scoped_hotkeys.lua` — that's the entirety of
-   the "notifications" surface, `tmux-mover` already handles its own via
-   `notify.go`), `hs.chooser` UI pattern (~8 hammerspoon files) → a Linux
-   launcher.
-6. Decide GUI app carryover (Brewfile audit) — **not started**, deferred by
-   user request.
+4. Add x86_64-linux host + build-only CI check — **done, no CI** (2026-08-24,
+   commit `54e1b9e`). Placeholder `x86_64-generic` host added via a shared
+   `mkNixosHost` flake helper; `nix flake check` and a `.drv` resolve both
+   verified from this (aarch64-darwin) Mac, no real build possible without a
+   Linux builder/QEMU. CI itself explicitly declined by user for now.
+5. Port macOS-only pieces to Hyprland/Linux — **in progress**. Done since
+   the summary above: `action_menu.lua`, `firefox_tab_switcher.lua`,
+   `text_expander.lua` (custom evdev/uinput daemon), the `window_manager.lua`/
+   `globals.lua` keybinding overhaul, and the four pinned-app raise-or-launch
+   binds (Firefox/Obsidian/FreeCAD/GNOME Calendar). `fuzzy_window_switcher.lua`
+   needs no separate port -- already covered by the Walker-backed
+   `window-switcher` (`SUPER+Tab`/`SUPER+Shift+Tab`, see line ~724).
+   `theme_sync.lua` is out of scope here too -- it's cross-tool theme
+   unification (kitty/nvim/wezterm/quickshell), explicitly deferred to its
+   own dedicated future session, not this migration. `kb_battery.lua` --
+   **declined**, not being ported. The 4 `hs.notify.new(...)` mute-toggle
+   banners in `scoped_hotkeys.lua` (the entirety of the "notifications"
+   surface) are on hold, deprioritized for now. With those resolved one way
+   or another, **task #5 has no unclaimed items left** except that
+   deprioritized notifications piece.
+6. Decide GUI app carryover (Brewfile audit) — **done** (2026-08-24, commit
+   `e4f234c`). Added `vlc`, `signal-desktop`, `google-chrome` (all
+   platforms); `slack`, `spotify` gated to `x86_64-linux` only (no
+   aarch64-linux build, confirmed via `nix eval`). Declined: BitBar,
+   Hammerspoon, Raycast, AppCleaner, jordanbaird-ice, UTM (superseded by
+   this migration or N/A on Linux); Pocket Casts (web app), NordVPN
+   (WireGuard covers it), KeePassXC (Bitwarden via Firefox already wired),
+   karabiner-elements (no stated remap need).
 7. Old physical x86 machine real-hardware pass — **not started**, deferred
    until both VMs work end to end.
+8. DDC/CI monitor brightness bar widget (monitorcontrol replacement) —
+   **done** (2026-08-24, commit `423f6a4`). `ddcutil`-backed
+   `helper_scripts/libexec/desktop/brightness-ddc` script polled via
+   Quickshell `Process` (no native DDC/CI property binding exists);
+   reuses Omarchy's caching strategy since raw `ddcutil` calls are slow.
+9. Clipboard history bar/launcher panel (cliphist backend) — **done**
+   (2026-08-24, commit `e4f234c`).
 
 ## Gotchas for whoever picks this up
 
