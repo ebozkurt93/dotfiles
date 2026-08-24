@@ -18,7 +18,7 @@ disabled = true
 format = "[$symbol$version $workspace]($style) "
 
 [custom.enabled-states]
-command = "cat ~/Documents/bitbar_plugins/tmp/enabled_state_icons.txt"
+command = "cat ~/.local/state/state-switcher/enabled_state_icons.txt 2>/dev/null"
 shell = "sh"
 when = "true"
 format = "[$output]($style) "

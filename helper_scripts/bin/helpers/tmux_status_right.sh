@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 media() {
-  local state_switcher="$HOME/Documents/bitbar_plugins/state-switcher.5m"
+  local state_switcher="$HOME/bin/state-switcher"
   if [ "$(uname)" != "Darwin" ] || [ ! -x "$state_switcher" ]; then
     return 0
   fi

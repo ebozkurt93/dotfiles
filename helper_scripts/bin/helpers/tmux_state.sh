@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-state_switcher="$HOME/Documents/bitbar_plugins/state-switcher.5m"
+state_switcher="$HOME/bin/state-switcher"
 if [ ! -x "$state_switcher" ]; then
 	exit 0
 fi
