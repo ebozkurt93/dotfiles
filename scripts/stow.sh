@@ -41,6 +41,7 @@ case "$(uname)" in
       hyprland
       quickshell
       launcher
+      mako
     )
     ;;
   *)
