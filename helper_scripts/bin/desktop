@@ -6,7 +6,7 @@ libexec_dir="$bin_dir/../libexec/desktop"
 
 usage() {
   cat <<'EOF'
-Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window|rowresize|mirror-toggle|reconnect-trackpad|text-expander>
+Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window|rowresize|mirror-toggle|reconnect-trackpad|text-expander|brightness-ddc>
 
 Control desktop-level Hyprland/Quickshell surfaces.
 EOF
@@ -26,6 +26,7 @@ case "$cmd" in
   mirror-toggle) exec "$libexec_dir/mirror-toggle" "$@" ;;
   reconnect-trackpad) exec "$libexec_dir/reconnect-trackpad" "$@" ;;
   text-expander) exec "$libexec_dir/text-expander" "$@" ;;
+  brightness-ddc) exec "$libexec_dir/brightness-ddc" "$@" ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 1 ;;
 esac

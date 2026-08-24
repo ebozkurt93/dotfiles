@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# DDC/CI external-monitor brightness control (monitorcontrol cask
+# replacement) -- no native Quickshell binding exists for this the way
+# PipeWire covers audio, so this is a plain ddcutil-backed script polled by
+# the Monitor.qml bar widget. Caching strategy (bus-detection cache,
+# "unavailable" cache, brightness-range cache) is lifted from Omarchy's own
+# omarchy-brightness-display-ddc, since ddcutil itself is slow enough
+# per-call that skipping repeated probes genuinely matters.
+#
+# Usage:
+#   brightness-ddc list                    JSON array of {connector} for
+#                                           every DDC-capable monitor found
+#   brightness-ddc get <connector>          current brightness, 0-100
+#   brightness-ddc set <connector> <pct>    absolute percent, e.g. 42
+
+cache_dir="${XDG_RUNTIME_DIR:-/tmp}/brightness-ddc"
+mkdir -p "$cache_dir" 2>/dev/null || true
+unavailable_cache_seconds=60
+range_cache_seconds=10
+
+cache_file_for() {
+  local connector="$1"
+  printf '%s/%s.bus\n' "$cache_dir" "${connector//[^[:alnum:]_.-]/_}"
+}
+
+detect_all() {
+  ddcutil --skip-ddc-checks detect --brief 2>/dev/null | awk '
+    /I2C bus:/ {
+      bus = $NF
+      sub(/^.*\/i2c-/, "", bus)
+    }
+    /DRM connector:/ {
+      connector = $NF
+      sub(/^card[0-9]+-/, "", connector)
+      if (connector != "" && bus != "") print connector, bus
+      bus = ""
+    }
+  '
+}
+
+cmd_list() {
+  local first=1
+  printf '['
+  while read -r connector bus; do
+    [ -n "$connector" ] || continue
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    printf '{"connector":"%s"}' "$connector"
+  done < <(detect_all)
+  printf ']'
+}
+
+find_bus() {
+  local connector="$1" cache_file bus="" cached_value="" now
+  cache_file="$(cache_file_for "$connector")"
+
+  if [ -r "$cache_file" ]; then
+    read -r bus cached_value <"$cache_file" || true
+  fi
+
+  if [ "$bus" = "unavailable" ]; then
+    now="$(date +%s)"
+    if [[ "$cached_value" =~ ^[0-9]+$ ]] && (( now - cached_value < unavailable_cache_seconds )); then
+      return 1
+    fi
+    bus=""
+    rm -f "$cache_file"
+  fi
+
+  if [ -z "$bus" ]; then
+    bus="$(detect_all | awk -v c="$connector" '$1 == c { print $2; exit }')"
+    if [[ ! "$bus" =~ ^[0-9]+$ ]]; then
+      printf 'unavailable %s\n' "$(date +%s)" >"$cache_file" 2>/dev/null || true
+      return 1
+    fi
+    printf '%s\n' "$bus" >"$cache_file" 2>/dev/null || true
+  fi
+
+  printf '%s\n' "$bus"
+}
+
+read_vcp() {
+  local bus="$1"
+  ddcutil --bus "$bus" --skip-ddc-checks getvcp 10 --brief 2>/dev/null | awk '
+    $1 == "VCP" && toupper($2) == "10" && $3 == "C" && $4 ~ /^[0-9]+$/ && $5 ~ /^[0-9]+$/ && $5 > 0 {
+      print $4, $5
+      found = 1
+      exit
+    }
+    END { exit !found }
+  '
+}
+
+read_brightness() {
+  local connector="$1" cache_file bus current maximum now
+  cache_file="$(cache_file_for "$connector")"
+  bus="$(find_bus "$connector")" || return 1
+  read -r current maximum < <(read_vcp "$bus") || { rm -f "$cache_file"; return 1; }
+  now="$(date +%s)"
+  printf '%s %s %s\n' "$bus" "$maximum" "$now" >"$cache_file" 2>/dev/null || true
+  printf '%s %s\n' "$current" "$maximum"
+}
+
+cmd_get() {
+  local connector="$1" current maximum percent
+  read -r current maximum < <(read_brightness "$connector") || { echo "-1"; return 0; }
+  (( percent = (current * 100 + maximum / 2) / maximum ))
+  printf '%s\n' "$percent"
+}
+
+cmd_set() {
+  local connector="$1" target="$2" cache_file bus maximum range_cached_at now fresh=0 raw_target
+  cache_file="$(cache_file_for "$connector")"
+
+  if [ -r "$cache_file" ]; then
+    read -r bus maximum range_cached_at <"$cache_file" || true
+    if [[ "$bus" =~ ^[0-9]+$ && "$maximum" =~ ^[0-9]+$ && "$range_cached_at" =~ ^[0-9]+$ ]]; then
+      now="$(date +%s)"
+      (( range_cached_at <= now && now - range_cached_at < range_cache_seconds )) && fresh=1
+    fi
+  fi
+
+  if [ "$fresh" -ne 1 ]; then
+    read -r _ maximum < <(read_brightness "$connector") || exit 1
+    bus="$(find_bus "$connector")" || exit 1
+  fi
+
+  (( target < 1 )) && target=1
+  (( target > 100 )) && target=100
+  (( raw_target = (target * maximum + 50) / 100 ))
+
+  ddcutil --bus "$bus" --skip-ddc-checks --noverify setvcp 10 "$raw_target" >/dev/null 2>&1 || {
+    rm -f "$cache_file"
+    exit 1
+  }
+  printf '%s\n' "$target"
+}
+
+case "${1:-}" in
+  list) cmd_list ;;
+  get) cmd_get "${2:-}" ;;
+  set) cmd_set "${2:-}" "${3:-}" ;;
+  *)
+    echo "usage: brightness-ddc <list|get <connector>|set <connector> <percent>>" >&2
+    exit 1
+    ;;
+esac

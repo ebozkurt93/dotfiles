@@ -90,6 +90,11 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
 
+        Monitor {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         Weather {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
