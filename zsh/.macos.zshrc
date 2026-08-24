@@ -4,15 +4,15 @@ function _load_custom_zsh_on_dir () {
 	  source $HOME/.$__custom_state.zshrc
 	  __sourced_states+=($__custom_state)
 	fi
-	local states=($(~/Documents/bitbar_plugins/state-switcher.5m enabled-states))
+	local states=($(~/bin/state-switcher enabled-states))
 	for state in "${states[@]}"; do
 	  if [[ $state == 'personal' ]]; then
 	    # this one is unique, always sourced it by default
 	    continue
 	  fi
 	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
-	    local __paths=($(~/Documents/bitbar_plugins/state-switcher.5m state-paths $state))
-	    if $(~/Documents/bitbar_plugins/state-switcher.5m always-sourced-if-enabled $state); then
+	    local __paths=($(~/bin/state-switcher state-paths $state))
+	    if $(~/bin/state-switcher always-sourced-if-enabled $state); then
 	        source $HOME/.$state.zshrc
 	        __sourced_states+=($state)
 	        continue
@@ -38,7 +38,7 @@ alias tailscale='/Applications/Tailscale.app/Contents/MacOS/Tailscale'
 alias ss='echo $__sourced_states'
 
 local function __state_switcher_toggle() {
-  local p=~/Documents/bitbar_plugins/state-switcher.5m
+  local p=~/bin/state-switcher
   local selected_state=$($p states-with-marks | sort | fzf \
     --bind 'ctrl-space:become(echo _{})+abort,alt-j:become(echo __{})+abort,alt-k:become(echo ___{})+abort'
   )
@@ -72,7 +72,7 @@ alias cs="colima status > /dev/null 2>&1 && colima stop || colima start"
 alias hsr='pgrep Hammerspoon | xargs kill; open -a /Applications/Hammerspoon.app'
 
 function __find_repos {
-  p=($(~/Documents/bitbar_plugins/state-switcher.5m enabled-states-paths) ~/bin)
+  p=($(~/bin/state-switcher enabled-states-paths) ~/bin)
   selected_dir="$(cat <(echo ~/dotfiles) \
     <(test ${#p[@]} -ne 0 && find ${p[@]} -maxdepth 1 -type d 2>/dev/null) \
     | sort | uniq | fzf --preview 'cd {}; tree -L 3 --filelimit 100 --dirsfirst \

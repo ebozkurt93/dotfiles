@@ -1,4 +1,4 @@
-states=($(~/Documents/bitbar_plugins/state-switcher.5m enabled-states))
+states=($(~/bin/state-switcher enabled-states))
 results=''
 for state in "${states[@]}"; do
 	p="$HOME/bin/helpers/tmux_$state.sh"

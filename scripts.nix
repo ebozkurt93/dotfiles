@@ -22,7 +22,7 @@
     # sh
     ''
       export PATH=${lib.makeBinPath requiredPackages}:$PATH
-      cd $HOME/dotfiles/bitbar/Documents/bitbar_plugins/source/state-switcher
+      cd $HOME/dotfiles/state-switcher
       nix develop -c make all
     '';
   installTmuxMover = let

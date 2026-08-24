@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 )
@@ -48,12 +49,11 @@ func main() {
 		return
 	}
 
-	configFile := filepath.Join(homeDir, "dotfiles/bitbar/Documents/bitbar_plugins/tmp/states.json")
-	statesData, err := readConfigFile(configFile)
-	if err != nil {
-		fmt.Println("Error reading config file:", err)
-		return
-	}
+	configFile := filepath.Join(homeDir, "dotfiles/state-switcher/states.json")
+	// states.json is personal/gitignored and may not exist (e.g. never
+	// synced to this machine yet) -- treat that as "no states defined"
+	// rather than erroring, since callers read our stdout as data.
+	statesData, _ := readConfigFile(configFile)
 
 	var enabledStates []State
 	for _, state := range statesData {
@@ -78,7 +78,7 @@ func main() {
 		alwaysSourcedIfEnabled[state.Title] = state.AlwaysSourcedIfEnabled
 	}
 
-	stateIconsFilePath := filepath.Join(homeDir, "Documents/bitbar_plugins/tmp/enabled_state_icons.txt")
+	stateIconsFilePath := filepath.Join(stateDir(), "enabled_state_icons.txt")
 
 	switch arg1 {
 	case "":
@@ -177,9 +177,15 @@ func substituteEnvVars(path string) string {
 	return os.ExpandEnv(path)
 }
 
-func getFilePath(state string) string {
+func stateDir() string {
 	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, "Documents/bitbar_plugins/tmp", state)
+	dir := filepath.Join(homeDir, ".local/state/state-switcher")
+	os.MkdirAll(dir, 0755)
+	return dir
+}
+
+func getFilePath(state string) string {
+	return filepath.Join(stateDir(), state)
 }
 
 func fileExists(filePath string) bool {
@@ -245,7 +251,9 @@ func toggleState(arg2, arg3 string, titles []string, icons map[string]string, on
 		if command != "" && arg3 != "ignore-event" {
 			runOnCommandHook(arg2, command)
 		}
-		exec.Command("open", "-g", "bitbar://refreshPlugin?name=*").Run()
+		if runtime.GOOS == "darwin" {
+			exec.Command("open", "-g", "bitbar://refreshPlugin?name=*").Run()
+		}
 	}
 }
 
