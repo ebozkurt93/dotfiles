@@ -227,7 +227,7 @@ states_json() {
     return
   fi
 
-  local state_switcher="$HOME/Documents/bitbar_plugins/state-switcher.5m"
+  local state_switcher="$HOME/bin/state-switcher"
   if [ ! -x "$state_switcher" ]; then
     echo '[]'
     return
@@ -244,8 +244,8 @@ states_json() {
         subtitle: (if .enabled then "Enabled" else "Disabled" end),
         keywords: [.title, (.icon // ""), "state", "toggle", "without hook", "ignore-event"],
         actions: [
-          {id: "toggle", title: "Toggle", command: ($ENV.HOME + "/Documents/bitbar_plugins/state-switcher.5m toggle " + (.title | @sh))},
-          {id: "toggle-no-hook", title: "Toggle Without Hook", key: "ctrl+h", command: ($ENV.HOME + "/Documents/bitbar_plugins/state-switcher.5m toggle " + (.title | @sh) + " ignore-event")}
+          {id: "toggle", title: "Toggle", command: ($ENV.HOME + "/bin/state-switcher toggle " + (.title | @sh))},
+          {id: "toggle-no-hook", title: "Toggle Without Hook", key: "ctrl+h", command: ($ENV.HOME + "/bin/state-switcher toggle " + (.title | @sh) + " ignore-event")}
         ]
       })
   '

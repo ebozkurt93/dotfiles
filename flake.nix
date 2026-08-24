@@ -41,13 +41,8 @@
             (lib.optionalAttrs (lib.elem pkgs.tmux packages) {
               installTPM = lib.mkAfter scripts.installTPM;
             })
-            # installStateSwitcher builds the bitbar/xbar state-switcher plugin,
-            # which isn't stowed on Linux yet (bitbar's Linux replacement is
-            # still undecided). Re-enable here once that's sorted.
-            (lib.optionalAttrs pkgs.stdenv.isDarwin {
-              installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
-            })
             {
+              installStateSwitcher = lib.mkAfter scripts.installStateSwitcher;
               installTmuxMover = lib.mkAfter scripts.installTmuxMover;
             }
           ];
