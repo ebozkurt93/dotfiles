@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tab_id="${1:-}"
+window_id="${2:-}"
+if [ -z "$tab_id" ] || [ -z "$window_id" ]; then
+  echo "usage: launcher switch-firefox-tab <tabId> <windowId>" >&2
+  exit 1
+fi
+
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+"$bin_dir/../desktop/raise-or-launch" firefox-devedition firefox-devedition
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+printf '{"type": "switch", "tabId": %s, "windowId": %s}' "$tab_id" "$window_id" >"$tmp"
+python3 "$HOME/dotfiles/firefox/native-host/bridge_send.py" "$tmp"

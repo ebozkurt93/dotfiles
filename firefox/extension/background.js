@@ -31,7 +31,7 @@ async function handleCommand(msg) {
         const tabs = [];
         windows.forEach((win, wi) => {
           (win.tabs || []).forEach((tab, ti) => {
-            tabs.push({ title: tab.title || "", url: tab.url || "", windowIndex: wi + 1, tabIndex: ti + 1, tabId: tab.id, windowId: win.id });
+            tabs.push({ title: tab.title || "", url: tab.url || "", favIconUrl: tab.favIconUrl || "", windowIndex: wi + 1, tabIndex: ti + 1, tabId: tab.id, windowId: win.id });
           });
         });
         port.postMessage({ type: "tabsResponse", tabs });

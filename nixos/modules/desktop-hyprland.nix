@@ -1,5 +1,21 @@
 # Shared across Linux hosts so the x86_64 host (task #4) can reuse it.
-{pkgs, ...}: {
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}: let
+  # Derived from whichever user the host itself declares as isNormalUser,
+  # rather than hardcoding a username in this shared module. Fails loudly
+  # (not a silent alphabetical-first guess) if that single-normal-user
+  # assumption is ever wrong for a host reusing this module.
+  normalUsers = lib.filterAttrs (_: u: u.isNormalUser) config.users.users;
+  primaryUser =
+    if builtins.length (lib.attrNames normalUsers) == 1
+    then lib.head (lib.attrValues normalUsers)
+    else throw "desktop-hyprland.nix: expected exactly one isNormalUser account, found ${toString (builtins.length (lib.attrNames normalUsers))} (${toString (lib.attrNames normalUsers)})";
+  dotfilesDir = "${primaryUser.home}/dotfiles";
+in {
   programs.hyprland.enable = true;
   security.pam.services.dotfiles-lock = {};
 
@@ -50,8 +66,20 @@
 
   fonts.packages = [pkgs.nerd-fonts.jetbrains-mono];
 
+  # Same firefox/policies/policies.json used on macOS (force-installs the
+  # Firefox Bridge extension used by firefox_tab_switcher.lua, plus the rest
+  # of the extension list). __DOTFILES_DIR__ is substituted here the same
+  # way macOS's setup.sh does it with sed -- content stays authored in the
+  # plain repo file, this just places it at /etc/firefox/policies/policies.json.
+  environment.etc."firefox/policies/policies.json".text =
+    builtins.replaceStrings ["__DOTFILES_DIR__"] [dotfilesDir]
+    (builtins.readFile ../../firefox/policies/policies.json);
+
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";
     MOZ_ENABLE_WAYLAND = "1";
+    # Wires the launcher's generic --tabs provider hook to the Firefox
+    # native-messaging bridge (firefox_tab_switcher.lua's replacement).
+    LAUNCHER_TABS_COMMAND = "${dotfilesDir}/helper_scripts/libexec/launcher/firefox-tabs";
   };
 }

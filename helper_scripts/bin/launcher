@@ -8,6 +8,7 @@ libexec_dir="$bin_dir/../libexec/launcher"
 case "${1:-}" in
   items) shift; exec "$libexec_dir/items" "$@" ;;
   open-desktop) shift; exec "$libexec_dir/open-desktop" "$@" ;;
+  switch-firefox-tab) shift; exec "$libexec_dir/switch-firefox-tab" "$@" ;;
 esac
 
 mode="all"
@@ -17,6 +18,7 @@ usage() {
 Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--confirm-exit] [--open|--toggle|--close|--ping]
        launcher items [--all|--apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--confirm-exit|--calculator <query>]
        launcher open-desktop <desktop-file-or-id>
+       launcher switch-firefox-tab <tabId> <windowId>
 
 Control the Quickshell launcher surface.
 EOF

@@ -204,7 +204,8 @@ PanelWindow {
                     subtitle: action.command || "",
                     kind: "action",
                     icon: "",
-                    address: ""
+                    address: "",
+                    iconUrl: ""
                 })
             }
             if (launcherSelected >= launcherRows.count) launcherSelected = Math.max(0, launcherRows.count - 1)
@@ -235,6 +236,7 @@ PanelWindow {
                 kind: item.kind || "",
                 icon: item.icon || "",
                 address: item.address || "",
+                iconUrl: item.iconUrl || "",
                 score: score
             })
         }
@@ -605,6 +607,7 @@ PanelWindow {
                     required property string kind
                     required property string icon
                     required property string address
+                    required property string iconUrl
 
                     width: ListView.view.width
                     height: kind === "keybind" ? 32 : 56
@@ -687,8 +690,22 @@ PanelWindow {
                             }
                         }
 
+                        // Favicon for tab rows -- no OS-level per-tab preview exists
+                        // the way Hyprland's screencopy protocol gives windows, so
+                        // this is the practical "preview" for a browser tab.
+                        Image {
+                            id: faviconBox
+                            visible: kind === "tab" && iconUrl !== ""
+                            width: visible ? 20 : 0
+                            height: 20
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: iconUrl
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                        }
+
                         Column {
-                            width: parent.width - thumbBox.width - (thumbBox.visible ? parent.spacing : 0)
+                            width: parent.width - thumbBox.width - faviconBox.width - ((thumbBox.visible || faviconBox.visible) ? parent.spacing : 0)
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 4
 
