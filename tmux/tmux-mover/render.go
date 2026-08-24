@@ -64,7 +64,7 @@ func renderMainPanel(m model, width int, height int) string {
 func renderChoiceList(title string, choices []choice, selected int, width int, height int) string {
 	rowWidth := max(10, width-4)
 	normalStyle := lipgloss.NewStyle().Width(rowWidth)
-	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Foreground(lipgloss.Color("2"))
+	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Reverse(true)
 	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth)
 	rows := make([]string, 0, len(choices))
 	for idx, choice := range choices {
@@ -376,7 +376,7 @@ type treeRows struct {
 func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string, agents map[string]AgentState, frame int) treeRows {
 	rowWidth := max(10, width-2)
 	normalStyle := lipgloss.NewStyle().Width(rowWidth)
-	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Foreground(lipgloss.Color("2"))
+	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Reverse(true)
 	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth)
 	windowStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("6"))
 	sessionStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("4"))
@@ -531,7 +531,7 @@ func renderAgentDashboard(m model, state TmuxState, selectedPaneID string, scrol
 // source depending on m.agentView.
 func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, rowWidth int) treeRows {
 	normalStyle := lipgloss.NewStyle().Width(rowWidth)
-	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Foreground(lipgloss.Color("2"))
+	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Reverse(true)
 	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
 	mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 
