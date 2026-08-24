@@ -342,6 +342,17 @@ local function __state_switcher_toggle() {
 zle -N __state_switcher_toggle
 bindkey "^[s" __state_switcher_toggle
 
+function __open_folder() {
+  if is_macos; then
+    open .
+  else
+    xdg-open .
+  fi
+}
+
+zle -N __open_folder
+bindkey "^[o" __open_folder
+
 function __sed_inplace() {
   if is_macos; then
     sed -i '' "$1" "$2"
