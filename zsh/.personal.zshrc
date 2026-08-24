@@ -276,6 +276,72 @@ function withenv {
   (set -a; . "$envfile"; exec "${SHELL:-/bin/sh}" -c "$*")
 }
 
+__sourced_states=()
+function _load_custom_zsh_on_dir () {
+	if [[ ! -z $__custom_state && -f $HOME/.$__custom_state.zshrc ]]; then
+	  source $HOME/.$__custom_state.zshrc
+	  __sourced_states+=($__custom_state)
+	fi
+	local states=($(~/bin/state-switcher enabled-states))
+	for state in "${states[@]}"; do
+	  if [[ $state == 'personal' ]]; then
+	    # this one is unique, always sourced it by default
+	    continue
+	  fi
+	  if [[ -f $HOME/.$state.zshrc && ! " ${__sourced_states[*]} " =~ " ${state} " ]]; then
+	    local __paths=($(~/bin/state-switcher state-paths $state))
+	    if $(~/bin/state-switcher always-sourced-if-enabled $state); then
+	        source $HOME/.$state.zshrc
+	        __sourced_states+=($state)
+	        continue
+	    fi
+	    for __path in ${__paths[@]}; do
+	      if [[ $PWD/ = $__path/* ]]; then
+	        source $HOME/.$state.zshrc
+	        __sourced_states+=($state)
+	        break
+	      fi
+	    done
+	  fi
+	done
+}
+
+function chpwd() {
+  _load_custom_zsh_on_dir
+}
+
+alias ss='echo $__sourced_states'
+
+local function __state_switcher_toggle() {
+  local p=~/bin/state-switcher
+  local selected_state=$($p states-with-marks | sort | fzf \
+    --bind 'ctrl-space:become(echo _{})+abort,alt-j:become(echo __{})+abort,alt-k:become(echo ___{})+abort'
+  )
+  selected_state=$(echo $selected_state | awk '{print $1}')
+
+  test -z $selected_state && return
+  if [[ $selected_state =~ ^___.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c4-)"
+    $p run_hook on_enabled $selected_state
+    zle reset-prompt
+    return
+  elif [[ $selected_state =~ ^__.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c3-)"
+    $p run_hook on_disabled $selected_state
+    zle reset-prompt
+    return
+  fi
+
+  if [[ $selected_state =~ ^_.* ]]; then
+    selected_state="$(echo "$selected_state" | cut -c2-)"
+    local suffix="ignore-event"
+  fi
+  $p toggle $selected_state $suffix
+  zle reset-prompt
+}
+zle -N __state_switcher_toggle
+bindkey "^[s" __state_switcher_toggle
+
 function __sed_inplace() {
   if is_macos; then
     sed -i '' "$1" "$2"
