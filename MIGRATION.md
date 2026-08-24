@@ -645,6 +645,52 @@ exists on Hyprland before porting the binding itself.
    reuses Omarchy's caching strategy since raw `ddcutil` calls are slow.
 9. Clipboard history bar/launcher panel (cliphist backend) — **done**
    (2026-08-24, commit `e4f234c`).
+10. Cross-platform zsh tooling (`.macos.zshrc` split + `state-switcher`
+    relocation) — **in progress** (2026-08-24, commits `ed6ecfc`, `6c060c2`,
+    `04bca45`, `9d460e4`, `24230a2`, `c98aa7a`, `40f4c18`; mirrored on
+    `master` too, same content). Done:
+    - `state-switcher` relocated out of `bitbar/` (which is never stowed on
+      Linux) to its own top-level `state-switcher/`; binary now installs to
+      `~/bin/state-switcher` (mirrors `tmux-mover`'s pattern), runtime state
+      moved to `~/.local/state/state-switcher/`, the one BitBar-specific
+      call (`open -g bitbar://refreshPlugin`) gated behind
+      `runtime.GOOS == "darwin"`. `installStateSwitcher` activation enabled
+      for Linux hosts too (was `isDarwin`-gated). **Verified end-to-end on
+      the utm-aarch64 VM via a real `nixos-rebuild switch`**: binary builds,
+      toggle/enabled-states/icons work, and the Quickshell launcher's
+      existing (previously broken -- wrong path) "toggle state" action is
+      now functional.
+    - Everything in `.macos.zshrc` that turned out to have zero actual
+      macOS-specific code (just trapped behind the `is_macos` guard) moved
+      to the shared `.personal.zshrc`: the theme picker, nvim remote-exec
+      helpers, font-changers, transparency/setting togglers (needed only a
+      `__sed_inplace` shim for the BSD-vs-GNU `sed -i` difference), the
+      state-switcher dispatch (`_load_custom_zsh_on_dir`/`chpwd`/
+      `__state_switcher_toggle`), and `__open_folder` (`xdg-open` branch).
+    - `__bt_device_toggle` and `wp_change` also moved to shared zshrc, but
+      their actual backends (`blueutil`, `set_wallpaper.sh`) are 100%
+      macOS-specific with no shared core worth extracting yet -- rather than
+      block on researching Linux equivalents, they're gated behind
+      `is_macos` and print a `grep`-able `TODO(linux): ...` message when
+      invoked elsewhere, so real ports can happen later without re-deriving
+      this audit.
+    Still remaining:
+    - `__bt_device_toggle`'s Linux backend (`bluetoothctl`-based, TODO-stubbed)
+    - `wp_change`'s Linux backend -- `set_wallpaper.sh` itself has zero
+      OS-awareness yet, needs a Hyprland/swaybg-based wallpaper-setting
+      mechanism designed and verified (TODO-stubbed)
+    - `__reload_ghostty_config`'s Linux equivalent -- still unresearched
+      (the macOS side was fixed this session too: swapped a focus-stealing
+      `System Events` keystroke-sim AppleScript for Ghostty's native
+      `perform action "reload_config"` .sdef command, see commit `04bca45`'s
+      predecessor on `master`)
+    - `__open_pr` -- user wants both kept: the existing bitbar-plugin
+      version stays, plus a new CLI-native variant (likely `gh`-based,
+      decoupled from `github-prs.5m.sh`)
+    - Reviewed and intentionally **not** porting (no meaningful Linux
+      equivalent): `alias code`/`tailscale` (macOS `.app` paths), `cs`
+      (colima -- Linux runs docker natively), `hsr` (Hammerspoon restart --
+      Hammerspoon itself doesn't exist on Linux)
 
 ## Gotchas for whoever picks this up
 
