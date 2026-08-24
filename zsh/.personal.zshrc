@@ -352,6 +352,48 @@ function __open_folder() {
 zle -N __open_folder
 bindkey "^[o" __open_folder
 
+function __bt_device_toggle() {
+  if ! is_macos; then
+    echo "TODO(linux): __bt_device_toggle not ported yet (blueutil-specific)"
+    zle send-break
+    return
+  fi
+  if [[ "$(blueutil --power)" == "0" ]]; then
+    echo 'bluetooth off'
+    zle send-break
+    return
+  fi
+  local c=$(blueutil --paired --format json | jq -r \
+    '.[] | .name + " " + (.connected|tostring|sub("true"; "✅")|sub("false"; "❌")) + " " + .address')
+  local selection=$(echo "$c" | sort | fzf --bind 'ctrl-p:become(echo _{})+abort')
+  [[ -z $selection ]] && return
+  address=$(echo $selection | awk '{print $NF}')
+  if [[ $selection =~ ^_.* ]]; then
+    blueutil --disconnect $address --wait-disconnect $address
+    blueutil --connect $address --wait-connect $address
+  elif [[ "$(blueutil --is-connected $address)" == '1' ]]; then
+    blueutil --disconnect $address --wait-disconnect $address
+  else
+    blueutil --connect $address --wait-connect $address
+  fi
+  zle send-break
+}
+
+zle -N __bt_device_toggle
+bindkey '^Xb' __bt_device_toggle
+
+function wp_change() {
+  if ! is_macos; then
+    echo "TODO(linux): wp_change not ported yet (set_wallpaper.sh is macOS-only)"
+    return
+  fi
+  local wp_file=$(~/bin/helpers/set_wallpaper.sh wp-path)
+  local selection=$(~/bin/helpers/set_wallpaper.sh find | fzf --preview 'viu -b {}')
+  [[ -z $selection ]] && return
+  echo -e "$selection\n$(cat $wp_file)" > $wp_file
+  ~/bin/helpers/set_wallpaper.sh
+}
+
 function __sed_inplace() {
   if is_macos; then
     sed -i '' "$1" "$2"
