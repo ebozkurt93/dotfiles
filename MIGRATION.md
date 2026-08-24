@@ -718,6 +718,17 @@ exists on Hyprland before porting the binding itself.
   want a cleaner setup, consider pushing the `nixos` branch to GitHub and
   cloning it on the VM properly (needs deploy key or similar, wasn't set up
   this session to keep the private submodules out of it easily).
+- **`$HOME/.nix-profile` is empty/unused on NixOS** — home-manager installs
+  packages under `/etc/profiles/per-user/<user>/` there instead (system
+  activation), not the traditional per-user profile channel that
+  nix-darwin/standalone home-manager uses. Already known from the
+  launcher's `apps_json` desktop-file search path list; bit us again with
+  `zsh-autosuggestions` (hardcoded `~/.nix-profile/share/...` path, hard
+  "no such file or directory" error on every new shell on the VM). Fixed by
+  scanning a few candidate paths and sourcing whichever exists rather than
+  hardcoding one. **Any script/dotfile that assumes `~/.nix-profile` holds
+  home-manager-installed packages needs the same treatment before trusting
+  it works on NixOS.**
 
 ## Current session update (7)
 
