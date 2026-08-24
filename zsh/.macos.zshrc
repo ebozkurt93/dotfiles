@@ -103,13 +103,6 @@ function wp_change() {
   ~/bin/helpers/set_wallpaper.sh
 }
 
-function __open_folder() {
-  open .
-}
-
-zle -N __open_folder
-bindkey "^[o" __open_folder
-
 function __reload_ghostty_config {
   # native perform-action call -- no focus steal, unlike System Events keystroke sim
   osascript -e 'tell application "Ghostty" to perform action "reload_config" on (focused terminal of (selected tab of front window))' > /dev/null
