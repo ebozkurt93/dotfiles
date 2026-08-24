@@ -202,31 +202,31 @@ Item {
                     }
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.isPresent && !root.fullyCharged
                     label: root.onBattery ? "Time left" : "Time to full"
                     value: root.formatTime(root.onBattery ? root.device.timeToEmpty : root.device.timeToFull)
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.isPresent && root.device.healthSupported
                     label: "Health"
                     value: root.isPresent ? Math.round(root.device.healthPercentage) + "%" : ""
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.isPresent && root.chargeCycles.length > 0
                     label: "Charge cycles"
                     value: root.chargeCycles
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.isPresent && root.device.energyCapacity > 0
                     label: "Capacity"
                     value: root.isPresent ? root.device.energyCapacity.toFixed(1) + " Wh" : ""
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.isPresent && root.device.model && root.device.model.length > 0
                     label: "Model"
                     value: root.isPresent ? (root.device.model || "") : ""
@@ -299,32 +299,4 @@ Item {
         }
     }
 
-    component InfoRow: Item {
-        property string label: ""
-        property string value: ""
-
-        width: parent ? parent.width : 0
-        height: labelText.implicitHeight
-
-        Text {
-            id: labelText
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: label
-            color: Commons.Color.launcher.textMuted
-            font.pixelSize: 11
-        }
-
-        Text {
-            anchors.left: labelText.right
-            anchors.leftMargin: 8
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            horizontalAlignment: Text.AlignRight
-            text: value
-            color: Commons.Color.launcher.text
-            font.pixelSize: 11
-            elide: Text.ElideRight
-        }
-    }
 }

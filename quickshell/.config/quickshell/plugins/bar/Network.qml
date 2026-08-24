@@ -668,61 +668,61 @@ Item {
                         color: Commons.Color.launcher.cardBorder
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.gateway
                         label: "Gateway"
                         value: root.routeInfo.gateway || ""
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Interface"
                         value: root.routeInfo.iface || ""
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Ping"
                         value: root.formatPingLatency(root.internetPingLatency)
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Packet Loss"
                         value: root.hasInternetPingSamples ? root.internetPingPacketLoss + "%" : "--"
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Receiving"
                         value: root.formatRate(root.downloadRate)
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Sending"
                         value: root.formatRate(root.uploadRate)
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: root.linkSpeedMbps !== ""
                         label: "Link Speed"
                         value: root.linkSpeedMbps + " Mbps"
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: root.macAddress !== ""
                         label: "MAC Address"
                         value: root.macAddress
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: !!root.routeInfo.iface
                         label: "Session Total"
                         value: root.formatBytes(root.sessionRxBytes) + " ↓ / " + root.formatBytes(root.sessionTxBytes) + " ↑"
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: root.publicIp !== ""
                         label: "Public IP"
                         value: root.publicIp
@@ -741,7 +741,7 @@ Item {
                         font.pixelSize: 10
                     }
 
-                    InfoRow {
+                    Commons.InfoRow {
                         visible: root.effectiveDnsServers !== ""
                         label: "Servers"
                         value: root.effectiveDnsServers
@@ -939,35 +939,6 @@ Item {
                     }
                 }
             }
-        }
-    }
-
-    component InfoRow: Item {
-        property string label: ""
-        property string value: ""
-
-        width: parent ? parent.width : 0
-        height: visible ? labelText.implicitHeight : 0
-
-        Text {
-            id: labelText
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: label
-            color: Commons.Color.launcher.textMuted
-            font.pixelSize: 11
-        }
-
-        Text {
-            anchors.left: labelText.right
-            anchors.leftMargin: 8
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            horizontalAlignment: Text.AlignRight
-            text: value
-            color: Commons.Color.launcher.text
-            font.pixelSize: 11
-            elide: Text.ElideRight
         }
     }
 

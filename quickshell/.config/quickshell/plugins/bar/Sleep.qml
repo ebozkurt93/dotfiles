@@ -251,7 +251,7 @@ Item {
                     }
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.active
                     label: "Remaining"
                     value: root.formatRemaining(root.remaining)
@@ -448,32 +448,4 @@ Item {
         }
     }
 
-    component InfoRow: Item {
-        property string label: ""
-        property string value: ""
-
-        width: parent ? parent.width : 0
-        height: labelText.implicitHeight
-
-        Text {
-            id: labelText
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: label
-            color: Commons.Color.launcher.textMuted
-            font.pixelSize: 11
-        }
-
-        Text {
-            anchors.left: labelText.right
-            anchors.leftMargin: 8
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            horizontalAlignment: Text.AlignRight
-            text: value
-            color: Commons.Color.launcher.text
-            font.pixelSize: 11
-            elide: Text.ElideRight
-        }
-    }
 }

@@ -278,13 +278,13 @@ Item {
                     color: Commons.Color.launcher.cardBorder
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.hasData && root.feelsLikeC !== null
                     label: "Feels like"
                     value: root.hasData && root.feelsLikeC !== null ? root.formatTemp(root.feelsLikeC) + "C" : ""
                 }
 
-                InfoRow {
+                Commons.InfoRow {
                     visible: root.hasData && root.nextRainAt !== null
                     label: "Next rain"
                     value: root.hasData ? root.formatRainEta(root.nextRainAt)
@@ -317,32 +317,4 @@ Item {
         }
     }
 
-    component InfoRow: Item {
-        property string label: ""
-        property string value: ""
-
-        width: parent ? parent.width : 0
-        height: visible ? labelText.implicitHeight : 0
-
-        Text {
-            id: labelText
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: label
-            color: Commons.Color.launcher.textMuted
-            font.pixelSize: 11
-        }
-
-        Text {
-            anchors.left: labelText.right
-            anchors.leftMargin: 8
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            horizontalAlignment: Text.AlignRight
-            text: value
-            color: Commons.Color.launcher.text
-            font.pixelSize: 11
-            elide: Text.ElideRight
-        }
-    }
 }
