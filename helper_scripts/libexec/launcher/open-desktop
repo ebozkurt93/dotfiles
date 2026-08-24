@@ -9,7 +9,7 @@ if [ -z "$target" ]; then
 fi
 
 desktop_dirs=(
-  "/etc/profiles/per-user/$USER/share/applications"
+  "/etc/profiles/per-user/$(id -un)/share/applications"
   "/run/current-system/sw/share/applications"
   "/usr/share/applications"
   "/var/lib/flatpak/exports/share/applications"

@@ -138,7 +138,13 @@ PanelWindow {
                 actions: [
                     {
                         id: "open",
-                        title: "Open",
+                        title: "Open (or jump to running)",
+                        command: home + "/bin/desktop raise-or-launch " + shellQuote(String(entry.startupClass || id)) + " " + shellQuote(home + "/bin/launcher open-desktop " + shellQuote(id))
+                    },
+                    {
+                        id: "new-window",
+                        title: "Open New Window",
+                        key: "ctrl+n",
                         command: home + "/bin/launcher open-desktop " + shellQuote(id)
                     }
                 ]
