@@ -91,11 +91,16 @@
         });
     };
 
-    nixosConfigurations = {
-      utm-aarch64 = nixpkgs.lib.nixosSystem {
-        system = "aarch64-linux";
+    # Shared shape for every NixOS host -- only the host path + system
+    # string actually differ between them.
+    mkNixosHost = {
+      hostPath,
+      system,
+    }:
+      nixpkgs.lib.nixosSystem {
+        inherit system;
         modules = [
-          ./nixos/hosts/utm-aarch64/configuration.nix
+          hostPath
           home-manager.nixosModules.home-manager
           {
             nixpkgs.config.allowUnfree = true; # obsidian
@@ -113,6 +118,18 @@
             };
           }
         ];
+      };
+
+    nixosConfigurations = {
+      utm-aarch64 = self.mkNixosHost {
+        hostPath = ./nixos/hosts/utm-aarch64/configuration.nix;
+        system = "aarch64-linux";
+      };
+      # Placeholder host for task #4 (build-only CI check) -- not installed
+      # anywhere yet, see nixos/hosts/x86_64-generic/hardware-configuration.nix.
+      x86_64-generic = self.mkNixosHost {
+        hostPath = ./nixos/hosts/x86_64-generic/configuration.nix;
+        system = "x86_64-linux";
       };
     };
   };
