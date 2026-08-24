@@ -61,6 +61,7 @@ function __nvim_cmd() {
 }
 
 function nvim_remote_exec() {
+  # $1 is a plain ex-command string, e.g. "lua Foo()"
   local msg="$1"
   local pc="${pc:-$(sysctl -n hw.ncpu 2>/dev/null || echo 4)}"
   local nvim_cmd="$(__nvim_cmd)"
@@ -98,8 +99,9 @@ function nvim_remote_exec() {
 
   (( ${#live[@]} == 0 )) && return 0
 
+  local escaped_msg="${msg//\'/\'\'}"
   printf '%s\n' "${live[@]}" | xargs -n 1 -P "$pc" -I {} \
-    "$nvim_cmd" --server {} --remote-send "$msg" >/dev/null 2>&1
+    "$nvim_cmd" --server {} --remote-expr "execute('$escaped_msg')" >/dev/null 2>&1
 }
 
 # Attempts to find and kill nvim instances that are not connected to a tty
@@ -252,7 +254,7 @@ function __theme_helper() {
 	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
 	  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
 	else
-	  nvim_remote_exec "<cmd>lua require('ebozkurt.theme-gen').generate('$kitty_theme')<cr>" > /dev/null 2>&1
+	  nvim_remote_exec "lua require('ebozkurt.theme-gen').generate('$kitty_theme')" > /dev/null 2>&1
 	  if [[ ! -f $kitty_conf/themes/$kitty_theme.conf ]]; then
 	    local nvim_cmd="$(__nvim_cmd)"
 	    [[ -n "$nvim_cmd" ]] && "$nvim_cmd" --headless -c "lua require('ebozkurt.theme-gen').generate('$kitty_theme')" -c qa > /dev/null 2>&1
@@ -273,25 +275,13 @@ function __theme_helper() {
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
-	# this one is a bit faster, but updates kitty.conf as well. Both options reload kitty config.
-	# local kitty_theme_filename=$(__theme_helper get_custom_kitty_theme $2)
-	# local kitty_theme=$(__theme_helper find_kitty_theme_name $kitty_theme_filename)
-	# kitty +kitten themes "$kitty_theme"
-	local kitty_theme=$(__theme_helper get_custom_kitty_theme $2)
-	# if existing kitty_theme we can do things in parallel
-	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
-	  __theme_helper set_nvim_theme $2 &
-	  __theme_helper set_kitty_theme $2 &
-	# we will attempt to generate kitty_theme, so nvim one should be set first
-	else
-	  __theme_helper set_nvim_theme $2
-	  __theme_helper set_kitty_theme $2 &
-	fi
+	__theme_helper set_nvim_theme $2
+	__theme_helper set_kitty_theme $2
 	return
   fi
   if [[ "$1" == "set_nvim_theme" ]]; then
 	"${__macos_sed}" -i '' "1s/.*/local selected_theme = \'$2\'/" $nvim_themefile
-	nvim_remote_exec "<cmd>lua ReloadTheme()<cr>" > /dev/null 2>&1 
+	nvim_remote_exec "lua ReloadTheme()" > /dev/null 2>&1 
 	return
   fi
 }
@@ -411,17 +401,8 @@ function __reload_wezterm_config {
 }
 
 function __reload_ghostty_config {
-  osascript <<'APPLESCRIPT'
-tell application "Ghostty" to activate
-tell application "System Events" to keystroke "," using {command down, shift down}
-
-# doing this so that `mouse-hide-while-typing` works
-# without toggling focused application manually
-ignoring application responses
-  tell application "Finder" to activate
-  tell application "Ghostty" to activate
-end ignoring
-APPLESCRIPT
+  # native perform-action call -- no focus steal, unlike System Events keystroke sim
+  osascript -e 'tell application "Ghostty" to perform action "reload_config" on (focused terminal of (selected tab of front window))'
 }
 
 function __wezterm_change_font() {
@@ -525,10 +506,10 @@ function __kitty_toggle_transparency() {
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^# '; then
     "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
-    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentEnable" > /dev/null 2>&1
   else
     "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
-    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentDisable" > /dev/null 2>&1
   fi
 
   # After reloading config menubar even on full screen for some reason with new changes, but obviously possible to toggle fullscreen again manually
@@ -542,10 +523,10 @@ function __wezterm_toggle_transparency() {
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^-- '; then
     "${__macos_sed}" -i '' "${lineNum}s/^-- //" $file
-    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentEnable" > /dev/null 2>&1
   else
     "${__macos_sed}" -i '' "${lineNum}s/^/-- /" $file
-    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentDisable" > /dev/null 2>&1
   fi
 }
 
@@ -556,10 +537,10 @@ function __ghostty_toggle_transparency() {
   # Check if the line is commented
   if sed -n "${lineNum}p" $file | grep -q '^# '; then
     "${__macos_sed}" -i '' "${lineNum}s/^# //" $file
-    nvim_remote_exec "<cmd>TransparentEnable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentEnable" > /dev/null 2>&1
   else
     "${__macos_sed}" -i '' "${lineNum}s/^/# /" $file
-    nvim_remote_exec "<cmd>TransparentDisable<cr>" > /dev/null 2>&1
+    nvim_remote_exec "TransparentDisable" > /dev/null 2>&1
   fi
 
   __reload_ghostty_config
