@@ -177,6 +177,7 @@ windows_json() {
         id: ("window:" + .address),
         kind: "window",
         icon: "window",
+        address: .address,
         title: ((.title // "untitled") | gsub("[\t\n]"; " ")),
         subtitle: (((.class // "unknown") | gsub("[\t\n]"; " ")) + " - workspace " + ((.workspace.name // (.workspace.id | tostring)) | tostring)),
         keywords: [
@@ -193,12 +194,22 @@ windows_json() {
           {
             id: "close",
             title: "Close Window",
+            key: "ctrl+w",
+            keepOpen: true,
             command: ("hyprctl dispatch \"hl.dsp.window.close({ window = \\\"address:" + .address + "\\\" })\" >/dev/null 2>&1 || hyprctl dispatch closewindow address:" + .address)
           },
           {
             id: "float",
             title: "Toggle Floating",
+            key: "ctrl+f",
             command: ("hyprctl dispatch \"hl.dsp.window.float({ window = \\\"address:" + .address + "\\\", action = \\\"toggle\\\" })\" >/dev/null 2>&1 || hyprctl dispatch togglefloating address:" + .address)
+          },
+          {
+            id: "kill",
+            title: "Quit App",
+            key: "ctrl+q",
+            keepOpen: true,
+            command: ("kill -TERM " + (.pid | tostring) + " 2>/dev/null || true")
           }
         ]
       })

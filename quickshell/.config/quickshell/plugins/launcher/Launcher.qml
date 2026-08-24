@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 import QtQml.Models
 
@@ -65,7 +66,6 @@ PanelWindow {
 
     function reloadLauncher() {
         launcherLoading = true
-        launcherOutput = ""
         launcherNativeItems = launcherMode === "all" ? desktopAppItems() : []
         if (launcherMode === "apps") {
             launcherItems = desktopAppItems()
@@ -75,12 +75,24 @@ PanelWindow {
         }
         launcherItems = launcherNativeItems
         rebuildLauncherRows()
+        fetchLauncherItems()
+        reloadCalculator()
+    }
 
+    // Re-fetches provider items without blanking the visible list or showing
+    // the loading state first -- used after a keepOpen action (e.g. closing a
+    // window) so the list updates in place instead of flashing empty.
+    function refreshLauncherSilently() {
+        if (launcherMode === "apps") return
+        fetchLauncherItems()
+    }
+
+    function fetchLauncherItems() {
+        launcherOutput = ""
         var providerMode = launcherMode === "all" ? "non-apps" : (launcherMode || "all")
         var flag = "--" + providerMode
         launcherProvider.command = [home + "/bin/launcher", "items", flag]
         launcherProvider.running = true
-        reloadCalculator()
     }
 
     function shellQuote(value) {
@@ -191,7 +203,8 @@ PanelWindow {
                     title: action.title || "",
                     subtitle: action.command || "",
                     kind: "action",
-                    icon: ""
+                    icon: "",
+                    address: ""
                 })
             }
             if (launcherSelected >= launcherRows.count) launcherSelected = Math.max(0, launcherRows.count - 1)
@@ -221,6 +234,7 @@ PanelWindow {
                 subtitle: item.subtitle || "",
                 kind: item.kind || "",
                 icon: item.icon || "",
+                address: item.address || "",
                 score: score
             })
         }
@@ -244,11 +258,12 @@ PanelWindow {
         launcherList.positionViewAtIndex(launcherSelected, ListView.Contain)
     }
 
-    function runLauncherCommand(command) {
+    function runLauncherCommand(command, keepOpen) {
         if (!command) return
-        launcherOpen = false
+        if (!keepOpen) launcherOpen = false
         commandRunner.command = ["bash", "-lc", command]
         commandRunner.running = true
+        if (keepOpen) refreshAfterActionTimer.restart()
     }
 
     function activateLauncherRow(actionOffset) {
@@ -258,12 +273,14 @@ PanelWindow {
         if (!item || !Array.isArray(item.actions) || item.actions.length === 0) return
 
         if (actionOffset !== undefined && actionOffset >= 0 && item.actions.length > actionOffset) {
-            runLauncherCommand(item.actions[actionOffset].command || "")
+            var offsetAction = item.actions[actionOffset]
+            runLauncherCommand(offsetAction.command || "", !!offsetAction.keepOpen)
             return
         }
 
         if (row.actionIndex >= 0) {
-            runLauncherCommand(item.actions[row.actionIndex].command || "")
+            var chosenAction = item.actions[row.actionIndex]
+            runLauncherCommand(chosenAction.command || "", !!chosenAction.keepOpen)
             return
         }
 
@@ -272,7 +289,8 @@ PanelWindow {
             return
         }
 
-        if (item.actions.length > 1) {
+        var hasKeyedActions = item.actions.some(function(a) { return a && a.key })
+        if (item.actions.length > 1 && !hasKeyedActions) {
             launcherChoosingAction = true
             launcherActionItemIndex = row.itemIndex
             launcherSelected = 0
@@ -282,6 +300,55 @@ PanelWindow {
         }
 
         runLauncherCommand(item.actions[0].command || "")
+    }
+
+    // Parses a "ctrl+w"-style action.key spec and checks it against a key event.
+    function keyEventMatchesSpec(event, spec) {
+        var parts = String(spec || "").toLowerCase().split("+")
+        var letter = parts[parts.length - 1]
+        var wantCtrl = parts.indexOf("ctrl") >= 0
+        var wantShift = parts.indexOf("shift") >= 0
+        var wantAlt = parts.indexOf("alt") >= 0
+        var hasCtrl = !!(event.modifiers & Qt.ControlModifier)
+        var hasShift = !!(event.modifiers & Qt.ShiftModifier)
+        var hasAlt = !!(event.modifiers & Qt.AltModifier)
+        if (wantCtrl !== hasCtrl || wantShift !== hasShift || wantAlt !== hasAlt) return false
+        if (letter.length !== 1 || letter < "a" || letter > "z") return false
+        var keyCode = Qt.Key_A + (letter.charCodeAt(0) - "a".charCodeAt(0))
+        return event.key === keyCode
+    }
+
+    // Looks up the live Quickshell.Wayland.Toplevel handle for a Hyprland window
+    // address (as reported by `hyprctl clients -j` .address), for feeding into
+    // ScreencopyView.captureSource. Returns null if the window isn't found (e.g.
+    // it closed since the list was fetched).
+    function windowThumbnailHandle(address) {
+        if (!address) return null
+        var target = String(address).replace(/^0x/, "").toLowerCase()
+        var list = (Hyprland.toplevels && Hyprland.toplevels.values) || []
+        for (var i = 0; i < list.length; i++) {
+            var t = list[i]
+            var addr = String((t && t.address) || "").replace(/^0x/, "").toLowerCase()
+            if (addr && addr === target) return t.wayland
+        }
+        return null
+    }
+
+    // Runs the selected row's action whose declared `key` matches this event,
+    // bypassing the action sub-list entirely. Returns true if one was run.
+    function tryActionShortcut(event) {
+        if (launcherRows.count <= 0 || launcherChoosingAction) return false
+        var row = launcherRows.get(launcherSelected)
+        var item = launcherVisibleItems[row.itemIndex]
+        if (!item || !Array.isArray(item.actions)) return false
+        for (var i = 0; i < item.actions.length; i++) {
+            var action = item.actions[i]
+            if (action && action.key && keyEventMatchesSpec(event, action.key)) {
+                runLauncherCommand(action.command || "", !!action.keepOpen)
+                return true
+            }
+        }
+        return false
     }
 
     function backFromActions() {
@@ -307,6 +374,21 @@ PanelWindow {
         var row = launcherRows.get(launcherSelected)
         var item = launcherVisibleItems[row.itemIndex]
         if (item && item.kind === "calculator") return "Enter: copy result    Ctrl+Enter: copy input"
+        if (item && Array.isArray(item.actions) && row.actionIndex < 0) {
+            var hints = []
+            for (var i = 0; i < item.actions.length; i++) {
+                var action = item.actions[i]
+                if (!action) continue
+                if (i === 0) {
+                    hints.push("Enter: " + (action.title || ""))
+                } else if (action.key) {
+                    var label = action.key.replace(/\bctrl\b/i, "Ctrl").replace(/\bshift\b/i, "Shift")
+                        .replace(/\balt\b/i, "Alt").replace(/\+(\w)$/, function(m, c) { return "+" + c.toUpperCase() })
+                    hints.push(label + ": " + (action.title || ""))
+                }
+            }
+            if (hints.length > 1) return hints.join("    ")
+        }
         return ""
     }
 
@@ -341,6 +423,15 @@ PanelWindow {
 
     Process {
         id: commandRunner
+    }
+
+    // Refreshes the item list after a keepOpen action (e.g. closing a window)
+    // so the list reflects the new state without dismissing the launcher.
+    Timer {
+        id: refreshAfterActionTimer
+        interval: 200
+        repeat: false
+        onTriggered: if (root.launcherOpen) root.refreshLauncherSilently()
     }
 
     Process {
@@ -482,6 +573,8 @@ PanelWindow {
                                 root.activateLauncherRow()
                             }
                             event.accepted = true
+                        } else if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier)) {
+                            if (root.tryActionShortcut(event)) event.accepted = true
                         }
                     }
                 }
@@ -511,6 +604,7 @@ PanelWindow {
                     required property string subtitle
                     required property string kind
                     required property string icon
+                    required property string address
 
                     width: ListView.view.width
                     height: kind === "keybind" ? 32 : 56
@@ -555,29 +649,64 @@ PanelWindow {
                         }
                     }
 
-                    Column {
+                    Row {
                         visible: kind !== "keybind"
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.leftMargin: 12
                         anchors.rightMargin: 12
-                        spacing: 4
+                        spacing: 10
 
-                        Text {
-                            width: parent.width
-                            text: title
-                            color: Commons.Color.launcher.text
-                            font.pixelSize: 15
-                            elide: Text.ElideRight
+                        // Live/static thumbnail for window rows, via Hyprland's
+                        // per-toplevel screencopy. Only the selected row streams
+                        // live video; other visible rows show a one-shot snapshot.
+                        Rectangle {
+                            id: thumbBox
+                            visible: kind === "window"
+                            width: visible ? 64 : 0
+                            height: 40
+                            radius: 4
+                            color: Commons.Color.launcher.inputBackground
+                            border.color: Commons.Color.launcher.inputBorder
+                            border.width: 1
+                            anchors.verticalCenter: parent.verticalCenter
+                            clip: true
+
+                            Loader {
+                                anchors.fill: parent
+                                active: thumbBox.visible && root.windowThumbnailHandle(address) !== null
+                                sourceComponent: ScreencopyView {
+                                    anchors.fill: parent
+                                    captureSource: root.windowThumbnailHandle(address)
+                                    live: index === root.launcherSelected
+                                    paintCursor: false
+                                    Component.onCompleted: captureFrame()
+                                    onHasContentChanged: if (hasContent && !live) captureFrame()
+                                }
+                            }
                         }
 
-                        Text {
-                            width: parent.width
-                            text: subtitle || kind
-                            color: Commons.Color.launcher.textMuted
-                            font.pixelSize: 12
-                            elide: Text.ElideRight
+                        Column {
+                            width: parent.width - thumbBox.width - (thumbBox.visible ? parent.spacing : 0)
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 4
+
+                            Text {
+                                width: parent.width
+                                text: title
+                                color: Commons.Color.launcher.text
+                                font.pixelSize: 15
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: subtitle || kind
+                                color: Commons.Color.launcher.textMuted
+                                font.pixelSize: 12
+                                elide: Text.ElideRight
+                            }
                         }
                     }
                 }
