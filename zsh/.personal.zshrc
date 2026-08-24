@@ -407,8 +407,17 @@ alias lg='lazygit'
 
 # mise
 eval "$(mise activate zsh)"
-# zsh-autosuggestions
-source ~/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# zsh-autosuggestions -- home-manager installs it under ~/.nix-profile on
+# macOS/standalone home-manager, but under /etc/profiles/per-user on NixOS
+# (~/.nix-profile points at a separate, unused profile there)
+for __zas in \
+  ~/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  /etc/profiles/per-user/$(whoami)/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  /run/current-system/sw/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+do
+  [[ -f $__zas ]] && source $__zas && break
+done
+unset __zas
 bindkey '^ ' autosuggest-accept
 
 eval "$(direnv hook zsh)"
