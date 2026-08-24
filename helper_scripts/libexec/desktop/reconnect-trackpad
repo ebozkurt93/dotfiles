@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Linux port of hammerspoon's action_menu.lua "Connect To Trackpad" /
+# helper_scripts/bin/btt: this specific trackpad's Bluetooth pairing goes
+# flaky periodically, and a remove+reconnect cycle fixes it -- same trick,
+# bluetoothctl instead of blueutil. Wrapped in `timeout` since bluetoothctl
+# hangs forever with no adapter present (same class of bug fixed earlier in
+# tmux_bluetooth.sh and the launcher's bluetooth provider).
+TRACKPAD_MAC="A0:78:17:E2:CF:57"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Bluetooth" "$1" || true
+}
+
+if ! timeout 2 bluetoothctl show >/dev/null 2>&1; then
+  notify "No Bluetooth adapter"
+  exit 1
+fi
+
+timeout 2 bluetoothctl power on >/dev/null 2>&1 || true
+timeout 5 bluetoothctl remove "$TRACKPAD_MAC" >/dev/null 2>&1 || true
+sleep 2
+if timeout 5 bluetoothctl connect "$TRACKPAD_MAC" >/dev/null 2>&1; then
+  notify "Trackpad reconnected"
+else
+  notify "Trackpad reconnect failed"
+  exit 1
+fi

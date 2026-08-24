@@ -77,5 +77,38 @@
     "actions": [
       {"id": "reload", "title": "Reload", "command": "hyprctl reload"}
     ]
+  },
+  {
+    "id": "action:reset-wifi-dns",
+    "kind": "setting",
+    "icon": "network-wireless",
+    "title": "Reset WiFi DNS",
+    "subtitle": "Restore DHCP-provided DNS servers",
+    "keywords": ["dns", "wifi", "network", "reset", "dhcp"],
+    "actions": [
+      {"id": "run", "title": "Reset to DHCP", "command": "~/bin/dns-manager set DHCP"}
+    ]
+  },
+  {
+    "id": "action:reconnect-trackpad",
+    "kind": "setting",
+    "icon": "input-touchpad",
+    "title": "Reconnect Trackpad",
+    "subtitle": "Cycle Bluetooth pairing for the flaky trackpad",
+    "keywords": ["trackpad", "bluetooth", "reconnect", "pair"],
+    "actions": [
+      {"id": "run", "title": "Reconnect", "command": "~/bin/desktop reconnect-trackpad"}
+    ]
+  },
+  {
+    "id": "action:mirror-toggle",
+    "kind": "setting",
+    "icon": "video-display",
+    "title": "Toggle Display Mirroring",
+    "subtitle": "Mirror internal display to external monitor",
+    "keywords": ["mirror", "display", "monitor", "external", "screen"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/desktop mirror-toggle"}
+    ]
   }
 ]

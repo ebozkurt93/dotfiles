@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Toggles mirroring the internal display onto the first connected external
+# monitor -- Linux/Hyprland equivalent of hammerspoon's action_menu.lua
+# "Toggle Display Mirroring" (which shelled out to the macOS-only
+# fcanas/mirror-displays CLI tool, see setup/install-mirror.sh). Hyprland
+# has this natively via hl.monitor({..., mirror = "<output>"}), called at
+# runtime through `hyprctl eval` (the Lua config provider's live-eval
+# escape hatch, same mechanism already used by rowresize for cursor:no_warps).
+# Shape borrowed from Omarchy's omarchy-hyprland-monitor-internal-mirror,
+# simplified (no separate on/off/recover subcommands, no disable-toggle
+# interaction) since this is a single toggle action, not a full monitor tool.
+
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/desktop/monitor-mirror"
+mkdir -p "$(dirname "$state_file")"
+
+monitors_json="$(hyprctl monitors -j)"
+internal="$(jq -r '[.[] | select(.name | test("^(eDP|LVDS|DSI)-"))][0].name // empty' <<<"$monitors_json")"
+external="$(jq -r '[.[] | select(.name | test("^(eDP|LVDS|DSI)-") | not)][0].name // empty' <<<"$monitors_json")"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Display" "$1" || true
+}
+
+if [ -z "$internal" ]; then
+  notify "No internal display found"
+  exit 1
+fi
+
+if [ -f "$state_file" ]; then
+  mirrored_external="$(cat "$state_file")"
+  hyprctl eval "hl.monitor({ output = \"$mirrored_external\", mode = \"preferred\", position = \"auto\", scale = 1 })" >/dev/null
+  rm -f "$state_file"
+  notify "Extended mode restored"
+else
+  if [ -z "$external" ]; then
+    notify "No external display connected"
+    exit 1
+  fi
+  hyprctl eval "hl.monitor({ output = \"$external\", mode = \"preferred\", position = \"auto\", scale = 1, mirror = \"$internal\" })" >/dev/null
+  echo "$external" >"$state_file"
+  notify "Mirroring enabled ($external)"
+fi
