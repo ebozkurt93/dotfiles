@@ -88,4 +88,16 @@ with pkgs;
     gnome-calendar # pinned app, SUPER+ALT+C raise-or-launch
     (python3.withPackages (ps: [ps.evdev])) # firefox/native-host/*.py + helper_scripts/libexec/desktop/text-expander
     zip # firefox/setup.sh's bridge.xpi build step (implicit on macOS)
+    cliphist # clipboard history backend for the (upcoming) clipboard panel
+    ddcutil # DDC/CI external-monitor brightness control (upcoming widget)
+    vlc
+    signal-desktop
+    google-chrome
+  ]
+  ++ lib.optionals (stdenv.isLinux && stdenv.hostPlatform.isx86_64) [
+    # Proprietary Electron builds with no aarch64-linux package -- this
+    # VM is aarch64, so these only apply once the x86_64 host (task #4,
+    # not started yet) exists.
+    slack
+    spotify
   ]

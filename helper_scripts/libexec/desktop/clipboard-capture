@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs under `wl-paste --watch clipboard-capture`, once per clipboard change,
+# with the new clipboard content on stdin. cliphist itself has no per-item
+# size cap (only -max-items, an entry-count cap) -- this buffers to a temp
+# file first and silently drops anything over the threshold instead of
+# storing arbitrarily large pastes/screenshots forever.
+max_bytes=$((5 * 1024 * 1024)) # 5 MiB
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+cat >"$tmp"
+
+size="$(wc -c <"$tmp")"
+[ "$size" -le "$max_bytes" ] || exit 0
+
+cliphist store <"$tmp"

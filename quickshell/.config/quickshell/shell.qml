@@ -3,6 +3,7 @@ import Quickshell
 import "plugins/bar"
 import "plugins/lock"
 import "plugins/launcher"
+import "plugins/clipboard"
 
 ShellRoot {
     id: shell
@@ -16,6 +17,10 @@ ShellRoot {
     }
 
     Launcher {
+        shell: shell
+    }
+
+    Clipboard {
         shell: shell
     }
 }
