@@ -89,6 +89,7 @@ hl.bind(mainMod .. " + CTRL + Q", hl.dsp.exec_cmd(home .. "/bin/desktop lock"), 
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"), { description = "Open window switcher" })
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"), { description = "Open browser tabs" })
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --bluetooth"), { description = "Open bluetooth devices" })
+hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-expander --toggle"), { description = "Toggle text expansion" })
 
 -- Scrolling-layout focus: move focus between columns (h/l, left/right) and
 -- within a column's stack (j/k, up/down). Auto-scrolls the tape into view.

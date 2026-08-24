@@ -86,6 +86,6 @@ with pkgs;
     obsidian # pinned app, SUPER+ALT+O raise-or-launch
     freecad # pinned app, SUPER+ALT+F raise-or-launch
     gnome-calendar # pinned app, SUPER+ALT+C raise-or-launch
-    python3 # firefox/native-host/*.py (implicit via Xcode CLT on macOS)
+    (python3.withPackages (ps: [ps.evdev])) # firefox/native-host/*.py + helper_scripts/libexec/desktop/text-expander
     zip # firefox/setup.sh's bridge.xpi build step (implicit on macOS)
   ]

@@ -15,6 +15,7 @@
     then lib.head (lib.attrValues normalUsers)
     else throw "desktop-hyprland.nix: expected exactly one isNormalUser account, found ${toString (builtins.length (lib.attrNames normalUsers))} (${toString (lib.attrNames normalUsers)})";
   dotfilesDir = "${primaryUser.home}/dotfiles";
+  pythonWithEvdev = pkgs.python3.withPackages (ps: [ps.evdev]);
 in {
   programs.hyprland.enable = true;
   security.pam.services.dotfiles-lock = {};
@@ -81,5 +82,36 @@ in {
     # Wires the launcher's generic --tabs provider hook to the Firefox
     # native-messaging bridge (firefox_tab_switcher.lua's replacement).
     LAUNCHER_TABS_COMMAND = "${dotfilesDir}/helper_scripts/libexec/launcher/firefox-tabs";
+  };
+
+  # text_expander.lua's replacement (helper_scripts/libexec/desktop/text-expander):
+  # reads raw keyboard events via evdev (needs "input" group for
+  # /dev/input/event*) and injects replacements via a synthetic uinput
+  # virtual keyboard (needs /dev/uinput, created by this module + "uinput"
+  # group). Neither is granted by default.
+  hardware.uinput.enable = true;
+  # users.users.${primaryUser.name}.extraGroups would read config.users.users
+  # (to compute primaryUser) while also contributing to it -- genuine
+  # infinite recursion. Extending group membership by name instead only
+  # reads primaryUser.name as a value, not as an attribute key.
+  users.groups.input.members = [primaryUser.name];
+  users.groups.uinput.members = [primaryUser.name];
+
+  systemd.user.services.text-expander = {
+    description = "Text expansion daemon (evdev/uinput port of text_expander.lua)";
+    wantedBy = ["default.target"];
+    # PATH: notify-send is the only external command the script still shells
+    # out to (toggle on/off notification) -- same minimal-PATH problem as
+    # ExecStart itself, just one level down via subprocess.run. The dynamic
+    # triggers (@@ip, @@localip, etc.) use Python's own urllib/socket, not
+    # curl/iproute2, specifically to avoid pulling in packages for this.
+    path = [pkgs.libnotify];
+    serviceConfig = {
+      # Full store path instead of relying on env python3 -- systemd user
+      # services get a minimal PATH that doesn't include the Nix profile's
+      # bin dir (confirmed: "env: 'python3': No such file or directory").
+      ExecStart = "${pythonWithEvdev}/bin/python3 ${dotfilesDir}/helper_scripts/libexec/desktop/text-expander";
+      Restart = "on-failure";
+    };
   };
 }
