@@ -98,6 +98,9 @@
           ./nixos/hosts/utm-aarch64/configuration.nix
           home-manager.nixosModules.home-manager
           {
+            nixpkgs.config.allowUnfree = true; # obsidian
+          }
+          {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.erdembozkurt = {pkgs, ...}: {

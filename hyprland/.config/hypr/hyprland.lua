@@ -153,6 +153,10 @@ hl.bind(mainMod .. " + CTRL + down", hl.dsp.exec_cmd(home .. "/bin/desktop rowre
 -- Raise-or-launch pinned apps: focus the most-recently-focused window of
 -- the app if one exists (mirrors hammerspoon's launchOrFocus), else launch it.
 hl.bind(mainMod .. " + ALT + k", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch com.mitchellh.ghostty ghostty"), { description = "Jump to (or launch) terminal" })
+hl.bind(mainMod .. " + ALT + b", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch firefox-devedition firefox-devedition"), { description = "Jump to (or launch) Firefox" })
+hl.bind(mainMod .. " + ALT + o", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch md.Obsidian obsidian"), { description = "Jump to (or launch) Obsidian" })
+hl.bind(mainMod .. " + ALT + f", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch FreeCAD freecad"), { description = "Jump to (or launch) FreeCAD" })
+hl.bind(mainMod .. " + ALT + c", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch org.gnome.Calendar gnome-calendar"), { description = "Jump to (or launch) Calendar" })
 
 -- Move focus to / move the focused window to a neighboring monitor,
 -- regardless of whether monitors are arranged side-by-side or stacked.

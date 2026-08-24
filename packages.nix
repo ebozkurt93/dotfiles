@@ -83,4 +83,7 @@ with pkgs;
     power-profiles-daemon # powerprofilesctl; helper_scripts/bin/helpers/low-power-mode-toggle.sh
     bluez # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
     lua5_4 # sandboxed hyprland.lua replay for helper_scripts/libexec/desktop/keybinds
+    obsidian # pinned app, SUPER+ALT+O raise-or-launch
+    freecad # pinned app, SUPER+ALT+F raise-or-launch
+    gnome-calendar # pinned app, SUPER+ALT+C raise-or-launch
   ]

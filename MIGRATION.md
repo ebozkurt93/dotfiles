@@ -1712,3 +1712,76 @@ session, along with the rest of task #5's hs.chooser-driven files
 (`action_menu.lua`, `firefox_tab_switcher.lua`, `text_expander.lua`,
 `fuzzy_window_switcher.lua`) and the bar-widget-only files
 (`theme_sync.lua`, `kb_battery.lua`).
+
+## Task #5: remaining pinned-app binds wired up (2026-08-24)
+
+Closed out the "not yet decided" pinned-app binds above. Confirmed with the
+user via questions: Firefox yes; Obsidian and FreeCAD yes; Calendar yes but
+no app in mind -- recommended **GNOME Calendar** (native GTK4/libadwaita,
+real Wayland support, fits the already-GTK-ish stack) and user agreed.
+Verified this really is the complete list of hammerspoon raise-or-launch
+pins (`grep -rn "launchOrFocus"` across all `.lua` files) before wiring
+anything -- no other app is pinned this way.
+
+Added `obsidian`, `freecad`, `gnome-calendar` to `packages.nix`'s Linux set,
+plus `nixpkgs.config.allowUnfree = true` on the `nixosConfigurations`
+module in `flake.nix` (obsidian's package is marked unfree; darwin already
+had this set, Linux didn't). Added four `SUPER+ALT+<letter>` binds in
+`hyprland.lua` next to the existing Ghostty one, same
+`desktop raise-or-launch <class-pattern> <launch-cmd>` pattern:
+`+B` Firefox, `+O` Obsidian, `+F` FreeCAD, `+C` Calendar.
+
+**Verified every class pattern empirically on the VM instead of guessing
+from each app's `.desktop` file** -- two would have been wrong if guessed:
+- Firefox (`firefox-devedition`) and FreeCAD (`StartupWMClass=FreeCAD`,
+  matches `org.freecad.FreeCAD` via the script's case-insensitive substring
+  regex) matched their desktop-file-declared values.
+- **Obsidian's `.desktop` file has no `StartupWMClass` at all** -- the
+  actual runtime class, confirmed via `hyprctl clients -j` after a real
+  launch, is `md.Obsidian`, not `obsidian` as initially guessed. Fixed
+  before committing.
+- **GNOME Calendar has no explicit `StartupWMClass` either** but its actual
+  class (`org.gnome.Calendar`) happened to match the `Icon=` field value
+  guessed from the desktop file -- confirmed, not assumed.
+
+Verification method: dispatched each raise-or-launch call directly via
+`hyprctl dispatch 'hl.dsp.exec_cmd(...)'` over SSH into a real logged-in
+Hyprland session (same bypass technique used throughout this migration),
+checked `hyprctl clients -j` for the resulting class, then re-dispatched to
+confirm the *raise* path (`hyprctl activewindow -j`) focuses the existing
+window rather than spawning a duplicate -- for all four apps, not just
+launch-once.
+
+**Testing pitfall hit and worth remembering**: running these apps directly
+over a plain SSH shell (rather than via Hyprland's own `exec_cmd`) fails
+silently different ways per app -- Obsidian's Electron wrapper script only
+adds `--ozone-platform=wayland` when *both* `NIXOS_OZONE_WL` and
+`WAYLAND_DISPLAY` are set (confirmed by reading the wrapper script
+directly), and a bare SSH login shell has neither (SSH doesn't import the
+graphical session's env vars the way a child-of-Hyprland process does).
+Without them Obsidian silently falls back to X11 ozone and dies with
+"Missing X server or $DISPLAY" -- looked like a real portability bug at
+first, wasn't one; the actual keybind path (spawned as a child of Hyprland
+itself via `exec_cmd`) already inherits both correctly, since
+`NIXOS_OZONE_WL = "1"` is set globally via
+`environment.sessionVariables` in `desktop-hyprland.nix`. GNOME Calendar
+separately just needed more cold-start time than an 8s test window
+(Vulkan/GPU init fails and falls back to software rendering on this VM's
+virtio-gpu, adding real delay) -- not a bug either, just slow.
+
+**Unrelated VM incident during this session**: hit a genuine full-disk
+event (`/dev/vda2` 63G/63G used, ext4 aborted its journal, remounted
+`emergency_ro`) -- different from the earlier-documented UTM I/O-hang class
+of bug, this was real disk exhaustion, most likely from the `nix build`
+pulling in freecad's heavy dependency tree (vtk/pdal/openturns/etc, several
+GB). Recovered the same way as the I/O-hang incidents
+(`utmctl stop --kill` + `start`); after reboot the filesystem remounted
+`rw` clean and `df` showed 37G free, so the fill-up was transient rather
+than a permanent leak -- not investigated further, but worth a note if it
+recurs: check `df -h /` before assuming another I/O hang.
+
+Cleaned up all four test app processes/windows after verification; VM left
+with just its normal Ghostty window. Local `nix flake check --no-build` and
+the darwin `homeConfigurations.erdembozkurt.activationPackage` build both
+still pass -- darwin path untouched by the `allowUnfree` change since it
+was scoped to the `nixosConfigurations` module only.
