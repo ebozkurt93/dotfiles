@@ -90,6 +90,9 @@ with pkgs;
     zip # firefox/setup.sh's bridge.xpi build step (implicit on macOS)
     cliphist # clipboard history backend for the (upcoming) clipboard panel
     ddcutil # DDC/CI external-monitor brightness control (upcoming widget)
+    brightnessctl # laptop-panel brightness; XF86MonBrightness hyprland.lua binds
+    playerctl # XF86Audio play/next/prev hyprland.lua binds
+    adwaita-icon-theme # no cursor theme was installed at all -- fell back to the renderer's bare default. Plain default arrow, not a themed pick.
     vlc
     signal-desktop
     google-chrome

@@ -29,11 +29,17 @@ hl.on("hyprland.start", function()
 end)
 
 hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_THEME", "Adwaita")
 
 hl.config({
     input = {
         kb_layout = "us",
         follow_mouse = 1,
+        -- Mirrors macOS's `KeyRepeat=1`/`InitialKeyRepeat=10` (fastest tick
+        -- available via `defaults write`, beyond the System Settings slider
+        -- max) -- repeat_rate is Hz, repeat_delay is ms before repeat starts.
+        repeat_rate = 60,
+        repeat_delay = 150,
         touchpad = {
             natural_scroll = true,
         },
@@ -44,19 +50,33 @@ hl.config({
         gaps_out = 8,
         border_size = 2,
         layout = "scrolling",
+        resize_on_border = true,
     },
 
     decoration = {
         rounding = 6,
         blur = {
             enabled = true,
-            size = 4,
-            passes = 2,
+            size = 8,
+            passes = 1,
         },
     },
 
     animations = {
         enabled = true,
+    },
+
+    cursor = {
+        -- UTM's virtio-gpu has a known class of hardware-cursor bugs
+        -- (corrupted/invisible cursor) -- force software cursor rendering
+        -- there specifically, not on real hardware where the hardware
+        -- cursor plane is cheaper and fine.
+        no_hardware_cursors = lowSpecDesktop,
+    },
+
+    misc = {
+        disable_hyprland_logo = true,
+        disable_splash_rendering = true,
     },
 
     scrolling = {
@@ -69,9 +89,11 @@ hl.config({
 
 -- Speed up the default animation pace -- "enabled = true" alone left every
 -- category on Hyprland's own built-in defaults, which felt sluggish. Just
--- overriding "global" (higher speed = faster) is enough since every
--- category without its own explicit override inherits from it.
-hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
+-- overriding "global" (speed is duration in ~100ms units, lower = faster) is
+-- enough since every category without its own explicit override inherits
+-- from it. Kept low deliberately -- animations should be snappy and not
+-- make the user wait, not a visual flourish.
+hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
 
 local mainMod = "SUPER"
 local home = os.getenv("HOME")
@@ -191,12 +213,15 @@ hl.bind(mainMod .. " + CTRL + ALT + up",    hl.dsp.workspace.move({ monitor = "u
 hl.bind(mainMod .. " + CTRL + ALT + j",     hl.dsp.workspace.move({ monitor = "d" }), { description = "Move workspace to monitor down" })
 hl.bind(mainMod .. " + CTRL + ALT + down",  hl.dsp.workspace.move({ monitor = "d" }), { description = "Move workspace to monitor down" })
 
-for i = 1, 5 do
-    hl.bind(mainMod .. " + " .. i, hl.dsp.focus({ workspace = i }), { description = "Switch to workspace " .. i })
-    hl.bind(mainMod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
+for i = 1, 10 do
+    local key = i == 10 and "0" or tostring(i)
+    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }), { description = "Switch to workspace " .. i })
+    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
 end
 
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, description = "Drag floating window" })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, description = "Resize floating window" })
 
 hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd(home .. "/bin/launcher --keybinds"), { description = "Show keybindings" })
+
+dofile(home .. "/.config/hypr/media-keys.lua")
