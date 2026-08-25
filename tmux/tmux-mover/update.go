@@ -20,6 +20,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = filterPopupState(m.state, m.selfWindowID)
 		}
 		m.selectedPanes = pruneSelectedPanes(m.selectedPanes, m.state.Panes)
+		m.selectedSessions = pruneSelectedSessions(m.selectedSessions, m.state.Sessions)
 		m.agents, m.probedNonAgents = reconcileAgentStates(m.agents, m.probedNonAgents, m.state.Panes, time.Now())
 		// window selection derived from selected panes
 		m.paneOrder = buildPaneOrder(m.state)
@@ -162,21 +163,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return reorderWindow(m, 1)
 		case keyMatches(msg, m.keys.TogglePaneSelect):
-			if m.mode == ModeList && !m.sessionView {
+			if m.mode == ModeList && m.sessionView {
+				return toggleSessionSelection(m)
+			}
+			if m.mode == ModeList {
 				return togglePaneSelection(m)
 			}
 		case keyMatches(msg, m.keys.SelectNext):
-			if m.mode == ModeList && !m.sessionView {
+			if m.mode == ModeList && m.sessionView {
+				updated, _ := toggleSessionSelection(m)
+				return stepSessionSelection(updated.(model), 1)
+			}
+			if m.mode == ModeList {
 				updated, _ := togglePaneSelection(m)
 				return moveDownByCount(updated.(model), 1)
 			}
 		case keyMatches(msg, m.keys.SelectPrev):
-			if m.mode == ModeList && !m.sessionView {
+			if m.mode == ModeList && m.sessionView {
+				updated, _ := toggleSessionSelection(m)
+				return stepSessionSelection(updated.(model), -1)
+			}
+			if m.mode == ModeList {
 				updated, _ := togglePaneSelection(m)
 				return moveUpByCount(updated.(model), 1)
 			}
 		case keyMatches(msg, m.keys.ClearSelection):
 			if m.sessionView {
+				m.selectedSessions = map[string]bool{}
+				m.status = "Cleared selections"
 				return m, nil
 			}
 			m.selectedPanes = map[string]bool{}
@@ -218,16 +232,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
-		case keyMatches(msg, m.keys.KillSession):
-			if m.mode == ModeList && m.sessionView {
-				if m.selectedSessionID == "" {
-					m.status = "No session selected"
-					return m, nil
-				}
-				m.mode = ModeConfirmKillSession
-				m.status = fmt.Sprintf("Kill session %q? y/n", sessionNameByID(m.state, m.selectedSessionID))
-				return m, nil
-			}
 		case keyMatches(msg, m.keys.MovePane):
 			if m.mode == ModeList && !m.sessionView {
 				m.mode = ModePickWindow
@@ -259,18 +263,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.RenameSession):
-			if m.mode == ModeList && !m.sessionView {
-				sessionID := sessionIDForPane(m.state, m.selectedPaneID)
+			if m.mode == ModeList {
+				sessionID := m.selectedSessionID
+				if !m.sessionView {
+					sessionID = sessionIDForPane(m.state, m.selectedPaneID)
+				}
 				if sessionID == "" {
 					m.status = "No session selected"
 					return m, nil
 				}
 				m.mode = ModeRenameSession
+				m.renameSessionID = sessionID
 				m.input = sessionNameByID(m.state, sessionID)
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.DeletePanes):
-			if m.mode == ModeList && !m.sessionView {
+			if m.mode == ModeList && m.sessionView {
+				count := killSessionCount(m)
+				if count == 0 {
+					m.status = "No session selected"
+					return m, nil
+				}
+				m.mode = ModeConfirmKillSession
+				if count == 1 {
+					m.status = fmt.Sprintf("Kill session %q? y/n", sessionNameByID(m.state, killSessionTargets(m)[0]))
+				} else {
+					m.status = fmt.Sprintf("Kill %d session(s)? y/n", count)
+				}
+				return m, nil
+			}
+			if m.mode == ModeList {
 				count := deletePaneCount(m)
 				if count == 0 {
 					m.status = "No pane selected"
@@ -967,7 +989,7 @@ func acceptAction(m model) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(loadStateCmd(), loadPreviewCmd(m.selectedPaneID))
 	case ModeRenameSession:
 		name := strings.TrimSpace(m.input)
-		sessionID := sessionIDForPane(m.state, m.selectedPaneID)
+		sessionID := m.renameSessionID
 		if name == "" || sessionID == "" {
 			m.status = "Rename cancelled"
 		} else if err := applySessionRename(sessionID, name); err != nil {
@@ -977,6 +999,7 @@ func acceptAction(m model) (tea.Model, tea.Cmd) {
 		}
 		m.mode = ModeList
 		m.input = ""
+		m.renameSessionID = ""
 		return m, loadStateCmd()
 	default:
 		return m, nil
@@ -1057,6 +1080,46 @@ func selectedPaneIDs(m model) []string {
 	return ids
 }
 
+func toggleSessionSelection(m model) (tea.Model, tea.Cmd) {
+	if m.selectedSessionID == "" {
+		return m, nil
+	}
+	if m.selectedSessions[m.selectedSessionID] {
+		delete(m.selectedSessions, m.selectedSessionID)
+	} else {
+		m.selectedSessions[m.selectedSessionID] = true
+	}
+	return m, nil
+}
+
+func selectedSessionIDs(m model) []string {
+	if len(m.selectedSessions) == 0 {
+		return nil
+	}
+	ids := []string{}
+	for _, id := range sessionOrder(m.state) {
+		if m.selectedSessions[id] {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+func killSessionTargets(m model) []string {
+	selected := selectedSessionIDs(m)
+	if len(selected) > 0 {
+		return selected
+	}
+	if m.selectedSessionID != "" {
+		return []string{m.selectedSessionID}
+	}
+	return nil
+}
+
+func killSessionCount(m model) int {
+	return len(killSessionTargets(m))
+}
+
 func deletePaneCount(m model) int {
 	selected := selectedPaneIDs(m)
 	if len(selected) > 0 {
@@ -1117,16 +1180,14 @@ func confirmDeletePanes(m model) (tea.Model, tea.Cmd) {
 }
 
 func confirmKillSession(m model) (tea.Model, tea.Cmd) {
-	sessionID := m.selectedSessionID
+	selected := killSessionTargets(m)
 	m.mode = ModeList
-	if sessionID == "" {
+	if len(selected) == 0 {
 		m.status = "No session selected"
 		return m, nil
 	}
-	name := sessionNameByID(m.state, sessionID)
 	switchedSessionID := ""
-	if sessionID == m.selfSessionID {
-		targetSession := fallbackSessionBeforeKillSession(m, sessionID)
+	if targetSession, needed := fallbackSessionBeforeKillSessions(m, selected); needed {
 		if targetSession == "" {
 			m.status = "Cannot kill the only remaining session"
 			return m, nil
@@ -1138,46 +1199,72 @@ func confirmKillSession(m model) (tea.Model, tea.Cmd) {
 		m.selfSessionID = targetSession
 		switchedSessionID = targetSession
 	}
-	if err := applySessionKill(sessionID); err != nil {
-		m.status = fmt.Sprintf("Error: %s", err)
-		return m, loadStateCmd()
+	killed := 0
+	var lastName string
+	for _, sessionID := range selected {
+		lastName = sessionNameByID(m.state, sessionID)
+		if err := applySessionKill(sessionID); err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+			return m, loadStateCmd()
+		}
+		killed++
 	}
-	if switchedSessionID != "" {
+	m.selectedSessions = map[string]bool{}
+	switch {
+	case switchedSessionID != "" && killed == 1:
 		switchedSessionName := sessionNameByID(m.state, switchedSessionID)
 		if switchedSessionName == "" {
 			switchedSessionName = switchedSessionID
 		}
-		m.status = fmt.Sprintf("Switched to %s, killed session %s", switchedSessionName, name)
-	} else {
-		m.status = fmt.Sprintf("Killed session %s", name)
+		m.status = fmt.Sprintf("Switched to %s, killed session %s", switchedSessionName, lastName)
+	case switchedSessionID != "":
+		switchedSessionName := sessionNameByID(m.state, switchedSessionID)
+		if switchedSessionName == "" {
+			switchedSessionName = switchedSessionID
+		}
+		m.status = fmt.Sprintf("Switched to %s, killed %d session(s)", switchedSessionName, killed)
+	case killed == 1:
+		m.status = fmt.Sprintf("Killed session %s", lastName)
+	default:
+		m.status = fmt.Sprintf("Killed %d session(s)", killed)
 	}
 	m.selectedSessionID = ""
 	m.lastSelectedSessionID = ""
 	return m, loadStateCmd()
 }
 
-func fallbackSessionBeforeKillSession(m model, sessionID string) string {
+func fallbackSessionBeforeKillSessions(m model, selected []string) (string, bool) {
+	if m.selfSessionID == "" || len(selected) == 0 {
+		return "", false
+	}
+	selectedSet := map[string]bool{}
+	for _, sessionID := range selected {
+		selectedSet[sessionID] = true
+	}
+	if !selectedSet[m.selfSessionID] {
+		return "", false
+	}
 	sessions := orderedSessions(m.state)
 	selfIndex := -1
 	for i, session := range sessions {
-		if session.ID == sessionID {
+		if session.ID == m.selfSessionID {
 			selfIndex = i
 			break
 		}
 	}
 	if selfIndex >= 0 {
 		for i := selfIndex - 1; i >= 0; i-- {
-			if sessions[i].ID != sessionID {
-				return sessions[i].ID
+			if !selectedSet[sessions[i].ID] {
+				return sessions[i].ID, true
 			}
 		}
 	}
 	for _, session := range sessions {
-		if session.ID != sessionID {
-			return session.ID
+		if !selectedSet[session.ID] {
+			return session.ID, true
 		}
 	}
-	return ""
+	return "", true
 }
 
 func sessionNameByID(state TmuxState, sessionID string) string {

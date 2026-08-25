@@ -54,7 +54,7 @@ func renderMainPanel(m model, width int, height int) string {
 		filtered := activeState(m)
 		if m.sessionView {
 			effectiveSessionID := effectiveSelectedPaneID(sessionOrder(filtered), m.selectedSessionID, m.lastSelectedSessionID, m.selectedSessionIndex)
-			return renderSessionList(filtered, effectiveSessionID, m.scroll, width, height, m.selfSessionID)
+			return renderSessionList(filtered, effectiveSessionID, m.scroll, width, height, m.selfSessionID, m.selectedSessions)
 		}
 		order := buildPaneOrder(filtered)
 		effectiveID := effectiveSelectedPaneID(order, m.selectedPaneID, m.lastSelectedID, m.selectedIndex)
@@ -69,15 +69,15 @@ func renderMainPanel(m model, width int, height int) string {
 // panel chrome, but rows are sessions rather than the full pane tree, for
 // the m.sessionView toggle (mirrors how m.agentView swaps in
 // renderAgentDashboard).
-func renderSessionList(state TmuxState, selectedSessionID string, scroll int, width int, height int, activeSessionID string) string {
-	tree := buildSessionRows(state, selectedSessionID, width, activeSessionID)
+func renderSessionList(state TmuxState, selectedSessionID string, scroll int, width int, height int, activeSessionID string, selectedSessions map[string]bool) string {
+	tree := buildSessionRows(state, selectedSessionID, width, activeSessionID, selectedSessions)
 	visible := sliceRows(tree.rows, scroll, max(1, height-2))
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(max(1, width-2))
 	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, tree.header, separator, content))
 }
 
-func buildSessionRows(state TmuxState, selectedSessionID string, width int, activeSessionID string) treeRows {
+func buildSessionRows(state TmuxState, selectedSessionID string, width int, activeSessionID string, selectedSessions map[string]bool) treeRows {
 	rowWidth := max(10, width-2)
 
 	windowCount := map[string]int{}
@@ -123,7 +123,11 @@ func buildSessionRows(state TmuxState, selectedSessionID string, width int, acti
 		if activeSessionID != "" && session.ID == activeSessionID {
 			marker = "• "
 		}
-		text := truncateRow(fmt.Sprintf("%s%s  (%d window(s), %d pane(s))", marker, session.Name, windowCount[session.ID], paneCount[session.ID]), contentWidth)
+		selectMarker := " "
+		if selectedSessions != nil && selectedSessions[session.ID] {
+			selectMarker = "*"
+		}
+		text := truncateRow(fmt.Sprintf("%s%s%s  (%d window(s), %d pane(s))", selectMarker, marker, session.Name, windowCount[session.ID], paneCount[session.ID]), contentWidth)
 		gutter := blankGutter
 		if hasSelectedIdx {
 			n := i - selectedIdx
@@ -226,20 +230,40 @@ func renderConfirmKillSession(m model, width int, height int) string {
 	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
 	plain := lipgloss.NewStyle().Width(rowWidth).Foreground(lipgloss.Color("7"))
 
-	name := sessionNameByID(m.state, m.selectedSessionID)
-	if name == "" {
-		name = "unknown"
-	}
-	windowCount := 0
+	selected := killSessionTargets(m)
+	windowCountBySession := map[string]int{}
 	for _, window := range m.state.Windows {
-		if window.SessionID == m.selectedSessionID {
-			windowCount++
-		}
+		windowCountBySession[window.SessionID]++
 	}
 
 	lines := []string{}
 	lines = append(lines, alertStyle.Render("Kill session"))
-	lines = append(lines, muted.Render(fmt.Sprintf("This will kill %q and its %d window(s).", name, windowCount)))
+	if len(selected) <= 1 {
+		name := "unknown"
+		windowCount := 0
+		if len(selected) == 1 {
+			name = sessionNameByID(m.state, selected[0])
+			windowCount = windowCountBySession[selected[0]]
+		}
+		lines = append(lines, muted.Render(fmt.Sprintf("This will kill %q and its %d window(s).", name, windowCount)))
+	} else {
+		totalWindows := 0
+		for _, sessionID := range selected {
+			totalWindows += windowCountBySession[sessionID]
+		}
+		lines = append(lines, muted.Render(fmt.Sprintf("This will kill %d session(s) and their %d window(s).", len(selected), totalWindows)))
+		previewIDs := selected
+		if len(previewIDs) > 6 {
+			previewIDs = previewIDs[:6]
+		}
+		lines = append(lines, plain.Render("Targets:"))
+		for _, sessionID := range previewIDs {
+			lines = append(lines, plain.Render("  - "+sessionNameByID(m.state, sessionID)))
+		}
+		if len(selected) > len(previewIDs) {
+			lines = append(lines, muted.Render(fmt.Sprintf("  ...and %d more", len(selected)-len(previewIDs))))
+		}
+	}
 	lines = append(lines, "")
 	lines = append(lines, plain.Render("Confirm: y = kill, n = cancel"))
 
@@ -286,8 +310,7 @@ func renderRenameSession(m model, width int, height int) string {
 	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
 	plain := lipgloss.NewStyle().Width(rowWidth).Foreground(lipgloss.Color("7"))
 
-	sessionID := sessionIDForPane(m.state, m.selectedPaneID)
-	currentName := sessionNameByID(m.state, sessionID)
+	currentName := sessionNameByID(m.state, m.renameSessionID)
 
 	lines := []string{}
 	lines = append(lines, accentStyle.Render("Rename session"))
@@ -1022,7 +1045,12 @@ func keyHintsStyled(keys Keymap, width int, sessionView bool, agentView bool) []
 			item("↑/↓/j/k", "move selection"),
 			item("0-9", "count"),
 			item(joinKeys(keys.Accept), "switch to session"),
-			item(joinKeys(keys.KillSession), "kill session"),
+			item("space", "select session"),
+			item("tab", "select+next"),
+			item("shift+tab", "select+prev"),
+			item("c", "clear selection"),
+			item(joinKeys(keys.DeletePanes), "kill session(s)"),
+			item(joinKeys(keys.RenameSession), "rename session"),
 			item(joinKeys(keys.CreateSession), "new session"),
 			item(joinKeys(keys.ToggleSessionView), "back to panes"),
 			item(joinKeys(keys.Cancel), "cancel"),

@@ -39,6 +39,8 @@ type model struct {
 	selectedSessionID     string
 	lastSelectedSessionID string
 	selectedSessionIndex  int
+	selectedSessions      map[string]bool
+	renameSessionID       string
 }
 
 type Mode int
@@ -82,7 +84,6 @@ type Keymap struct {
 	Backspace            []string
 	ToggleAgentView      []string
 	ToggleSessionView    []string
-	KillSession          []string
 }
 
 func defaultKeymap() Keymap {
@@ -113,7 +114,6 @@ func defaultKeymap() Keymap {
 		Backspace:            []string{"backspace"},
 		ToggleAgentView:      []string{"a"},
 		ToggleSessionView:    []string{"S"},
-		KillSession:          []string{"x"},
 	}
 }
 

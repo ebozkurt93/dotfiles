@@ -311,6 +311,9 @@ func ensureSelectionMaps(m model) model {
 	if m.selectedPanes == nil {
 		m.selectedPanes = map[string]bool{}
 	}
+	if m.selectedSessions == nil {
+		m.selectedSessions = map[string]bool{}
+	}
 	return m
 }
 
@@ -322,6 +325,19 @@ func pruneSelectedPanes(selected map[string]bool, panes []Pane) map[string]bool 
 	for _, pane := range panes {
 		if selected[pane.ID] {
 			valid[pane.ID] = true
+		}
+	}
+	return valid
+}
+
+func pruneSelectedSessions(selected map[string]bool, sessions []Session) map[string]bool {
+	if selected == nil {
+		return map[string]bool{}
+	}
+	valid := map[string]bool{}
+	for _, session := range sessions {
+		if selected[session.ID] {
+			valid[session.ID] = true
 		}
 	}
 	return valid

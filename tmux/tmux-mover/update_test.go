@@ -293,6 +293,119 @@ func TestUpdateConfirmKillSessionSwitchesAwayBeforeKillingCurrentSession(t *test
 	}
 }
 
+func TestUpdateRenameSessionKeyWorksInSessionView(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}},
+	}
+
+	m := model{
+		state:             state,
+		mode:              ModeList,
+		sessionView:       true,
+		selectedSessionID: "$1",
+		keys:              defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	next := updated.(model)
+	if next.mode != ModeRenameSession {
+		t.Fatalf("expected ModeRenameSession, got %v", next.mode)
+	}
+	if next.renameSessionID != "$1" {
+		t.Fatalf("expected renameSessionID $1, got %q", next.renameSessionID)
+	}
+	if next.input != "b" {
+		t.Fatalf("expected input prefilled with b, got %q", next.input)
+	}
+
+	updated, _ = next.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	updated, _ = updated.(model).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}})
+	updated, _ = updated.(model).Update(tea.KeyMsg{Type: tea.KeyEnter})
+	final := updated.(model)
+
+	if final.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", final.mode)
+	}
+	if final.status != "Renamed session to z" {
+		t.Fatalf("unexpected status: %q", final.status)
+	}
+	if len(fake.calls) != 1 {
+		t.Fatalf("expected 1 tmux call, got %d", len(fake.calls))
+	}
+	if strings.Join(fake.calls[0], " ") != "rename-session -t $1 z" {
+		t.Fatalf("unexpected tmux call: %s", strings.Join(fake.calls[0], " "))
+	}
+}
+
+func TestUpdateDeletePanesKeyEntersKillSessionConfirmInSessionView(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}},
+	}
+
+	m := model{
+		state:             state,
+		mode:              ModeList,
+		sessionView:       true,
+		selectedSessionID: "$1",
+		keys:              defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+	next := updated.(model)
+	if next.mode != ModeConfirmKillSession {
+		t.Fatalf("expected ModeConfirmKillSession, got %v", next.mode)
+	}
+	if next.status != `Kill session "b"? y/n` {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+}
+
+func TestUpdateConfirmKillSessionKillsMultipleSelectedSessions(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}, {ID: "$2", Name: "c"}},
+	}
+
+	m := model{
+		state:             state,
+		mode:              ModeConfirmKillSession,
+		selectedSessionID: "$1",
+		selectedSessions:  map[string]bool{"$0": true, "$1": true},
+		selfSessionID:     "$2",
+		keys:              defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	next := updated.(model)
+	if next.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", next.mode)
+	}
+	if next.status != "Killed 2 session(s)" {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+	if len(fake.calls) != 2 {
+		t.Fatalf("expected 2 tmux calls, got %d", len(fake.calls))
+	}
+	if strings.Join(fake.calls[0], " ") != "kill-session -t $0" {
+		t.Fatalf("unexpected tmux call 1: %s", strings.Join(fake.calls[0], " "))
+	}
+	if strings.Join(fake.calls[1], " ") != "kill-session -t $1" {
+		t.Fatalf("unexpected tmux call 2: %s", strings.Join(fake.calls[1], " "))
+	}
+	if len(next.selectedSessions) != 0 {
+		t.Fatalf("expected selections cleared, got %v", next.selectedSessions)
+	}
+}
+
 func TestUpdateConfirmKillSessionPreventsKillWhenNoFallbackSession(t *testing.T) {
 	fake := &fakeRunner{}
 	prev := tmuxRunner
