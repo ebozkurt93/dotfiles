@@ -641,8 +641,13 @@ function __reload_ghostty_config {
   elif command -v systemctl > /dev/null 2>&1 && systemctl --user is-active --quiet app-com.mitchellh.ghostty.service; then
     systemctl reload --user app-com.mitchellh.ghostty.service > /dev/null 2>&1
   else
-    command pkill -SIGUSR2 -x ghostty > /dev/null 2>&1 || true
-    command pkill -SIGUSR2 -x .ghostty-wrapped > /dev/null 2>&1 || true
+    local -a pids
+    pids=(${(f)"$(command pgrep -x ghostty 2>/dev/null || true)"})
+    if (( ${#pids[@]} == 0 )); then
+      pids=(${(f)"$(command pgrep -f '(^|/)\.ghostty-wrapped($| )' 2>/dev/null || true)"})
+    fi
+    (( ${#pids[@]} == 0 )) && return
+    kill -SIGUSR2 "${pids[@]}"
   fi
 }
 

@@ -1905,9 +1905,10 @@ Linux first uses Ghostty's documented systemd user-service reload:
 
 The current VM has the Ghostty user unit installed but disabled/inactive
 because Hyprland launches `ghostty` directly today, so the Linux branch also
-has a narrow fallback that sends `SIGUSR2` to exact `ghostty`/
-`.ghostty-wrapped` process names. This matches Ghostty's documented
-underlying reload signal without relying on broad `pgrep -f` matching.
+has a narrow fallback that sends `SIGUSR2` to exact `ghostty` PIDs first,
+then falls back to a command-line match for `.ghostty-wrapped`. This matches
+Ghostty's documented underlying reload signal without relying on broad
+`pgrep -f` matching.
 
 All Ghostty theme/font/transparency/settings helpers now call
 `__reload_ghostty_config` unconditionally after updating Ghostty config
@@ -1915,3 +1916,11 @@ files. Validation: local `zsh -n` for `.personal.zshrc` and `.macos.zshrc`,
 VM `zsh -lc 'source ~/dotfiles/zsh/.personal.zshrc; __reload_ghostty_config'`
 returned cleanly, and the same zsh hunk was mirrored onto `master` for an
 easier future merge.
+
+Visible VM test: uncommenting `font-size = 19` in Ghostty's override file
+did not visibly reload with the first fallback because Linux `pgrep -x`
+matches the 15-byte truncated process name (`.ghostty-wrappe`), so
+`.ghostty-wrapped` never matched. Sending `SIGUSR2` directly to the real
+Ghostty PID made the font grow immediately. The helper was corrected to use
+`pgrep -f '(^|/)\.ghostty-wrapped($| )'` for the wrapped-process fallback,
+and the temporary VM override was restored.
