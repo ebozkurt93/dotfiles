@@ -255,6 +255,75 @@ func TestUpdateConfirmDeletePreventsDeleteWhenNoFallbackSession(t *testing.T) {
 	}
 }
 
+func TestUpdateConfirmKillSessionSwitchesAwayBeforeKillingCurrentSession(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}},
+	}
+
+	m := model{
+		state:             state,
+		mode:              ModeConfirmKillSession,
+		selectedSessionID: "$0",
+		selfSessionID:     "$0",
+		selfClientID:      "c0",
+		keys:              defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	next := updated.(model)
+	if next.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", next.mode)
+	}
+	if next.status != "Switched to b, killed session a" {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+	if len(fake.calls) != 2 {
+		t.Fatalf("expected 2 tmux calls, got %d", len(fake.calls))
+	}
+	if strings.Join(fake.calls[0], " ") != "switch-client -c c0 -t $1" {
+		t.Fatalf("unexpected tmux call 1: %s", strings.Join(fake.calls[0], " "))
+	}
+	if strings.Join(fake.calls[1], " ") != "kill-session -t $0" {
+		t.Fatalf("unexpected tmux call 2: %s", strings.Join(fake.calls[1], " "))
+	}
+}
+
+func TestUpdateConfirmKillSessionPreventsKillWhenNoFallbackSession(t *testing.T) {
+	fake := &fakeRunner{}
+	prev := tmuxRunner
+	tmuxRunner = fake
+	t.Cleanup(func() { tmuxRunner = prev })
+
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+	}
+
+	m := model{
+		state:             state,
+		mode:              ModeConfirmKillSession,
+		selectedSessionID: "$0",
+		selfSessionID:     "$0",
+		keys:              defaultKeymap(),
+	}
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+	next := updated.(model)
+	if next.mode != ModeList {
+		t.Fatalf("expected mode list, got %v", next.mode)
+	}
+	if next.status != "Cannot kill the only remaining session" {
+		t.Fatalf("unexpected status: %q", next.status)
+	}
+	if len(fake.calls) != 0 {
+		t.Fatalf("expected no tmux calls, got %d", len(fake.calls))
+	}
+}
+
 func TestUpdateNewSessionInputAndCreate(t *testing.T) {
 	fake := &fakeRunner{}
 	prev := tmuxRunner

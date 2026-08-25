@@ -1124,14 +1124,60 @@ func confirmKillSession(m model) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	name := sessionNameByID(m.state, sessionID)
+	switchedSessionID := ""
+	if sessionID == m.selfSessionID {
+		targetSession := fallbackSessionBeforeKillSession(m, sessionID)
+		if targetSession == "" {
+			m.status = "Cannot kill the only remaining session"
+			return m, nil
+		}
+		if err := switchClientToSession(targetSession, m.selfClientID); err != nil {
+			m.status = fmt.Sprintf("Error: %s", err)
+			return m, nil
+		}
+		m.selfSessionID = targetSession
+		switchedSessionID = targetSession
+	}
 	if err := applySessionKill(sessionID); err != nil {
 		m.status = fmt.Sprintf("Error: %s", err)
 		return m, loadStateCmd()
 	}
-	m.status = fmt.Sprintf("Killed session %s", name)
+	if switchedSessionID != "" {
+		switchedSessionName := sessionNameByID(m.state, switchedSessionID)
+		if switchedSessionName == "" {
+			switchedSessionName = switchedSessionID
+		}
+		m.status = fmt.Sprintf("Switched to %s, killed session %s", switchedSessionName, name)
+	} else {
+		m.status = fmt.Sprintf("Killed session %s", name)
+	}
 	m.selectedSessionID = ""
 	m.lastSelectedSessionID = ""
 	return m, loadStateCmd()
+}
+
+func fallbackSessionBeforeKillSession(m model, sessionID string) string {
+	sessions := orderedSessions(m.state)
+	selfIndex := -1
+	for i, session := range sessions {
+		if session.ID == sessionID {
+			selfIndex = i
+			break
+		}
+	}
+	if selfIndex >= 0 {
+		for i := selfIndex - 1; i >= 0; i-- {
+			if sessions[i].ID != sessionID {
+				return sessions[i].ID
+			}
+		}
+	}
+	for _, session := range sessions {
+		if session.ID != sessionID {
+			return session.ID
+		}
+	}
+	return ""
 }
 
 func sessionNameByID(state TmuxState, sessionID string) string {
