@@ -25,7 +25,7 @@ func (m model) View() string {
 	previewText := m.preview
 	previewErr := m.previewErr
 	preview := renderPreview(previewText, previewErr, previewWidth, previewHeight)
-	keyBar := renderKeyBar(m.keys, availableWidth, keyBarHeight, m.filterInput, m.filtering, m.status)
+	keyBar := renderKeyBar(m.keys, availableWidth, keyBarHeight, m.filterInput, m.filtering, m.status, m.sessionView, m.agentView)
 	var body string
 	if vertical {
 		gapLine := strings.Repeat("\n", gapVertical)
@@ -52,6 +52,10 @@ func renderMainPanel(m model, width int, height int) string {
 	switch m.mode {
 	default:
 		filtered := activeState(m)
+		if m.sessionView {
+			effectiveSessionID := effectiveSelectedPaneID(sessionOrder(filtered), m.selectedSessionID, m.lastSelectedSessionID, m.selectedSessionIndex)
+			return renderSessionList(filtered, effectiveSessionID, m.scroll, width, height, m.selfSessionID)
+		}
 		order := buildPaneOrder(filtered)
 		effectiveID := effectiveSelectedPaneID(order, m.selectedPaneID, m.lastSelectedID, m.selectedIndex)
 		if m.agentView {
@@ -59,6 +63,91 @@ func renderMainPanel(m model, width int, height int) string {
 		}
 		return renderPaneList(filtered, effectiveID, m.scroll, width, height, m.selectedPanes, nil, m.selfSessionID, m.selfWindowID, m.agents, m.frame)
 	}
+}
+
+// renderSessionList is the sessions-only counterpart to renderPaneList: same
+// panel chrome, but rows are sessions rather than the full pane tree, for
+// the m.sessionView toggle (mirrors how m.agentView swaps in
+// renderAgentDashboard).
+func renderSessionList(state TmuxState, selectedSessionID string, scroll int, width int, height int, activeSessionID string) string {
+	tree := buildSessionRows(state, selectedSessionID, width, activeSessionID)
+	visible := sliceRows(tree.rows, scroll, max(1, height-2))
+	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
+	separator := mutedSeparator(max(1, width-2))
+	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, tree.header, separator, content))
+}
+
+func buildSessionRows(state TmuxState, selectedSessionID string, width int, activeSessionID string) treeRows {
+	rowWidth := max(10, width-2)
+
+	windowCount := map[string]int{}
+	for _, w := range state.Windows {
+		windowCount[w.SessionID]++
+	}
+	paneCount := map[string]int{}
+	for _, p := range state.Panes {
+		paneCount[p.SessionID]++
+	}
+
+	sessions := orderedSessions(state)
+	order := make([]string, len(sessions))
+	for i, s := range sessions {
+		order[i] = s.ID
+	}
+	selectedIdx, hasSelectedIdx := -1, false
+	for i, id := range order {
+		if id == selectedSessionID {
+			selectedIdx = i
+			hasSelectedIdx = true
+			break
+		}
+	}
+
+	numWidth := 2
+	if n := len(fmt.Sprintf("%d", len(order))); n > numWidth {
+		numWidth = n
+	}
+	gutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(numWidth).Align(lipgloss.Right)
+	currentGutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true).Width(numWidth).Align(lipgloss.Right)
+	blankGutter := strings.Repeat(" ", numWidth+1)
+	contentWidth := max(1, rowWidth-numWidth-1)
+
+	normalStyle := lipgloss.NewStyle().Width(contentWidth)
+	selectedStyle := lipgloss.NewStyle().Width(contentWidth).Bold(true).Reverse(true)
+	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth)
+
+	rows := make([]string, 0, len(sessions))
+	selectedRow := -1
+	for i, session := range sessions {
+		marker := "  "
+		if activeSessionID != "" && session.ID == activeSessionID {
+			marker = "• "
+		}
+		text := truncateRow(fmt.Sprintf("%s%s  (%d window(s), %d pane(s))", marker, session.Name, windowCount[session.ID], paneCount[session.ID]), contentWidth)
+		gutter := blankGutter
+		if hasSelectedIdx {
+			n := i - selectedIdx
+			if n < 0 {
+				n = -n
+			}
+			style := gutterStyle
+			if session.ID == selectedSessionID {
+				style = currentGutterStyle
+			}
+			gutter = style.Render(fmt.Sprintf("%d", n)) + " "
+		}
+		if session.ID == selectedSessionID {
+			selectedRow = len(rows)
+			rows = append(rows, gutter+selectedStyle.Render(text))
+		} else {
+			rows = append(rows, gutter+normalStyle.Render(text))
+		}
+	}
+	if len(rows) == 0 {
+		rows = append(rows, "(no sessions)")
+	}
+
+	return treeRows{header: headerStyle.Render("Sessions"), rows: rows, selectedRow: selectedRow}
 }
 
 func renderChoiceList(title string, choices []choice, selected int, width int, height int) string {
@@ -128,6 +217,36 @@ func renderConfirmDelete(m model, width int, height int) string {
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(rowWidth)
 	return modalFrame("Confirm Delete", content, width, height, headerStyle, separator, lipgloss.Color("1"))
+}
+
+func renderConfirmKillSession(m model, width int, height int) string {
+	rowWidth := max(10, width-4)
+	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("1"))
+	alertStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Width(rowWidth)
+	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
+	plain := lipgloss.NewStyle().Width(rowWidth).Foreground(lipgloss.Color("7"))
+
+	name := sessionNameByID(m.state, m.selectedSessionID)
+	if name == "" {
+		name = "unknown"
+	}
+	windowCount := 0
+	for _, window := range m.state.Windows {
+		if window.SessionID == m.selectedSessionID {
+			windowCount++
+		}
+	}
+
+	lines := []string{}
+	lines = append(lines, alertStyle.Render("Kill session"))
+	lines = append(lines, muted.Render(fmt.Sprintf("This will kill %q and its %d window(s).", name, windowCount)))
+	lines = append(lines, "")
+	lines = append(lines, plain.Render("Confirm: y = kill, n = cancel"))
+
+	visible := sliceRows(lines, 0, max(1, height-2))
+	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
+	separator := mutedSeparator(rowWidth)
+	return modalFrame("Confirm Kill Session", content, width, height, headerStyle, separator, lipgloss.Color("1"))
 }
 
 func renderNewSession(m model, width int, height int) string {
@@ -232,6 +351,8 @@ func renderModalForMode(m model, availableWidth int) (string, bool) {
 		return renderRenameSession(m, modalWidth, modalHeight), true
 	case ModeConfirmDelete:
 		return renderConfirmDelete(m, modalWidth, modalHeight), true
+	case ModeConfirmKillSession:
+		return renderConfirmKillSession(m, modalWidth, modalHeight), true
 	default:
 		return "", false
 	}
@@ -375,11 +496,33 @@ type treeRows struct {
 
 func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPanes map[string]bool, selectedWindows map[string]bool, activeSessionID string, activeWindowID string, agents map[string]AgentState, frame int) treeRows {
 	rowWidth := max(10, width-2)
-	normalStyle := lipgloss.NewStyle().Width(rowWidth)
-	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Reverse(true)
+
+	// paneIdxByID gives each pane's position in the same flattened order
+	// moveDown/moveUp step through (buildPaneOrder), so the gutter number
+	// shown next to a pane is exactly how many j/k (or "5j") presses it
+	// takes to reach it from the current selection — matching vim's
+	// relativenumber rather than a raw row count that would also count
+	// session/window header lines.
+	order := buildPaneOrder(state)
+	paneIdxByID := make(map[string]int, len(order))
+	for i, id := range order {
+		paneIdxByID[id] = i
+	}
+	selectedIdx, hasSelectedIdx := paneIdxByID[selectedPaneID]
+	numWidth := 2
+	if n := len(fmt.Sprintf("%d", len(order))); n > numWidth {
+		numWidth = n
+	}
+	gutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(numWidth).Align(lipgloss.Right)
+	currentGutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true).Width(numWidth).Align(lipgloss.Right)
+	blankGutter := strings.Repeat(" ", numWidth+1)
+	contentWidth := max(1, rowWidth-numWidth-1)
+
+	normalStyle := lipgloss.NewStyle().Width(contentWidth)
+	selectedStyle := lipgloss.NewStyle().Width(contentWidth).Bold(true).Reverse(true)
 	headerStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth)
-	windowStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("6"))
-	sessionStyle := lipgloss.NewStyle().Bold(true).Width(rowWidth).Foreground(lipgloss.Color("4"))
+	windowStyle := lipgloss.NewStyle().Bold(true).Width(contentWidth).Foreground(lipgloss.Color("6"))
+	sessionStyle := lipgloss.NewStyle().Bold(true).Width(contentWidth).Foreground(lipgloss.Color("4"))
 
 	panesByWindow := make(map[string][]Pane)
 	for _, pane := range state.Panes {
@@ -417,8 +560,8 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 		if activeSessionID != "" && session.ID == activeSessionID {
 			sessionPrefix = "• "
 		}
-		sessionRow := truncateRow(fmt.Sprintf("%s%s", sessionPrefix, session.Name), rowWidth)
-		rows = append(rows, sessionStyle.Render(sessionRow))
+		sessionRow := truncateRow(fmt.Sprintf("%s%s", sessionPrefix, session.Name), contentWidth)
+		rows = append(rows, blankGutter+sessionStyle.Render(sessionRow))
 		for _, window := range windowsBySession[session.ID] {
 			windowMarker := " "
 			if selectedWindows != nil && selectedWindows[window.ID] {
@@ -428,8 +571,8 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 			if activeWindowID != "" && window.ID == activeWindowID {
 				windowPrefix = "•"
 			}
-			windowRow := truncateRow(fmt.Sprintf("%s %s %s:%s", windowPrefix, windowMarker, window.Index, window.Name), rowWidth)
-			rows = append(rows, windowStyle.Render(windowRow))
+			windowRow := truncateRow(fmt.Sprintf("%s %s %s:%s", windowPrefix, windowMarker, window.Index, window.Name), contentWidth)
+			rows = append(rows, blankGutter+windowStyle.Render(windowRow))
 			panes := panesByWindow[window.ID]
 			for _, pane := range panes {
 				paneMarker := " "
@@ -438,12 +581,26 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 				}
 				dot, dotWidth := agentStatusDot(agents[pane.ID], frame)
 				text := fmt.Sprintf("    %s %s  %s", paneMarker, pane.Command, pane.Path)
-				text = truncateRow(text, max(1, rowWidth-dotWidth))
+				text = truncateRow(text, max(1, contentWidth-dotWidth))
+				gutter := blankGutter
+				if hasSelectedIdx {
+					if idx, ok := paneIdxByID[pane.ID]; ok {
+						n := idx - selectedIdx
+						if n < 0 {
+							n = -n
+						}
+						style := gutterStyle
+						if pane.ID == selectedPaneID {
+							style = currentGutterStyle
+						}
+						gutter = style.Render(fmt.Sprintf("%d", n)) + " "
+					}
+				}
 				if pane.ID == selectedPaneID {
 					selectedRow = len(rows)
-					rows = append(rows, dot+selectedStyle.Width(rowWidth-dotWidth).Render(text))
+					rows = append(rows, gutter+dot+selectedStyle.Width(contentWidth-dotWidth).Render(text))
 				} else {
-					rows = append(rows, dot+normalStyle.Width(rowWidth-dotWidth).Render(text))
+					rows = append(rows, gutter+dot+normalStyle.Width(contentWidth-dotWidth).Render(text))
 				}
 			}
 		}
@@ -550,6 +707,20 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 	// keyboard navigation lands on exactly the row rendered next/previous.
 	order := agentDashboardOrder(state, m.agents)
 
+	paneIdxByID := make(map[string]int, len(order))
+	for i, id := range order {
+		paneIdxByID[id] = i
+	}
+	selectedIdx, hasSelectedIdx := paneIdxByID[selectedPaneID]
+	numWidth := 2
+	if n := len(fmt.Sprintf("%d", len(order))); n > numWidth {
+		numWidth = n
+	}
+	gutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(numWidth).Align(lipgloss.Right)
+	currentGutterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true).Width(numWidth).Align(lipgloss.Right)
+	blankGutter := strings.Repeat(" ", numWidth+1)
+	contentWidth := max(1, rowWidth-numWidth-1)
+
 	rows := []string{}
 	selectedRow := -1
 	lastStatus := AgentStatus(-1)
@@ -568,7 +739,7 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 				}
 				sectionCount++
 			}
-			rows = append(rows, lipgloss.NewStyle().Bold(true).Foreground(agentStatusColor(agent.Status)).Width(rowWidth).
+			rows = append(rows, blankGutter+lipgloss.NewStyle().Bold(true).Foreground(agentStatusColor(agent.Status)).Width(contentWidth).
 				Render(fmt.Sprintf("%s (%d)", sectionTitle[agent.Status], sectionCount)))
 			lastStatus = agent.Status
 		}
@@ -615,13 +786,27 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 			unseenMarkerWidth = 4
 		}
 
-		primaryWidth := max(1, rowWidth-dotWidth-backgroundMarkerWidth-unseenMarkerWidth)
+		primaryWidth := max(1, contentWidth-dotWidth-backgroundMarkerWidth-unseenMarkerWidth)
 		primary = truncateRow(primary, primaryWidth)
+		gutter := blankGutter
+		if hasSelectedIdx {
+			if idx, ok := paneIdxByID[pane.ID]; ok {
+				n := idx - selectedIdx
+				if n < 0 {
+					n = -n
+				}
+				style := gutterStyle
+				if pane.ID == selectedPaneID {
+					style = currentGutterStyle
+				}
+				gutter = style.Render(fmt.Sprintf("%d", n)) + " "
+			}
+		}
 		// Width is set to primary's own natural width (not the full
 		// available row width) so the style adds no trailing padding —
 		// otherwise the markers would land at the far right edge of the
 		// row instead of right next to the text they're describing.
-		line := dot
+		line := gutter + dot
 		if pane.ID == selectedPaneID {
 			selectedRow = len(rows)
 			line += selectedStyle.Width(lipgloss.Width(primary)).Render(primary)
@@ -631,7 +816,7 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 		line += backgroundMarker
 		line += unseenMarker
 		rows = append(rows, line)
-		rows = append(rows, metaStyle.Render("    "+truncateRow(location, max(1, rowWidth-4))))
+		rows = append(rows, blankGutter+metaStyle.Render("    "+truncateRow(location, max(1, contentWidth-4))))
 	}
 
 	if len(order) == 0 {
@@ -693,13 +878,13 @@ func renderPreview(text string, err error, width int, height int) string {
 	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, headerStyle.Render("Preview"), separator, style.Render(content)))
 }
 
-func renderKeyBar(keys Keymap, width int, height int, filterInput string, filtering bool, status string) string {
+func renderKeyBar(keys Keymap, width int, height int, filterInput string, filtering bool, status string, sessionView bool, agentView bool) string {
 	if height <= 0 {
 		return ""
 	}
 	rowWidth := max(10, width-2)
 	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	lines := keyHintsStyled(normalizeKeymap(keys), rowWidth)
+	lines := keyHintsStyled(normalizeKeymap(keys), rowWidth, sessionView, agentView)
 	if len(lines) == 0 {
 		lines = []string{"(no keys)"}
 	}
@@ -774,7 +959,7 @@ func renderActionsPanel(actions []StagedAction, mode Mode, input string, status 
 	rows = append(rows, sectionRule(rowWidth))
 
 	rows = append(rows, truncateANSI(muted.Render("Keys"), rowWidth))
-	keyLines := keyHintsStyled(normalizeKeymap(keys), rowWidth)
+	keyLines := keyHintsStyled(normalizeKeymap(keys), rowWidth, false, false)
 	if len(keyLines) == 0 {
 		rows = append(rows, truncateANSI(muted.Render("(no keys)"), rowWidth))
 	} else {
@@ -814,7 +999,13 @@ func formatAction(action StagedAction) string {
 	}
 }
 
-func keyHintsStyled(keys Keymap, width int) []string {
+// keyHintsStyled shows only the keys that actually do something in the
+// current view: sessionView and agentView each replace the pane tree in the
+// same panel, but most pane/window-scoped actions (move, break, reorder,
+// multi-select) don't apply to whichever of those is showing, and are
+// gated off in update.go accordingly — the legend has to match or a listed
+// key would silently do nothing (or, worse, act on stale state).
+func keyHintsStyled(keys Keymap, width int, sessionView bool, agentView bool) []string {
 	keyStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("7"))
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	item := func(key string, label string) string {
@@ -824,28 +1015,61 @@ func keyHintsStyled(keys Keymap, width int) []string {
 		return keyStyle.Render(key) + " " + labelStyle.Render(label)
 	}
 
-	items := []string{
-		item("↑/↓/j/k", "move selection"),
-		item("/", "filter"),
-		item("0-9", "count"),
-		item("enter", "jump to pane"),
-		item("alt+j/alt+k", "swap pane"),
-		item("alt+J/alt+K", "swap window"),
-		item(joinKeys(keys.ToggleAgentView), "AI dashboard"),
-		item("space", "select pane"),
-		item("tab", "select+next"),
-		item("shift+tab", "select+prev"),
-		item("c", "clear selection"),
-		item(joinKeys(keys.BreakPane), "break pane"),
-		item(joinKeys(keys.CreateSession), "new session"),
-		item(joinKeys(keys.RenameSession), "rename session"),
-		item(joinKeys(keys.DeletePanes), "delete panes"),
-		item(joinKeys(keys.MovePane), "move pane"),
-		item(joinKeys(keys.MoveWindow), "move window"),
-		item(joinKeys(keys.MovePaneNewSession), "pane -> new session"),
-		item(joinKeys(keys.MoveWindowNewSession), "window -> new session"),
-		item(joinKeys(keys.Cancel), "cancel"),
-		item(joinKeys(keys.Quit), "quit"),
+	var items []string
+	switch {
+	case sessionView:
+		items = []string{
+			item("↑/↓/j/k", "move selection"),
+			item("0-9", "count"),
+			item(joinKeys(keys.Accept), "switch to session"),
+			item(joinKeys(keys.KillSession), "kill session"),
+			item(joinKeys(keys.CreateSession), "new session"),
+			item(joinKeys(keys.ToggleSessionView), "back to panes"),
+			item(joinKeys(keys.Cancel), "cancel"),
+			item(joinKeys(keys.Quit), "quit"),
+		}
+	case agentView:
+		items = []string{
+			item("↑/↓/j/k", "move selection"),
+			item("/", "filter"),
+			item("0-9", "count"),
+			item(joinKeys(keys.Accept), "jump to pane"),
+			item("space", "select pane"),
+			item("tab", "select+next"),
+			item("shift+tab", "select+prev"),
+			item("c", "clear selection"),
+			item(joinKeys(keys.DeletePanes), "delete panes"),
+			item(joinKeys(keys.BreakPane), "break pane"),
+			item(joinKeys(keys.ToggleAgentView), "back to panes"),
+			item(joinKeys(keys.ToggleSessionView), "sessions"),
+			item(joinKeys(keys.Cancel), "cancel"),
+			item(joinKeys(keys.Quit), "quit"),
+		}
+	default:
+		items = []string{
+			item("↑/↓/j/k", "move selection"),
+			item("/", "filter"),
+			item("0-9", "count"),
+			item(joinKeys(keys.Accept), "jump to pane"),
+			item("alt+j/alt+k", "swap pane"),
+			item("alt+J/alt+K", "swap window"),
+			item(joinKeys(keys.ToggleAgentView), "AI dashboard"),
+			item(joinKeys(keys.ToggleSessionView), "sessions"),
+			item("space", "select pane"),
+			item("tab", "select+next"),
+			item("shift+tab", "select+prev"),
+			item("c", "clear selection"),
+			item(joinKeys(keys.BreakPane), "break pane"),
+			item(joinKeys(keys.CreateSession), "new session"),
+			item(joinKeys(keys.RenameSession), "rename session"),
+			item(joinKeys(keys.DeletePanes), "delete panes"),
+			item(joinKeys(keys.MovePane), "move pane"),
+			item(joinKeys(keys.MoveWindow), "move window"),
+			item(joinKeys(keys.MovePaneNewSession), "pane -> new session"),
+			item(joinKeys(keys.MoveWindowNewSession), "window -> new session"),
+			item(joinKeys(keys.Cancel), "cancel"),
+			item(joinKeys(keys.Quit), "quit"),
+		}
 	}
 
 	return wrapLegendItems(items, width)

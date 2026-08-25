@@ -43,6 +43,7 @@ type Window struct {
 	Index     string
 	IndexNum  int
 	Name      string
+	Active    bool
 }
 
 type Pane struct {
@@ -54,6 +55,7 @@ type Pane struct {
 	Command   string
 	Title     string
 	PID       string
+	Active    bool
 }
 
 type TmuxState struct {
@@ -94,7 +96,7 @@ func listSessions() ([]Session, error) {
 }
 
 func listWindows() ([]Window, error) {
-	out, err := tmuxOutput("list-windows", "-a", "-F", "#{window_id}\t#{session_id}\t#{window_index}\t#{window_name}")
+	out, err := tmuxOutput("list-windows", "-a", "-F", "#{window_id}\t#{session_id}\t#{window_index}\t#{window_name}\t#{window_active}")
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +104,7 @@ func listWindows() ([]Window, error) {
 }
 
 func listPanes() ([]Pane, error) {
-	out, err := tmuxOutput("list-panes", "-a", "-F", "#{pane_id}\t#{window_id}\t#{session_id}\t#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_title}\t#{pane_pid}")
+	out, err := tmuxOutput("list-panes", "-a", "-F", "#{pane_id}\t#{window_id}\t#{session_id}\t#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_title}\t#{pane_pid}\t#{pane_active}")
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +265,14 @@ func applyWindowKill(windowID string) error {
 	return err
 }
 
+func applySessionKill(sessionID string) error {
+	if sessionID == "" {
+		return fmt.Errorf("missing session")
+	}
+	_, err := tmuxOutput("kill-session", "-t", sessionID)
+	return err
+}
+
 func applySessionRename(sessionID string, name string) error {
 	if sessionID == "" || strings.TrimSpace(name) == "" {
 		return fmt.Errorf("missing session or name")
@@ -344,8 +354,8 @@ func parseWindowsOutput(out string) []Window {
 	lines := splitLines(out)
 	windows := make([]Window, 0, len(lines))
 	for _, line := range lines {
-		parts := strings.SplitN(line, "\t", 4)
-		if len(parts) != 4 {
+		parts := strings.SplitN(line, "\t", 5)
+		if len(parts) != 5 {
 			continue
 		}
 		indexNum := 0
@@ -358,6 +368,7 @@ func parseWindowsOutput(out string) []Window {
 			Index:     parts[2],
 			IndexNum:  indexNum,
 			Name:      parts[3],
+			Active:    parts[4] == "1",
 		})
 	}
 
@@ -368,8 +379,8 @@ func parsePanesOutput(out string) []Pane {
 	lines := splitLines(out)
 	panes := make([]Pane, 0, len(lines))
 	for _, line := range lines {
-		parts := strings.SplitN(line, "\t", 8)
-		if len(parts) != 8 {
+		parts := strings.SplitN(line, "\t", 9)
+		if len(parts) != 9 {
 			continue
 		}
 		indexNum := 0
@@ -385,6 +396,7 @@ func parsePanesOutput(out string) []Pane {
 			Command:   parts[5],
 			Title:     parts[6],
 			PID:       parts[7],
+			Active:    parts[8] == "1",
 		})
 	}
 

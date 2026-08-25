@@ -34,6 +34,11 @@ type model struct {
 	probedNonAgents map[string]probeRecord
 	agentView       bool
 	frame           int
+
+	sessionView           bool
+	selectedSessionID     string
+	lastSelectedSessionID string
+	selectedSessionIndex  int
 }
 
 type Mode int
@@ -47,6 +52,7 @@ const (
 	ModeConfirmDelete
 	ModeNewSessionMovePane
 	ModeNewSessionMoveWindow
+	ModeConfirmKillSession
 )
 
 type Keymap struct {
@@ -75,6 +81,8 @@ type Keymap struct {
 	Accept               []string
 	Backspace            []string
 	ToggleAgentView      []string
+	ToggleSessionView    []string
+	KillSession          []string
 }
 
 func defaultKeymap() Keymap {
@@ -104,6 +112,8 @@ func defaultKeymap() Keymap {
 		Accept:               []string{"enter"},
 		Backspace:            []string{"backspace"},
 		ToggleAgentView:      []string{"a"},
+		ToggleSessionView:    []string{"S"},
+		KillSession:          []string{"x"},
 	}
 }
 

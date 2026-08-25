@@ -43,7 +43,7 @@ func TestParseSessionsOutputSkipsBadLines(t *testing.T) {
 }
 
 func TestParseWindowsOutput(t *testing.T) {
-	input := "@1\t$0\t0\teditor\n@2\t$0\t1\tlogs\n"
+	input := "@1\t$0\t0\teditor\t1\n@2\t$0\t1\tlogs\t0\n"
 	got := parseWindowsOutput(input)
 	if len(got) != 2 {
 		t.Fatalf("expected 2 windows, got %d", len(got))
@@ -51,10 +51,13 @@ func TestParseWindowsOutput(t *testing.T) {
 	if got[0].IndexNum != 0 || got[1].IndexNum != 1 {
 		t.Fatalf("expected index numbers 0,1 got %d,%d", got[0].IndexNum, got[1].IndexNum)
 	}
+	if !got[0].Active || got[1].Active {
+		t.Fatalf("expected active true,false got %v,%v", got[0].Active, got[1].Active)
+	}
 }
 
 func TestParsePanesOutput(t *testing.T) {
-	input := "%1\t@1\t$0\t0\t~/proj\tnvim\tapi\t111\n%2\t@1\t$0\t1\t~/proj\tbash\t\t222\n"
+	input := "%1\t@1\t$0\t0\t~/proj\tnvim\tapi\t111\t1\n%2\t@1\t$0\t1\t~/proj\tbash\t\t222\t0\n"
 	got := parsePanesOutput(input)
 	if len(got) != 2 {
 		t.Fatalf("expected 2 panes, got %d", len(got))
@@ -64,6 +67,9 @@ func TestParsePanesOutput(t *testing.T) {
 	}
 	if got[0].PID != "111" || got[1].PID != "222" {
 		t.Fatalf("expected pids 111,222 got %s,%s", got[0].PID, got[1].PID)
+	}
+	if !got[0].Active || got[1].Active {
+		t.Fatalf("expected active true,false got %v,%v", got[0].Active, got[1].Active)
 	}
 }
 

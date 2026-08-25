@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -30,6 +31,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.lastSelectedID = m.selfPaneID
 		}
 		m = syncSelection(m)
+		if m.sessionView {
+			updated, cmd := stepSessionSelection(m, 0)
+			return updated, cmd
+		}
 		m = ensureVisible(m)
 		if m.selectedPaneID != "" {
 			return m, loadPreviewCmd(m.selectedPaneID)
@@ -96,6 +101,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
+		if m.mode == ModeConfirmKillSession {
+			switch {
+			case keyMatches(msg, m.keys.ConfirmYes):
+				return confirmKillSession(m)
+			case keyMatches(msg, m.keys.ConfirmNo):
+				m.mode = ModeList
+				m.status = "Kill cancelled"
+				return m, nil
+			case keyMatches(msg, m.keys.Cancel):
+				m.mode = ModeList
+				m.status = "Kill cancelled"
+				return m, nil
+			}
+			return m, nil
+		}
 		switch {
 		case keyMatches(msg, m.keys.Cancel):
 			if m.mode != ModeList {
@@ -107,6 +127,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.filterInput = ""
 			m.filterActive = false
 			m.agentView = false
+			m.sessionView = false
 			m.countBuffer = ""
 			m = syncSelection(m)
 			m = ensureVisible(m)
@@ -121,33 +142,48 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case keyMatches(msg, m.keys.MoveUp):
 			return moveUpByCount(m, 1)
 		case keyMatches(msg, m.keys.ReorderPaneUp):
+			if m.sessionView {
+				return m, nil
+			}
 			return reorderPane(m, -1)
 		case keyMatches(msg, m.keys.ReorderPaneDown):
+			if m.sessionView {
+				return m, nil
+			}
 			return reorderPane(m, 1)
 		case keyMatches(msg, m.keys.ReorderWindowUp):
+			if m.sessionView {
+				return m, nil
+			}
 			return reorderWindow(m, -1)
 		case keyMatches(msg, m.keys.ReorderWindowDown):
+			if m.sessionView {
+				return m, nil
+			}
 			return reorderWindow(m, 1)
 		case keyMatches(msg, m.keys.TogglePaneSelect):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				return togglePaneSelection(m)
 			}
 		case keyMatches(msg, m.keys.SelectNext):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				updated, _ := togglePaneSelection(m)
 				return moveDownByCount(updated.(model), 1)
 			}
 		case keyMatches(msg, m.keys.SelectPrev):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				updated, _ := togglePaneSelection(m)
 				return moveUpByCount(updated.(model), 1)
 			}
 		case keyMatches(msg, m.keys.ClearSelection):
+			if m.sessionView {
+				return m, nil
+			}
 			m.selectedPanes = map[string]bool{}
 			m.status = "Cleared selections"
 			return m, nil
 		case keyMatches(msg, m.keys.ToggleAgentView):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				m.agentView = !m.agentView
 				m = syncSelection(m)
 				m = ensureVisible(m)
@@ -161,26 +197,57 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
-		case keyMatches(msg, m.keys.MovePane):
+		case keyMatches(msg, m.keys.ToggleSessionView):
 			if m.mode == ModeList {
+				m.sessionView = !m.sessionView
+				if m.sessionView {
+					m.agentView = false
+					if m.selectedSessionID == "" {
+						m.selectedSessionID = m.selfSessionID
+						m.lastSelectedSessionID = m.selfSessionID
+					}
+					m.status = "Sessions"
+					updated, cmd := stepSessionSelection(m, 0)
+					return updated, cmd
+				}
+				m.status = ""
+				m = syncSelection(m)
+				m = ensureVisible(m)
+				if m.selectedPaneID != "" {
+					return m, loadPreviewCmd(m.selectedPaneID)
+				}
+				return m, nil
+			}
+		case keyMatches(msg, m.keys.KillSession):
+			if m.mode == ModeList && m.sessionView {
+				if m.selectedSessionID == "" {
+					m.status = "No session selected"
+					return m, nil
+				}
+				m.mode = ModeConfirmKillSession
+				m.status = fmt.Sprintf("Kill session %q? y/n", sessionNameByID(m.state, m.selectedSessionID))
+				return m, nil
+			}
+		case keyMatches(msg, m.keys.MovePane):
+			if m.mode == ModeList && !m.sessionView {
 				m.mode = ModePickWindow
 				m.targetIndex = initialWindowTargetIndex(m)
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.MoveWindow):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				m.mode = ModePickSession
 				m.targetIndex = initialSessionTargetIndex(m)
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.MovePaneNewSession):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				m.mode = ModeNewSessionMovePane
 				m.input = ""
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.MoveWindowNewSession):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				m.mode = ModeNewSessionMoveWindow
 				m.input = ""
 				return m, nil
@@ -192,7 +259,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.RenameSession):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				sessionID := sessionIDForPane(m.state, m.selectedPaneID)
 				if sessionID == "" {
 					m.status = "No session selected"
@@ -203,7 +270,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.DeletePanes):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				count := deletePaneCount(m)
 				if count == 0 {
 					m.status = "No pane selected"
@@ -214,7 +281,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case keyMatches(msg, m.keys.BreakPane):
-			if m.mode == ModeList {
+			if m.mode == ModeList && !m.sessionView {
 				if m.selectedPaneID == "" {
 					m.status = "No pane selected"
 					return m, nil
@@ -279,7 +346,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m = ensureVisible(m)
+	case sessionPreviewMsg:
+		if !m.sessionView || msg.sessionID != m.selectedSessionID {
+			return m, nil
+		}
+		m.preview = msg.text
+		m.previewErr = msg.err
+		return m, nil
 	case previewMsg:
+		if m.sessionView {
+			return m, nil
+		}
 		if msg.paneID == currentPaneID(m) {
 			m.preview = msg.text
 			m.previewErr = msg.err
@@ -363,6 +440,12 @@ type previewMsg struct {
 	err    error
 }
 
+type sessionPreviewMsg struct {
+	sessionID string
+	text      string
+	err       error
+}
+
 type stateTickMsg struct{}
 
 type agentTickMsg struct{}
@@ -394,6 +477,67 @@ func loadPreviewCmd(paneID string) tea.Cmd {
 	return func() tea.Msg {
 		text, err := capturePane(paneID)
 		return previewMsg{paneID: paneID, text: text, err: err}
+	}
+}
+
+// loadSessionPreviewCmd captures every target pane, then hands their actual
+// (blank-trimmed) content sizes to sessionPreviewFit to decide how many
+// panes fit and how many lines each gets — capture has to happen first here
+// since the fit decision depends on real content, not just a count. Panes
+// sessionPreviewFit drops are reported as a trailing "+N more pane(s)" note
+// instead of being silently cut off by the preview panel's own height
+// truncation.
+func loadSessionPreviewCmd(sessionID string, targets []panePreviewTarget, previewHeight int) tea.Cmd {
+	return func() tea.Msg {
+		if len(targets) == 0 {
+			return sessionPreviewMsg{sessionID: sessionID}
+		}
+		captured := make([]string, len(targets))
+		natural := make([]int, len(targets))
+		for i, target := range targets {
+			text, err := capturePane(target.PaneID)
+			if err != nil {
+				text = ""
+			}
+			captured[i] = trimTrailingBlankLines(text)
+			natural[i] = meaningfulLineCount(text)
+		}
+		linesPerPane, shown := sessionPreviewFit(previewHeight, natural)
+
+		headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
+		paneCountStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		var b strings.Builder
+		for i := 0; i < shown; i++ {
+			target := targets[i]
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			label := target.Window.Name
+			if target.Window.Index != "" {
+				label = fmt.Sprintf("%s:%s", target.Window.Index, target.Window.Name)
+			}
+			header := headerStyle.Render(fmt.Sprintf("── %s ──", label))
+			// Only flag which pane when there's something to flag: a window
+			// with one pane already shows all of it, so noting "pane 0"
+			// would just be noise on the common case.
+			if target.WindowPaneCount > 1 {
+				header += " " + paneCountStyle.Render(fmt.Sprintf("(pane %d)", target.PaneIndex))
+			}
+			b.WriteString(header)
+			b.WriteString("\n")
+			if captured[i] == "" {
+				b.WriteString(mutedStyle.Render("(empty)"))
+			} else {
+				b.WriteString(lastNLines(captured[i], linesPerPane[i]))
+			}
+			b.WriteString("\n")
+		}
+		if more := len(targets) - shown; more > 0 {
+			b.WriteString("\n")
+			b.WriteString(mutedStyle.Render(fmt.Sprintf("… +%d more pane(s) not shown", more)))
+		}
+		return sessionPreviewMsg{sessionID: sessionID, text: b.String()}
 	}
 }
 
@@ -547,6 +691,9 @@ func moveDown(m model) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	default:
+		if m.sessionView {
+			return stepSessionSelection(m, 1)
+		}
 		order := activeOrder(m)
 		if len(order) > 0 {
 			m = normalizeSelectedIndex(m)
@@ -589,6 +736,9 @@ func moveUp(m model) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	default:
+		if m.sessionView {
+			return stepSessionSelection(m, -1)
+		}
 		order := activeOrder(m)
 		if len(order) > 0 {
 			m = normalizeSelectedIndex(m)
@@ -601,6 +751,44 @@ func moveUp(m model) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
+}
+
+// stepSessionSelection advances (direction ±1) or normalizes (direction 0)
+// the sessions-only view's cursor, mirroring what the pane-oriented
+// moveDown/moveUp default cases do but against sessionOrder instead of
+// activeOrder, since sessions aren't panes and get their own selection
+// fields (m.selectedSessionID etc.) rather than overloading the pane ones.
+//
+// The preview panel shows a mosaic of real capture-pane content from every
+// window in the session (each capped to sessionPreviewLinesPerWindow lines)
+// rather than a static summary or just one pane — the preview panel's own
+// height-based truncation then naturally shows as many windows as fit.
+// sessionPreviewMsg carries the session ID the capture was requested for, so
+// the handler in Update only applies results still relevant to the current
+// selection.
+func stepSessionSelection(m model, direction int) (model, tea.Cmd) {
+	order := sessionOrder(activeState(m))
+	if len(order) == 0 {
+		return m, nil
+	}
+	effectiveID := effectiveSelectedPaneID(order, m.selectedSessionID, m.lastSelectedSessionID, m.selectedSessionIndex)
+	if idx, ok := findPaneIndex(order, effectiveID); ok {
+		m.selectedSessionIndex = idx
+	}
+	m.selectedSessionIndex = (m.selectedSessionIndex + direction + len(order)) % len(order)
+	m.selectedSessionID = order[m.selectedSessionIndex]
+	m.lastSelectedSessionID = m.selectedSessionID
+	m.status = ""
+	m = ensureVisible(m)
+
+	targets := sessionPanePreviewTargets(m.state, m.selectedSessionID)
+	if len(targets) == 0 {
+		m.preview = sessionPreviewText(m.state, m.selectedSessionID)
+		m.previewErr = nil
+		return m, nil
+	}
+	_, _, _, previewHeight, _, _, _, _, _ := layoutDims(m, max(1, m.width-2))
+	return m, loadSessionPreviewCmd(m.selectedSessionID, targets, previewHeight)
 }
 
 func moveUpByCount(m model, defaultCount int) (tea.Model, tea.Cmd) {
@@ -619,6 +807,16 @@ func moveUpByCount(m model, defaultCount int) (tea.Model, tea.Cmd) {
 func acceptAction(m model) (tea.Model, tea.Cmd) {
 	switch m.mode {
 	case ModeList:
+		if m.sessionView {
+			if m.selectedSessionID == "" {
+				return m, nil
+			}
+			if err := switchClientToSession(m.selectedSessionID, m.selfClientID); err != nil {
+				m.status = fmt.Sprintf("Error: %s", err)
+				return m, nil
+			}
+			return m, tea.Quit
+		}
 		if m.selectedPaneID == "" {
 			return m, nil
 		}
@@ -915,6 +1113,24 @@ func confirmDeletePanes(m model) (tea.Model, tea.Cmd) {
 	} else {
 		m.status = fmt.Sprintf("Deleted %d pane(s)", deleted)
 	}
+	return m, loadStateCmd()
+}
+
+func confirmKillSession(m model) (tea.Model, tea.Cmd) {
+	sessionID := m.selectedSessionID
+	m.mode = ModeList
+	if sessionID == "" {
+		m.status = "No session selected"
+		return m, nil
+	}
+	name := sessionNameByID(m.state, sessionID)
+	if err := applySessionKill(sessionID); err != nil {
+		m.status = fmt.Sprintf("Error: %s", err)
+		return m, loadStateCmd()
+	}
+	m.status = fmt.Sprintf("Killed session %s", name)
+	m.selectedSessionID = ""
+	m.lastSelectedSessionID = ""
 	return m, loadStateCmd()
 }
 

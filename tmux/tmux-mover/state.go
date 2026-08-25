@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 )
@@ -351,6 +352,207 @@ func windowChoicesForMove(m model) []choice {
 		exclude = ""
 	}
 	return buildWindowChoices(m.state, exclude)
+}
+
+// sessionOrder returns session IDs in the same order the sessions-only view
+// (m.sessionView) displays and navigates them in — the ID-list equivalent of
+// buildPaneOrder for panes, so the existing generic effectiveSelectedPaneID/
+// findPaneIndex helpers work unmodified against sessions too.
+func sessionOrder(state TmuxState) []string {
+	sessions := orderedSessions(state)
+	ids := make([]string, len(sessions))
+	for i, s := range sessions {
+		ids[i] = s.ID
+	}
+	return ids
+}
+
+// panePreviewTarget is one pane's entry in the sessions-only view's preview
+// mosaic: which window it belongs to, and (via WindowPaneCount) how many
+// siblings it has, so a multi-pane window can be labeled even though each of
+// its panes gets its own mosaic entry.
+type panePreviewTarget struct {
+	Window          Window
+	PaneID          string
+	PaneIndex       int
+	WindowPaneCount int
+}
+
+// sessionPanePreviewTargets returns every pane in a session, in
+// window-then-pane order — one mosaic entry per pane (not per window), so
+// the preview can actually show every pane it has room for instead of only
+// each window's active one.
+func sessionPanePreviewTargets(state TmuxState, sessionID string) []panePreviewTarget {
+	windows := []Window{}
+	for _, w := range state.Windows {
+		if w.SessionID == sessionID {
+			windows = append(windows, w)
+		}
+	}
+	sort.SliceStable(windows, func(i, j int) bool {
+		return windows[i].IndexNum < windows[j].IndexNum
+	})
+
+	panesByWindow := map[string][]Pane{}
+	for _, p := range state.Panes {
+		panesByWindow[p.WindowID] = append(panesByWindow[p.WindowID], p)
+	}
+	for windowID, panes := range panesByWindow {
+		sort.SliceStable(panes, func(i, j int) bool {
+			return panes[i].IndexNum < panes[j].IndexNum
+		})
+		panesByWindow[windowID] = panes
+	}
+
+	targets := []panePreviewTarget{}
+	for _, w := range windows {
+		panes := panesByWindow[w.ID]
+		for _, p := range panes {
+			targets = append(targets, panePreviewTarget{
+				Window:          w,
+				PaneID:          p.ID,
+				PaneIndex:       p.IndexNum,
+				WindowPaneCount: len(panes),
+			})
+		}
+	}
+	return targets
+}
+
+// minSessionPreviewLines is the floor sessionPreviewFit will clip a pane
+// down to before giving up and dropping it entirely — below this a snippet
+// stops being useful context. There is deliberately no matching upper cap:
+// a pane can grow to use as much of the preview panel as is actually left
+// over once every shown pane has at least this much. sessionPreviewOverhead
+// is the header line + blank separator every mosaic entry costs regardless
+// of its content.
+const (
+	minSessionPreviewLines = 4
+	sessionPreviewOverhead = 2
+)
+
+// meaningfulLineCount trims trailing blank rows (a pane shorter than the
+// terminal is padded with them) and returns how many lines of actual
+// content remain — uncapped, so a busy pane's real size is known and
+// sessionPreviewFit can decide how much of it actually fits.
+func meaningfulLineCount(text string) int {
+	trimmed := trimTrailingBlankLines(text)
+	if trimmed == "" {
+		return 0
+	}
+	return len(strings.Split(trimmed, "\n"))
+}
+
+// sessionPreviewFit decides, given each pane's true (uncapped) content line
+// count, how many lines to actually show per pane and how many panes fit in
+// the preview panel at all.
+//
+//  1. Every shown pane starts at min(natural, minSessionPreviewLines) — a
+//     pane with only a couple of real lines (an idle prompt) only costs
+//     those couple of lines, not a reserved minimum it doesn't need.
+//  2. Panes that are dropped from the tail (existing window/pane order)
+//     first, in as few drops as it takes for the rest to afford that floor
+//     — the caller reports the drop count as "+N more" instead of cramming
+//     every pane down to a sliver that stops being useful.
+//  3. Whatever budget is left over after every shown pane has its floor is
+//     then water-filled one line at a time to panes that still have more
+//     natural content to show, round-robin, so a session with only one or
+//     two panes lets them grow to fill the whole panel instead of being
+//     stuck at the floor while the rest of the panel sits empty.
+func sessionPreviewFit(previewHeight int, natural []int) (linesPerPane []int, shown int) {
+	if len(natural) == 0 {
+		return nil, 0
+	}
+	budget := max(1, previewHeight-2)
+	cost := func(lines int) int { return lines + sessionPreviewOverhead }
+
+	floor := func(n int) int { return min(n, minSessionPreviewLines) }
+
+	// If not every pane fits at its floor, some will get dropped and the
+	// caller appends a "+N more" note below the mosaic — reserve that
+	// note's own line cost up front. Without this, water-filling below
+	// happily spends the entire budget on shown panes' content, and the
+	// note text is still appended to the string but then silently sliced
+	// off by the preview panel's own height truncation.
+	allFloorCost := 0
+	for _, n := range natural {
+		allFloorCost += cost(floor(n))
+	}
+	if allFloorCost > budget {
+		budget = max(1, budget-sessionPreviewOverhead)
+	}
+
+	shown = len(natural)
+	for shown > 0 {
+		total := 0
+		for i := 0; i < shown; i++ {
+			total += cost(floor(natural[i]))
+		}
+		if total <= budget {
+			break
+		}
+		shown--
+	}
+	if shown == 0 {
+		shown = 1
+	}
+
+	lines := make([]int, shown)
+	used := 0
+	for i := 0; i < shown; i++ {
+		lines[i] = floor(natural[i])
+		used += cost(lines[i])
+	}
+
+	leftover := budget - used
+	for leftover > 0 {
+		progressed := false
+		for i := 0; i < shown && leftover > 0; i++ {
+			if lines[i] < natural[i] {
+				lines[i]++
+				leftover--
+				progressed = true
+			}
+		}
+		if !progressed {
+			break
+		}
+	}
+	return lines, shown
+}
+
+// sessionPreviewText renders a synthesized preview (window/pane counts) for
+// the sessions-only view, used as a fallback when sessionPanePreviewTargets
+// finds no live pane to capture (e.g. a session with no windows).
+func sessionPreviewText(state TmuxState, sessionID string) string {
+	name := ""
+	for _, s := range state.Sessions {
+		if s.ID == sessionID {
+			name = s.Name
+			break
+		}
+	}
+	if name == "" {
+		return ""
+	}
+	windows := []Window{}
+	for _, w := range state.Windows {
+		if w.SessionID == sessionID {
+			windows = append(windows, w)
+		}
+	}
+	sort.SliceStable(windows, func(i, j int) bool {
+		return windows[i].IndexNum < windows[j].IndexNum
+	})
+	paneCountByWindow := map[string]int{}
+	for _, p := range state.Panes {
+		paneCountByWindow[p.WindowID]++
+	}
+	lines := []string{fmt.Sprintf("Session: %s", name)}
+	for _, w := range windows {
+		lines = append(lines, fmt.Sprintf("  %s:%s — %d pane(s)", w.Index, w.Name, paneCountByWindow[w.ID]))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func sessionChoicesForMove(m model) []choice {

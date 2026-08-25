@@ -22,7 +22,7 @@ func TestWrapLegendItemsKeepsItemsTogether(t *testing.T) {
 }
 
 func TestKeyHintsStyledNotEmpty(t *testing.T) {
-	lines := keyHintsStyled(defaultKeymap(), 80)
+	lines := keyHintsStyled(defaultKeymap(), 80, false, false)
 	if len(lines) == 0 {
 		t.Fatalf("expected key hints")
 	}
@@ -47,7 +47,7 @@ func TestRenderModalForModePickWindow(t *testing.T) {
 
 func TestRenderKeyBarShowsStatusAndFilter(t *testing.T) {
 	keys := defaultKeymap()
-	bar := renderKeyBar(keys, 80, 3, "vim", true, "Moved 1 pane(s)")
+	bar := renderKeyBar(keys, 80, 3, "vim", true, "Moved 1 pane(s)", false, false)
 	clean := ansi.Strip(bar)
 	if !strings.Contains(clean, "Moved 1 pane(s)") {
 		t.Fatalf("expected status line")
@@ -148,7 +148,7 @@ func TestRenderMainPanelModes(t *testing.T) {
 }
 
 func TestKeyHintsStyledSingleLineAtWideWidth(t *testing.T) {
-	lines := keyHintsStyled(defaultKeymap(), 200)
+	lines := keyHintsStyled(defaultKeymap(), 200, false, false)
 	if len(lines) == 0 {
 		t.Fatalf("expected key hints")
 	}
@@ -171,7 +171,7 @@ func TestKeyHintsStyledSingleLineAtWideWidth(t *testing.T) {
 }
 
 func TestKeyHintsStyledWrapsAtNarrowWidth(t *testing.T) {
-	lines := keyHintsStyled(defaultKeymap(), 40)
+	lines := keyHintsStyled(defaultKeymap(), 40, false, false)
 	if len(lines) < 2 {
 		t.Fatalf("expected wrapped legend, got %d lines", len(lines))
 	}

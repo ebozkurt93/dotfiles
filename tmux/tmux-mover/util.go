@@ -65,6 +65,38 @@ func truncatePreview(text string, width int, height int) string {
 	return strings.Join(lines, "\n")
 }
 
+// trimTrailingBlankLines strips a pane capture's trailing padding rows (a
+// pane shorter than the terminal is padded with blank lines to fill it) so
+// callers can measure/display only the actual content, e.g. an idle prompt
+// near the top of an otherwise-blank pane.
+func trimTrailingBlankLines(text string) string {
+	trimmed := strings.TrimRight(text, "\n")
+	if strings.TrimSpace(trimmed) == "" {
+		return ""
+	}
+	lines := strings.Split(trimmed, "\n")
+	end := len(lines)
+	for end > 0 && strings.TrimSpace(lines[end-1]) == "" {
+		end--
+	}
+	return strings.Join(lines[:end], "\n")
+}
+
+// lastNLines keeps only the trailing n lines of text (the most recent
+// terminal output), so a mosaic of several panes' captures can fit each one
+// into a fixed line budget instead of one busy pane's full screen crowding
+// the others out.
+func lastNLines(text string, n int) string {
+	if n <= 0 {
+		return ""
+	}
+	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	if len(lines) <= n {
+		return strings.Join(lines, "\n")
+	}
+	return strings.Join(lines[len(lines)-n:], "\n")
+}
+
 func truncateANSI(s string, width int) string {
 	if width <= 0 {
 		return ""
