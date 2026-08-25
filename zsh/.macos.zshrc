@@ -70,9 +70,4 @@ function __open_pr {
 zle -N __open_pr
 bindkey "^[g" __open_pr 
 
-function __reload_ghostty_config {
-  # native perform-action call -- no focus steal, unlike System Events keystroke sim
-  osascript -e 'tell application "Ghostty" to perform action "reload_config" on (focused terminal of (selected tab of front window))' > /dev/null
-}
-
 _load_custom_zsh_on_dir

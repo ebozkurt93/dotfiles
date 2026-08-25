@@ -586,7 +586,7 @@ function __theme_helper() {
 	__reload_kitty_config
 	__reload_wezterm_config
 	~/bin/helpers/kitty-to-ghostty ~/.config/kitty/current-theme.conf ~/.config/ghostty/theme
-	is_macos && __reload_ghostty_config
+	__reload_ghostty_config
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then
@@ -633,6 +633,18 @@ function __reload_wezterm_config {
   touch ~/dotfiles/wezterm/.config/wezterm/wezterm.lua
 }
 
+function __reload_ghostty_config {
+  if is_macos; then
+    # native perform-action call -- no focus steal, unlike System Events keystroke sim
+    osascript -e 'tell application "Ghostty" to perform action "reload_config" on (focused terminal of (selected tab of front window))' > /dev/null
+  elif command -v systemctl > /dev/null 2>&1 && systemctl --user is-active --quiet app-com.mitchellh.ghostty.service; then
+    systemctl reload --user app-com.mitchellh.ghostty.service > /dev/null 2>&1
+  else
+    command pkill -SIGUSR2 -x ghostty > /dev/null 2>&1 || true
+    command pkill -SIGUSR2 -x .ghostty-wrapped > /dev/null 2>&1 || true
+  fi
+}
+
 function __wezterm_change_font() {
   __sed_inplace "3s/.*/M.font = \'$1\'/" ~/dotfiles/wezterm/.config/wezterm/overrides.lua
 }
@@ -644,7 +656,7 @@ function __kitty_change_font() {
 
 function __ghostty_change_font() {
   __sed_inplace "3s/.*/font-family = \"$1\"/" ~/dotfiles/ghostty/.config/ghostty/overrides
-  is_macos && __reload_ghostty_config
+  __reload_ghostty_config
 }
 
 function __kitty_font_changer() {
@@ -770,7 +782,7 @@ function __ghostty_toggle_transparency() {
     nvim_remote_exec "TransparentDisable" > /dev/null 2>&1
   fi
 
-  is_macos && __reload_ghostty_config
+  __reload_ghostty_config
 }
 
 function __term_toggle_transparency() {
@@ -855,7 +867,7 @@ function __ghostty_change_setting() {
       __sed_inplace "${lineNum}s/^/# /" $file
   fi
 
-  is_macos && __reload_ghostty_config
+  __reload_ghostty_config
 }
 
 function __term_change_setting() {
