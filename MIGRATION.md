@@ -1894,3 +1894,24 @@ Validation completed:
 Follow-up still open: decide whether the Quickshell launcher should expose
 a dedicated PR mode/keybind, or whether PR rows only belong in the default
 mixed launcher for now.
+
+## Ghostty reload function shared across macOS/Linux (2026-08-25)
+
+Closed the `__reload_ghostty_config` zsh portability item. The function now
+lives in shared `.personal.zshrc` instead of `.macos.zshrc`; macOS keeps the
+native Ghostty AppleScript `perform action "reload_config"` path, while
+Linux first uses Ghostty's documented systemd user-service reload:
+`systemctl reload --user app-com.mitchellh.ghostty.service`.
+
+The current VM has the Ghostty user unit installed but disabled/inactive
+because Hyprland launches `ghostty` directly today, so the Linux branch also
+has a narrow fallback that sends `SIGUSR2` to exact `ghostty`/
+`.ghostty-wrapped` process names. This matches Ghostty's documented
+underlying reload signal without relying on broad `pgrep -f` matching.
+
+All Ghostty theme/font/transparency/settings helpers now call
+`__reload_ghostty_config` unconditionally after updating Ghostty config
+files. Validation: local `zsh -n` for `.personal.zshrc` and `.macos.zshrc`,
+VM `zsh -lc 'source ~/dotfiles/zsh/.personal.zshrc; __reload_ghostty_config'`
+returned cleanly, and the same zsh hunk was mirrored onto `master` for an
+easier future merge.
