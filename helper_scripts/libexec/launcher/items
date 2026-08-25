@@ -11,7 +11,7 @@ fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
 
 usage() {
   cat <<'EOF'
-Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--bluetooth|--keybinds|--calculator QUERY]
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--prs|--bluetooth|--keybinds|--calculator QUERY]
 
 Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
 Quickshell and future launcher frontends.
@@ -38,6 +38,7 @@ while [ "$#" -gt 0 ]; do
     --windows) mode="windows"; shift ;;
     --states) mode="states"; shift ;;
     --tabs) mode="tabs"; shift ;;
+    --prs) mode="prs"; shift ;;
     --bluetooth) mode="bluetooth"; shift ;;
     --keybinds) mode="keybinds"; shift ;;
     --confirm-exit) mode="confirm-exit"; shift ;;
@@ -288,6 +289,24 @@ tabs_json() {
   ' "$tabs_file"
 }
 
+prs_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local github_prs="$HOME/bin/github-prs"
+  if [ ! -x "$github_prs" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$github_prs" launcher-json 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | map(select(.id and .title and (.actions | type == "array")))
+  ' 2>/dev/null || echo '[]'
+}
+
 keybinds_json() {
   if ! have_cmd jq; then
     echo '[]'
@@ -475,18 +494,19 @@ case "$mode" in
   apps) apps_json ;;
   non-apps)
     require_cmd jq
-    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(bluetooth_json)
+    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(prs_json) <(bluetooth_json)
     ;;
   actions) actions_json ;;
   windows) windows_json ;;
   states) states_json ;;
   tabs) tabs_json ;;
+  prs) prs_json ;;
   bluetooth) bluetooth_json ;;
   keybinds) keybinds_json ;;
   confirm-exit) confirm_exit_json ;;
   calculator) calculator_json ;;
   all)
     require_cmd jq
-    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(bluetooth_json)
+    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(prs_json) <(bluetooth_json)
     ;;
 esac

@@ -1859,3 +1859,38 @@ with just its normal Ghostty window. Local `nix flake check --no-build` and
 the darwin `homeConfigurations.erdembozkurt.activationPackage` build both
 still pass -- darwin path untouched by the `allowUnfree` change since it
 was scoped to the `nixosConfigurations` module only.
+
+## GitHub PR BitBar backend decoupled (2026-08-25)
+
+Started the same "keep backend, swap renderers" treatment previously used
+for BitBar/state-switcher-style migration work. Added a shared
+`helper_scripts/bin/github-prs` command and reduced
+`bitbar/Documents/bitbar_plugins/github-prs.5m.sh` to a compatibility
+wrapper that preserves the old BitBar cache/query paths and the old
+`refetch-prs`/`count`/`fzf` entry points.
+
+The shared command now owns:
+- query loading from `$GITHUB_PRS_QUERIES_FILE`, XDG config, or the legacy
+  `~/Documents/bitbar_plugins/tmp/queries.txt` path;
+- cache loading/refetching from `$GITHUB_PRS_CACHE_FILE` or XDG cache;
+- render modes: `bitbar`, `fzf`, `count`, `json`, and `launcher-json`.
+
+Wired PRs into the existing launcher provider layer as `--prs`, and included
+them in `--all`/`--non-apps`. This is intentionally UI-neutral: Quickshell
+gets normal launcher item/action JSON, while macOS BitBar still gets menu
+lines from the wrapper. No new Nix packages were needed because `gh` and
+`jq` are already in the common package set.
+
+Validation completed:
+- Local `bash -n` for `github-prs`, the BitBar wrapper, `launcher`, and
+  `launcher-items`.
+- Local fake-cache checks for `count`, `bitbar`, `fzf`, `launcher-json`,
+  and `launcher-items --prs`.
+- VM smoke test against the running UTM aarch64 VM: copied the changed
+  scripts into `~/dotfiles`, confirmed `~/bin` is already the stowed
+  `dotfiles/helper_scripts/bin`, ran `bash -n`, and confirmed
+  `launcher-items --prs` returns a valid `github-pr` row from a fake cache.
+
+Follow-up still open: decide whether the Quickshell launcher should expose
+a dedicated PR mode/keybind, or whether PR rows only belong in the default
+mixed launcher for now.

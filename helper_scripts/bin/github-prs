@@ -1,0 +1,228 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+style="size=13"
+search_json_format="assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url"
+pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
+
+usage() {
+  cat <<'EOF'
+Usage: github-prs [refetch|json|count|fzf|bitbar|launcher-json]
+
+Fetch and render GitHub pull-request search results. Queries are read from
+$GITHUB_PRS_QUERIES_FILE, ~/.config/github-prs/queries.txt, or the legacy
+~/Documents/bitbar_plugins/tmp/queries.txt file when it exists.
+EOF
+}
+
+have_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+legacy_tmp_dir="$HOME/Documents/bitbar_plugins/tmp"
+xdg_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/github-prs"
+xdg_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/github-prs"
+
+if [ -n "${GITHUB_PRS_QUERIES_FILE:-}" ]; then
+  queries_file="$GITHUB_PRS_QUERIES_FILE"
+elif [ -f "$legacy_tmp_dir/queries.txt" ]; then
+  queries_file="$legacy_tmp_dir/queries.txt"
+else
+  queries_file="$xdg_config_dir/queries.txt"
+fi
+
+cache_file="${GITHUB_PRS_CACHE_FILE:-$xdg_cache_dir/prs.json}"
+
+read_queries() {
+  [ -f "$queries_file" ] || return 0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    case "$line" in
+      ""|//*) continue ;;
+    esac
+    printf '%s\n' "$line"
+  done <"$queries_file"
+}
+
+run_gh_with_query() {
+  local subcommand="$1"
+  local query="$2"
+  local json_format="$3"
+
+  # Query files are personal config and historically used gh/xargs shell-word
+  # syntax. xargs preserves that behavior without eval.
+  printf 'gh %s %s --json %s\n' "$subcommand" "$query" "$json_format" | xargs
+}
+
+prs_json() {
+  if ! have_cmd jq || [ ! -f "$cache_file" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq -s 'add | unique_by(.id) | sort_by(.updatedAt)' "$cache_file" 2>/dev/null || echo '[]'
+}
+
+refetch_prs() {
+  if ! have_cmd gh || ! have_cmd jq; then
+    echo "missing command: gh and jq are required" >&2
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$cache_file")"
+
+  local temp_prs_file all_pr_urls query prs pr_urls url pr
+  temp_prs_file="$(mktemp "$(dirname "$cache_file")/prs.XXXXXXXXXX")"
+  trap 'rm -f "$temp_prs_file"' EXIT
+
+  all_pr_urls=""
+  while IFS= read -r query; do
+    prs="$(run_gh_with_query "search prs" "$query" "$search_json_format")"
+    pr_urls="$(jq -r '.[].url' <<<"$prs" | xargs || true)"
+    all_pr_urls="$all_pr_urls $pr_urls"
+  done < <(read_queries)
+
+  echo '[]' >"$temp_prs_file"
+  while IFS= read -r url; do
+    [ -n "$url" ] || continue
+    pr="$(gh pr view "$url" --json "$pr_json_format")"
+    jq -n --argjson pr "$pr" '[$pr]' >>"$temp_prs_file"
+  done < <(tr ' ' '\n' <<<"$all_pr_urls" | sort -u)
+
+  mv "$temp_prs_file" "$cache_file"
+  trap - EXIT
+}
+
+count_prs() {
+  prs_json | jq -r '
+    length as $length
+    | ([.[] | select(.author.login != "app/dependabot")] | length) as $non_dependabot_length
+    | "\($length) (\($non_dependabot_length))"
+  '
+}
+
+checks_status_filter='
+  if . == null or length == 0 then ""
+  elif (map(select(.conclusion == "FAILURE" or .conclusion == "TIMED_OUT" or .conclusion == "ACTION_REQUIRED" or .conclusion == "CANCELLED")) | length > 0) then "Failing"
+  elif (map(select(.status != "COMPLETED")) | length > 0) then "Pending"
+  else "Passing"
+  end
+'
+
+fzf_rows() {
+  prs_json | jq -r --arg checks_status_filter "$checks_status_filter" '
+    reverse[]
+    | [
+        ((.headRepository.name + "#" + (.number | tostring)) | .[0:30] + if length > 30 then "..." else "" end | .[0:30]),
+        (.title | .[0:80] + if length > 80 then "..." else "" end | .[0:80]),
+        (.author.login | .[0:20] + if length > 20 then "..." else "" end | .[0:20]),
+        .createdAt[0:22],
+        .updatedAt[0:22],
+        (if .isDraft then "Draft" else "" end),
+        (.statusCheckRollup | '"$checks_status_filter"'),
+        .url
+      ]
+    | @tsv
+  ' | awk -F'\t' '{printf "%-30s %-80s %-20s %-25s %-25s %-7s %-10s %-60s\n", $1, $2, $3, $4, $5, $6, $7, $8}'
+}
+
+bitbar_menu() {
+  local content length non_dependabot_length
+  content="$(prs_json)"
+  length="$(jq 'length' <<<"$content")"
+  non_dependabot_length="$(jq '[.[] | select(.author.login != "app/dependabot")] | length' <<<"$content")"
+
+  echo "PRs: $length ($non_dependabot_length)| dropdown=true $style"
+  echo "---"
+
+  if [ "$length" != 0 ]; then
+    jq -r --arg gh_username "${GH_USERNAME:-}" --arg style "$style" '
+      .[]
+      | {
+          name: ((.headRepository.name + "#" + (.number | tostring)) | gsub("[\t\n]"; " ")),
+          title: (.title | gsub("[\t\n]"; " ")),
+          author: .author.login,
+          comments: (.comments | length),
+          additions: .additions,
+          deletions: .deletions,
+          draft: (if .isDraft then "Draft" else "" end),
+          review: (.reviewDecision
+            | gsub("APPROVED"; "Approved")
+            | gsub("REVIEW_REQUIRED"; "Review required")
+            | gsub("CHANGES_REQUESTED"; "Changes requested")),
+          mergeable: (if .mergeable == "MERGEABLE" then "" else "Not mergeable" end),
+          checks: (.statusCheckRollup | '"$checks_status_filter"'),
+          url: .url,
+          color: (if .author.login == $gh_username then " color=teal " elif .author.login == "app/dependabot" then " color=dimgray " else "" end)
+        }
+      | @base64
+    ' <<<"$content" | while IFS= read -r row; do
+      local name title author comments additions deletions draft review mergeable checks url color
+      name="$(jq -Rr '@base64d | fromjson | .name' <<<"$row")"
+      title="$(jq -Rr '@base64d | fromjson | .title' <<<"$row")"
+      author="$(jq -Rr '@base64d | fromjson | .author' <<<"$row")"
+      comments="$(jq -Rr '@base64d | fromjson | .comments' <<<"$row")"
+      additions="$(jq -Rr '@base64d | fromjson | .additions' <<<"$row")"
+      deletions="$(jq -Rr '@base64d | fromjson | .deletions' <<<"$row")"
+      draft="$(jq -Rr '@base64d | fromjson | .draft' <<<"$row")"
+      review="$(jq -Rr '@base64d | fromjson | .review' <<<"$row")"
+      mergeable="$(jq -Rr '@base64d | fromjson | .mergeable' <<<"$row")"
+      checks="$(jq -Rr '@base64d | fromjson | .checks' <<<"$row")"
+      url="$(jq -Rr '@base64d | fromjson | .url' <<<"$row")"
+      color="$(jq -Rr '@base64d | fromjson | .color' <<<"$row")"
+      printf "%-30s %-70s %-20s %-2s %-7s %-52s %-10s | href=%s %s %s\n" \
+        "$name" "$title" "👤 $author" "💬 $comments" "📜+$additions-$deletions" "$draft $review $mergeable" "$checks" "$url" "$style" "$color"
+    done
+    echo "---"
+  fi
+
+  echo "Refetch PRs | bash=\"$0\" param1=refetch-prs refresh=true terminal=false $style"
+  echo "Refresh | refresh=true $style"
+}
+
+launcher_json() {
+  prs_json | jq '
+    reverse
+    | map({
+        id: ("github-pr:" + .id),
+        kind: "github-pr",
+        icon: (if .isDraft then "git-pull-request-draft" else "git-pull-request" end),
+        title: (.headRepository.name + "#" + (.number | tostring) + " " + .title),
+        subtitle: (
+          .author.login + " - " +
+          (if .isDraft then "Draft - " else "" end) +
+          ((.reviewDecision // "") | gsub("_"; " ") | ascii_downcase) +
+          (if .mergeable != "MERGEABLE" then " - not mergeable" else "" end)
+        ),
+        keywords: [
+          "github", "pr", "pull request",
+          .headRepository.name,
+          (.number | tostring),
+          .title,
+          .author.login,
+          (.reviewDecision // ""),
+          (.mergeable // "")
+        ],
+        actions: [
+          {id: "open", title: "Open PR", command: ("xdg-open " + (.url | @sh) + " 2>/dev/null || open " + (.url | @sh))},
+          {id: "copy-url", title: "Copy URL", key: "ctrl+c", command: ("printf %s " + (.url | @sh) + " | wl-copy 2>/dev/null || printf %s " + (.url | @sh) + " | pbcopy")},
+          {id: "refresh", title: "Refresh PR Cache", key: "ctrl+r", keepOpen: true, command: ($ENV.HOME + "/bin/github-prs refetch")}
+        ]
+      })
+  '
+}
+
+mode="${1:-bitbar}"
+case "$mode" in
+  refetch|refetch-prs) refetch_prs ;;
+  json) prs_json ;;
+  count) count_prs ;;
+  fzf) fzf_rows ;;
+  bitbar|"") bitbar_menu ;;
+  launcher-json) launcher_json ;;
+  -h|--help) usage ;;
+  *) usage >&2; exit 1 ;;
+esac
