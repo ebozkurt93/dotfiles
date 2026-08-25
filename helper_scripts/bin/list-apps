@@ -14,8 +14,10 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   echo "--- Desktop Entries ---"
   find /run/current-system/sw/share/applications \
+    "/etc/profiles/per-user/$(id -un)/share/applications" \
     /usr/share/applications \
     /var/lib/flatpak/exports/share/applications \
+    "$HOME/.local/state/nix/profile/share/applications" \
     "$HOME/.nix-profile/share/applications" \
     "$HOME/.local/share/applications" \
     "$HOME/.local/share/flatpak/exports/share/applications" \

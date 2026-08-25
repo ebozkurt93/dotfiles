@@ -270,14 +270,59 @@ func runHook(arg2, arg3 string, onEnabledCommands, onDisabledCommands map[string
 }
 
 func runOnCommandHook(customState, command string) {
-	cmdStr := fmt.Sprintf(`export PATH="$HOME/.nix-profile/bin:$PATH"; __custom_state=%s;  source ~/.zshrc; %s;`, customState, command)
-	cmd := exec.Command(os.Getenv("HOME") + "/.nix-profile/bin/zsh", "-c", cmdStr)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	shell, ok := hookShell(homeDir)
+	if !ok {
+		return
+	}
+
+	cmdStr := fmt.Sprintf(`__custom_state=%s; source ~/.zshrc; %s;`, shellQuote(customState), command)
+	cmd := exec.Command(shell, "-c", cmdStr)
+	cmd.Env = append(os.Environ(), "PATH="+hookPath(homeDir))
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	// New session so this outlives a tmux popup (`-E`) tearing down the
 	// calling process's process group the instant it exits.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	cmd.Start()
+}
+
+func hookShell(homeDir string) (string, bool) {
+	if shell, err := exec.LookPath("zsh"); err == nil {
+		return shell, true
+	}
+
+	for _, shell := range []string{
+		filepath.Join(homeDir, ".nix-profile/bin/zsh"),
+		filepath.Join("/etc/profiles/per-user", os.Getenv("USER"), "bin/zsh"),
+		"/run/current-system/sw/bin/zsh",
+		"/usr/bin/zsh",
+		"/bin/zsh",
+	} {
+		if fileExists(shell) {
+			return shell, true
+		}
+	}
+
+	return "", false
+}
+
+func hookPath(homeDir string) string {
+	pathEntries := []string{
+		filepath.Join(homeDir, ".nix-profile/bin"),
+		filepath.Join("/etc/profiles/per-user", os.Getenv("USER"), "bin"),
+		"/run/current-system/sw/bin",
+		os.Getenv("PATH"),
+	}
+
+	return strings.Join(pathEntries, ":")
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }
 
 func contains(slice []string, item string) bool {
