@@ -16,6 +16,31 @@
     else throw "desktop-hyprland.nix: expected exactly one isNormalUser account, found ${toString (builtins.length (lib.attrNames normalUsers))} (${toString (lib.attrNames normalUsers)})";
   dotfilesDir = "${primaryUser.home}/dotfiles";
   pythonWithEvdev = pkgs.python3.withPackages (ps: [ps.evdev]);
+
+  # nixpkgs' pkgs.fira-code only ships the newer variable-font build
+  # (FiraCode-VF.ttf, named instances FiraCodeRoman-Regular/Medium/...),
+  # dropping the classic static per-weight release entirely -- no "Retina"
+  # weight equivalent exists in it. macOS's setup/install-fonts.sh installs
+  # that classic static release directly from GitHub instead, and kitty.conf/
+  # the font-changer pickers pin the specific "FiraCode-Retina" weight from
+  # it (a real, distinct weight, not just an alias for Regular -- confirmed
+  # by inspecting the release zip's ttf/ folder). Fetching the exact same
+  # release here keeps font-family/PostScript-name selection identical on
+  # both platforms instead of picking nixpkgs' different default.
+  firaCodeStatic = pkgs.stdenvNoCC.mkDerivation {
+    pname = "fira-code-static";
+    version = "6.2";
+    src = pkgs.fetchurl {
+      url = "https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip";
+      sha256 = "sha256-CUmRW6jrJNif2T0Qp/9iP0KDDXxf/D7L+WDk7K0+Pnk=";
+    };
+    nativeBuildInputs = [pkgs.unzip];
+    unpackPhase = "unzip $src -d source";
+    installPhase = ''
+      mkdir -p $out/share/fonts/truetype
+      cp source/ttf/*.ttf $out/share/fonts/truetype/
+    '';
+  };
 in {
   programs.hyprland.enable = true;
   security.pam.services.dotfiles-lock = {};
@@ -65,7 +90,33 @@ in {
     pulse.enable = true;
   };
 
-  fonts.packages = [pkgs.nerd-fonts.jetbrains-mono];
+  # Terminal configs ask for exact family/PostScript names, and the
+  # nerd-fonts-patched builds rename both (confirmed via fc-list on the VM):
+  # patched Fira Code ships as "FiraCode Nerd Font" (no space, "Nerd Font"
+  # suffix), not the literal "Fira Code" ghostty's config asks for, nor the
+  # "FiraCode-Retina" PostScript name kitty.conf matches on. So both the
+  # nerd-patched (icon glyphs) and plain (name match) builds are needed for
+  # jetbrains-mono/fira-code -- firaCodeStatic (defined above) instead of
+  # nixpkgs' pkgs.fira-code, to match macOS's font exactly, "Retina" weight
+  # included. nerd-fonts.symbols-only: the standalone "Symbols Nerd Font"
+  # all three terminals reference for icon glyphs, not bundled with either
+  # mono font.
+  fonts.packages = [
+    pkgs.nerd-fonts.jetbrains-mono
+    pkgs.nerd-fonts.fira-code
+    pkgs.nerd-fonts.symbols-only
+    pkgs.jetbrains-mono
+    firaCodeStatic
+    # Rest of macOS's setup/install-fonts.sh list -- not referenced by any
+    # terminal config right now, ported anyway per user request to keep
+    # them available for manual/occasional use like on macOS.
+    pkgs.input-fonts # Input Mono
+    pkgs.noto-fonts # includes Noto Sans Mono
+    pkgs.victor-mono
+    pkgs.ibm-plex # includes IBM Plex Mono
+    pkgs.iosevka
+    pkgs.cascadia-code
+  ];
 
   # Same firefox/policies/policies.json used on macOS (force-installs the
   # Firefox Bridge extension used by firefox_tab_switcher.lua, plus the rest

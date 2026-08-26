@@ -99,6 +99,7 @@
           home-manager.nixosModules.home-manager
           {
             nixpkgs.config.allowUnfree = true; # obsidian
+            nixpkgs.config.input-fonts.acceptLicense = true; # Input Mono font
           }
           {
             home-manager.useGlobalPkgs = true;
