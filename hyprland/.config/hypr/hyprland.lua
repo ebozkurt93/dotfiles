@@ -9,11 +9,18 @@ end
 
 local lowSpecDesktop = hostname == "utm-aarch64" or os.getenv("DOTFILES_LOW_SPEC_DESKTOP") == "1"
 
+-- Was hardcoded to 2.5 (Retina-panel assumption) for every non-VM host --
+-- wrong default for a real, likely non-HiDPI x86_64 target. Default to 1.0
+-- (no scaling) and override per-session while experimenting on real
+-- hardware with `DOTFILES_DISPLAY_SCALE=1.5 Hyprland` (or export it in the
+-- greetd/session environment once a value is confirmed to look right).
+local displayScale = tonumber(os.getenv("DOTFILES_DISPLAY_SCALE")) or 1.0
+
 hl.monitor({
     output = "",
     mode = lowSpecDesktop and "1280x800@60" or "preferred",
     position = "auto",
-    scale = lowSpecDesktop and 1.0 or 2.5,
+    scale = displayScale,
 })
 
 hl.on("hyprland.start", function()
@@ -40,8 +47,18 @@ hl.config({
         -- max) -- repeat_rate is Hz, repeat_delay is ms before repeat starts.
         repeat_rate = 60,
         repeat_delay = 150,
+        -- macOS set trackpad/mouse scaling explicitly (`com.apple.trackpad.
+        -- scaling`/`com.apple.mouse.scaling`) rather than leaving it at
+        -- whatever the OS default was -- neither had a real equivalent here
+        -- before. `sensitivity` is libinput's -1.0..1.0 pointer-speed range
+        -- (0 = neutral); no real trackpad/mouse has been tested against
+        -- this yet, so treat these as a starting point to retune once on
+        -- real hardware, not a verified-correct value.
+        sensitivity = 0.0,
+        accel_profile = "adaptive",
         touchpad = {
             natural_scroll = true,
+            scroll_factor = 1.0,
         },
     },
 
