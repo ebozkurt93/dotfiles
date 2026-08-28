@@ -37,7 +37,7 @@
         };
 
         apps = {
-          # Foreground TUI: `nix run github:you/dotfiles?dir=tmux/tmux-mover`
+          # Foreground TUI: `nix run github:ebozkurt93/dotfiles?dir=tmux/tmux-mover`
           default = flake-utils.lib.mkApp {drv = tmux-mover;};
 
           # Headless agent watcher, detached: `nix run .#watch`
