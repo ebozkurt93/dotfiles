@@ -96,6 +96,17 @@ with pkgs;
     vlc
     signal-desktop
     google-chrome
+    grim # screenshot capture (helper_scripts/libexec/desktop/screenshot)
+    slurp # screenshot region selection
+    # forces software GL to skip a failed hardware-probe warning
+    (imv.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [makeWrapper];
+      postFixup =
+        (old.postFixup or "")
+        + ''
+          wrapProgram $out/bin/imv --set LIBGL_ALWAYS_SOFTWARE 1
+        '';
+    }))
   ]
   ++ lib.optionals (stdenv.isLinux && stdenv.hostPlatform.isx86_64) [
     # Proprietary Electron builds with no aarch64-linux package -- this

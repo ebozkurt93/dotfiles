@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Takes a screenshot via grim, saves it under Pictures and copies it to the
+# clipboard. Region mode (default) uses slurp for interactive selection;
+# fullscreen captures the focused monitor with no interaction.
+
+MODE="${1:-region}"
+
+OUTPUT_DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$OUTPUT_DIR"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Screenshot" "$1" --icon="$2" || true
+}
+
+case "$MODE" in
+  region)
+    GEOMETRY="$(slurp)" || exit 0
+    ;;
+  fullscreen)
+    GEOMETRY="$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | "\(.x),\(.y) \(.width)x\(.height)"')"
+    ;;
+  *)
+    echo "Usage: screenshot [region|fullscreen]" >&2
+    exit 1
+    ;;
+esac
+
+FILENAME="screenshot-$(date +'%Y-%m-%d_%H-%M-%S').png"
+FILEPATH="$OUTPUT_DIR/$FILENAME"
+
+grim -g "$GEOMETRY" "$FILEPATH"
+wl-copy --type image/png <"$FILEPATH"
+notify "Saved to clipboard and $FILEPATH" "$FILEPATH"

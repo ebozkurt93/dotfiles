@@ -102,6 +102,9 @@ hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"),
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"), { description = "Open browser tabs" })
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --bluetooth"), { description = "Open bluetooth devices" })
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-expander --toggle"), { description = "Toggle text expansion" })
+
+hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot fullscreen"), { description = "Screenshot: fullscreen" })
+hl.bind(mainMod .. " + SHIFT + 4", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot region"), { description = "Screenshot: region" })
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("quickshell ipc call clipboard toggle"), { description = "Open clipboard history" })
 
 -- Scrolling-layout focus: move focus between columns (h/l, left/right) and

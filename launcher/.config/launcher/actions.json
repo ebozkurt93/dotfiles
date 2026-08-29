@@ -110,5 +110,38 @@
     "actions": [
       {"id": "run", "title": "Toggle", "command": "~/bin/desktop mirror-toggle"}
     ]
+  },
+  {
+    "id": "action:notifications-privacy",
+    "kind": "setting",
+    "icon": "notification-symbolic",
+    "title": "Toggle Notification Privacy",
+    "subtitle": "Hide notification toasts from screen shares/recordings",
+    "keywords": ["notifications", "privacy", "screen share", "recording", "hide", "dnd"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/desktop notifications-privacy toggle"}
+    ]
+  },
+  {
+    "id": "action:screenshot-region",
+    "kind": "tool",
+    "icon": "applets-screenshooter",
+    "title": "Screenshot: Region",
+    "subtitle": "Select an area to capture",
+    "keywords": ["screenshot", "capture", "region", "select"],
+    "actions": [
+      {"id": "run", "title": "Capture", "command": "~/bin/desktop screenshot region"}
+    ]
+  },
+  {
+    "id": "action:screenshot-fullscreen",
+    "kind": "tool",
+    "icon": "applets-screenshooter",
+    "title": "Screenshot: Fullscreen",
+    "subtitle": "Capture the focused monitor",
+    "keywords": ["screenshot", "capture", "fullscreen", "monitor"],
+    "actions": [
+      {"id": "run", "title": "Capture", "command": "~/bin/desktop screenshot fullscreen"}
+    ]
   }
 ]
