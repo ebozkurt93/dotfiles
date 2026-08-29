@@ -61,6 +61,9 @@ in {
   security.polkit.enable = true;
   security.rtkit.enable = true;
 
+  # Required for home-manager's dconf.settings (system-wide dark theme default).
+  programs.dconf.enable = true;
+
   # Secret Service backend for secret-tool (helper_scripts/bin/helpers/pass.sh).
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.greetd.enableGnomeKeyring = true;

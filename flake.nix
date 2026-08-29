@@ -117,6 +117,18 @@
               # quickshell only makes sense on Linux with Hyprland, kept out
               # of the shared homeModule so darwin's package set is untouched.
               home.packages = [quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default];
+              # System-wide dark default for GTK/Qt apps; needs programs.dconf.enable at the NixOS level too.
+              gtk = {
+                enable = true;
+                theme = {
+                  name = "Adwaita-dark";
+                  package = pkgs.gnome-themes-extra;
+                };
+              };
+              dconf.settings."org/gnome/desktop/interface" = {
+                color-scheme = "prefer-dark";
+                gtk-theme = "Adwaita-dark";
+              };
             };
           }
         ];
