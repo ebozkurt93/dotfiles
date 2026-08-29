@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTPUT_DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
+mkdir -p "$OUTPUT_DIR"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Screen Recording" "$1" || true
+}
+
+# unanchored: Nix's wrapper execs the store path, not the bare name, so ^gpu-screen-recorder never matches
+if pgrep -f gpu-screen-recorder >/dev/null 2>&1; then
+  pkill -INT -f gpu-screen-recorder
+  count=0
+  while pgrep -f gpu-screen-recorder >/dev/null 2>&1 && [ "$count" -lt 50 ]; do
+    sleep 0.1
+    count=$((count + 1))
+  done
+  if pgrep -f gpu-screen-recorder >/dev/null 2>&1; then
+    pkill -9 -f gpu-screen-recorder
+    notify "Had to force-kill the recording, file may be corrupted"
+  else
+    notify "Recording saved to $OUTPUT_DIR"
+  fi
+  exit 0
+fi
+
+MODE="${1:-region}"
+shift || true
+
+AUDIO_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --mic) AUDIO_ARGS+=(-a default_input) ;;
+    --desktop-audio) AUDIO_ARGS+=(-a default_output) ;;
+  esac
+done
+
+case "$MODE" in
+  region)
+    SELECTION="$(slurp)" || exit 0
+    read -r XY WH <<<"$SELECTION"
+    TARGET="${WH}+${XY%,*}+${XY#*,}"
+    ;;
+  fullscreen)
+    TARGET="$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name')"
+    ;;
+  *)
+    echo "Usage: record [region|fullscreen] [--mic] [--desktop-audio]" >&2
+    exit 1
+    ;;
+esac
+
+FILENAME="screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
+FILEPATH="$OUTPUT_DIR/$FILENAME"
+
+setsid gpu-screen-recorder -w "$TARGET" -k auto -f 60 -o "$FILEPATH" "${AUDIO_ARGS[@]}" >/tmp/gpu-screen-recorder.log 2>&1 </dev/null &
+
+notify "Recording started"

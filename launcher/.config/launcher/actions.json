@@ -143,5 +143,38 @@
     "actions": [
       {"id": "run", "title": "Capture", "command": "~/bin/desktop screenshot fullscreen"}
     ]
+  },
+  {
+    "id": "action:record-region",
+    "kind": "tool",
+    "icon": "media-record",
+    "title": "Screen Recording: Region",
+    "subtitle": "Select an area to record",
+    "keywords": ["record", "recording", "video", "capture", "region", "select"],
+    "actions": [
+      {"id": "run", "title": "Start", "command": "~/bin/desktop record region"}
+    ]
+  },
+  {
+    "id": "action:record-fullscreen",
+    "kind": "tool",
+    "icon": "media-record",
+    "title": "Screen Recording: Fullscreen",
+    "subtitle": "Record the focused monitor",
+    "keywords": ["record", "recording", "video", "capture", "fullscreen", "monitor"],
+    "actions": [
+      {"id": "run", "title": "Start", "command": "~/bin/desktop record fullscreen"}
+    ]
+  },
+  {
+    "id": "action:record-stop",
+    "kind": "tool",
+    "icon": "media-playback-stop",
+    "title": "Stop Screen Recording",
+    "subtitle": "Save the current recording",
+    "keywords": ["record", "recording", "video", "stop", "save"],
+    "actions": [
+      {"id": "run", "title": "Stop", "command": "~/bin/desktop record"}
+    ]
   }
 ]

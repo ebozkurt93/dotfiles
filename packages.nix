@@ -98,6 +98,7 @@ with pkgs;
     google-chrome
     grim # screenshot capture (helper_scripts/libexec/desktop/screenshot)
     slurp # screenshot region selection
+    gpu-screen-recorder # screen recording (helper_scripts/libexec/desktop/record)
     # forces software GL to skip a failed hardware-probe warning
     (imv.overrideAttrs (old: {
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ [makeWrapper];
