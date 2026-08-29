@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# cliphist has no per-item size cap (only -max-items); silently drop anything over the threshold instead.
+max_bytes=$((5 * 1024 * 1024)) # 5 MiB
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+cat >"$tmp"
+
+size="$(wc -c <"$tmp")"
+[ "$size" -le "$max_bytes" ] || exit 0
+
+cliphist store <"$tmp"

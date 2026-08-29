@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+direction="${1:-}"
+if [ "$direction" != "l" ] && [ "$direction" != "r" ]; then
+  echo "usage: desktop swap-window <l|r>" >&2
+  exit 1
+fi
+
+active_json="$(hyprctl activewindow -j)"
+active_addr="$(jq -r '.address // empty' <<<"$active_json")"
+[ -z "$active_addr" ] && exit 0
+
+active_x="$(jq -r '.at[0]' <<<"$active_json")"
+active_mon="$(jq -r '.monitor' <<<"$active_json")"
+
+# Only expel (which un-stacks the focused window from its column) if there's
+# actually a neighboring column to swap into -- otherwise expel still
+# succeeds even with nothing to swap with, breaking the stack for nothing.
+has_neighbor="$(hyprctl clients -j | jq -r --argjson x "$active_x" --argjson mon "$active_mon" --arg dir "$direction" '
+  [.[] | select(.monitor == $mon and .floating == false and
+    (if $dir == "l" then .at[0] < $x else .at[0] > $x end))]
+  | length > 0
+')"
+
+[ "$has_neighbor" != "true" ] && exit 0
+
+hyprctl dispatch 'hl.dsp.layout("expel")' >/dev/null 2>&1
+hyprctl dispatch "hl.dsp.layout(\"swapcol $direction\")" >/dev/null

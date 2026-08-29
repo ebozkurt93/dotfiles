@@ -1,0 +1,505 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mode="all"
+query=""
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+default_actions_file="${XDG_CONFIG_HOME:-$HOME/.config}/launcher/actions.json"
+fallback_actions_file="$repo_root/launcher/.config/launcher/actions.json"
+
+usage() {
+  cat <<'EOF'
+Usage: launcher-items [--all|--apps|--non-apps|--actions|--windows|--states|--tabs|--prs|--bluetooth|--keybinds|--calculator QUERY]
+
+Emit launcher items as JSON. This is the UI-neutral provider layer consumed by
+Quickshell and future launcher frontends.
+EOF
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "missing command: $1" >&2
+    exit 1
+  }
+}
+
+have_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --all) mode="all"; shift ;;
+    --apps) mode="apps"; shift ;;
+    --non-apps) mode="non-apps"; shift ;;
+    --actions) mode="actions"; shift ;;
+    --windows) mode="windows"; shift ;;
+    --states) mode="states"; shift ;;
+    --tabs) mode="tabs"; shift ;;
+    --prs) mode="prs"; shift ;;
+    --bluetooth) mode="bluetooth"; shift ;;
+    --keybinds) mode="keybinds"; shift ;;
+    --confirm-exit) mode="confirm-exit"; shift ;;
+    --calculator)
+      mode="calculator"
+      shift
+      query="${1:-}"
+      [ "$#" -gt 0 ] && shift
+      ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 1 ;;
+  esac
+done
+
+actions_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local actions_file="${LAUNCHER_ACTIONS_FILE:-$default_actions_file}"
+  if [ ! -f "$actions_file" ] && [ -f "$fallback_actions_file" ]; then
+    actions_file="$fallback_actions_file"
+  fi
+  if [ ! -f "$actions_file" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    if type == "array" then . else [] end
+    | map(select(.id and .title and (.actions | type == "array")))
+  ' "$actions_file"
+}
+
+desktop_entry_value() {
+  local file="$1"
+  local key="$2"
+  awk -F= -v key="$key" '
+    /^\[/ { in_entry = ($0 == "[Desktop Entry]") }
+    in_entry && $1 == key { sub(/^[^=]*=/, ""); print; exit }
+  ' "$file"
+}
+
+apps_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local desktop_dirs=(
+    "/run/current-system/sw/share/applications"
+    # The real home-manager-managed profile on NixOS; $HOME/.nix-profile can point at a separate, unused one.
+    "/etc/profiles/per-user/$(id -un)/share/applications"
+    "/usr/share/applications"
+    "/var/lib/flatpak/exports/share/applications"
+    "$HOME/.nix-profile/share/applications"
+    "$HOME/.local/share/applications"
+    "$HOME/.local/share/flatpak/exports/share/applications"
+  )
+
+  local tmp
+  tmp="$(mktemp)"
+  find "${desktop_dirs[@]}" -maxdepth 1 -name "*.desktop" 2>/dev/null | sort -u >"$tmp" || true
+
+  local first=1
+  printf '['
+  while IFS= read -r desktop_file; do
+    [ -f "$desktop_file" ] || continue
+
+    local type no_display hidden name exec_line icon generic_name keywords terminal desktop_id startup_wm_class class_pattern open_desktop_cmd open_cmd
+    type="$(desktop_entry_value "$desktop_file" Type)"
+    no_display="$(desktop_entry_value "$desktop_file" NoDisplay)"
+    hidden="$(desktop_entry_value "$desktop_file" Hidden)"
+    name="$(desktop_entry_value "$desktop_file" Name)"
+    exec_line="$(desktop_entry_value "$desktop_file" Exec)"
+    icon="$(desktop_entry_value "$desktop_file" Icon)"
+    generic_name="$(desktop_entry_value "$desktop_file" GenericName)"
+    keywords="$(desktop_entry_value "$desktop_file" Keywords)"
+    terminal="$(desktop_entry_value "$desktop_file" Terminal)"
+    startup_wm_class="$(desktop_entry_value "$desktop_file" StartupWMClass)"
+    desktop_id="$(basename "$desktop_file" .desktop)"
+
+    [ "${type:-Application}" = "Application" ] || continue
+    [ "$no_display" != "true" ] || continue
+    [ "$hidden" != "true" ] || continue
+    [ -n "$name" ] || continue
+    [ -n "$exec_line" ] || continue
+
+    class_pattern="${startup_wm_class:-$desktop_id}"
+    open_desktop_cmd="$HOME/bin/launcher-open-desktop $(printf '%q' "$desktop_file")"
+    open_cmd="$HOME/bin/desktop raise-or-launch $(printf '%q' "$class_pattern") $(printf '%q' "$open_desktop_cmd")"
+
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    jq -n \
+      --arg id "app:$desktop_id" \
+      --arg title "$name" \
+      --arg subtitle "${generic_name:-$desktop_id}" \
+      --arg icon "${icon:-application-x-executable}" \
+      --arg keywords "$keywords $desktop_id $generic_name" \
+      --arg open_cmd "$open_cmd" \
+      --arg new_window_cmd "$open_desktop_cmd" \
+      --arg terminal "$terminal" \
+      '{
+        id: $id,
+        kind: "app",
+        icon: $icon,
+        title: $title,
+        subtitle: $subtitle,
+        keywords: (($keywords | split(";") + ($keywords | split(" "))) | map(select(length > 0))),
+        actions: [
+          {id: "open", title: "Open (or jump to running)", command: $open_cmd},
+          {id: "new-window", title: "Open New Window", key: "ctrl+n", command: $new_window_cmd}
+        ] + (if $terminal == "true" then [{id: "terminal", title: "Open Terminal App", key: "ctrl+t", command: $new_window_cmd}] else [] end)
+      }'
+  done <"$tmp"
+  printf ']'
+  rm -f "$tmp"
+}
+
+windows_json() {
+  if ! have_cmd hyprctl || ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local clients_json
+  clients_json="$(hyprctl clients -j 2>/dev/null || true)"
+  if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"$clients_json"; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    sort_by(.workspace.id, .class, .title)
+    | map(select(.mapped == true))
+    | map({
+        id: ("window:" + .address),
+        kind: "window",
+        icon: "window",
+        address: .address,
+        title: ((.title // "untitled") | gsub("[\t\n]"; " ")),
+        subtitle: (((.class // "unknown") | gsub("[\t\n]"; " ")) + " - workspace " + ((.workspace.name // (.workspace.id | tostring)) | tostring)),
+        keywords: [
+          (.class // "unknown"),
+          (.title // "untitled"),
+          ("workspace " + ((.workspace.name // (.workspace.id | tostring)) | tostring))
+        ],
+        actions: [
+          {
+            id: "focus",
+            title: "Focus Window",
+            command: ("hyprctl dispatch \"hl.dsp.focus({ window = \\\"address:" + .address + "\\\" })\" >/dev/null 2>&1 || hyprctl dispatch focuswindow address:" + .address)
+          },
+          {
+            id: "close",
+            title: "Close Window",
+            key: "ctrl+w",
+            keepOpen: true,
+            command: ("hyprctl dispatch \"hl.dsp.window.close({ window = \\\"address:" + .address + "\\\" })\" >/dev/null 2>&1 || hyprctl dispatch closewindow address:" + .address)
+          },
+          {
+            id: "float",
+            title: "Toggle Floating",
+            key: "ctrl+f",
+            command: ("hyprctl dispatch \"hl.dsp.window.float({ window = \\\"address:" + .address + "\\\", action = \\\"toggle\\\" })\" >/dev/null 2>&1 || hyprctl dispatch togglefloating address:" + .address)
+          },
+          {
+            id: "kill",
+            title: "Quit App",
+            key: "ctrl+q",
+            keepOpen: true,
+            command: ("kill -TERM " + (.pid | tostring) + " 2>/dev/null || true")
+          }
+        ]
+      })
+  ' <<<"$clients_json"
+}
+
+states_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local state_switcher="$HOME/bin/state-switcher"
+  if [ ! -x "$state_switcher" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$state_switcher" states-json 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | sort_by((.enabled | not), .title)
+    | map({
+        id: ("state:" + (.title | ascii_downcase | gsub("[^a-z0-9]+"; "-") | gsub("(^-|-$)"; ""))),
+        kind: "state",
+        icon: (if .enabled then "check-circle" else "circle" end),
+        title: ("State: " + .title),
+        subtitle: (if .enabled then "Enabled" else "Disabled" end),
+        keywords: [.title, (.icon // ""), "state", "toggle", "without hook", "ignore-event"],
+        actions: [
+          {id: "toggle", title: "Toggle", command: ($ENV.HOME + "/bin/state-switcher toggle " + (.title | @sh))},
+          {id: "toggle-no-hook", title: "Toggle Without Hook", key: "ctrl+h", command: ($ENV.HOME + "/bin/state-switcher toggle " + (.title | @sh) + " ignore-event")}
+        ]
+      })
+  '
+}
+
+tabs_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  if [ -n "${LAUNCHER_TABS_COMMAND:-}" ]; then
+    bash -lc "$LAUNCHER_TABS_COMMAND" 2>/dev/null | jq '
+      if type == "array" then . else [] end
+      | map(select(.id and .title and (.actions | type == "array")))
+    ' 2>/dev/null || echo '[]'
+    return
+  fi
+
+  local tabs_file="${LAUNCHER_TABS_FILE:-${XDG_CACHE_HOME:-$HOME/.cache}/launcher/browser-tabs.json}"
+  if [ ! -f "$tabs_file" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq '
+    if type == "array" then . else [] end
+    | map(select(.title and .url))
+    | map({
+        id: (.id // ("tab:" + .url)),
+        kind: "tab",
+        icon: (.icon // "browser"),
+        title: .title,
+        subtitle: .url,
+        keywords: ([.browser, .profile, .url, .title] | map(select(. != null))),
+        actions: [
+          {id: "open", title: "Open", command: ("xdg-open " + (.url | @sh))}
+        ]
+      })
+  ' "$tabs_file"
+}
+
+prs_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local github_prs="$HOME/bin/github-prs"
+  if [ ! -x "$github_prs" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$github_prs" launcher-json 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | map(select(.id and .title and (.actions | type == "array")))
+  ' 2>/dev/null || echo '[]'
+}
+
+keybinds_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+
+  local desktop_bin="$HOME/bin/desktop"
+  if [ ! -x "$desktop_bin" ]; then
+    echo '[]'
+    return
+  fi
+
+  "$desktop_bin" keybinds 2>/dev/null | jq '
+    if type == "array" then . else [] end
+    | map(select(.keys and .description and .command))
+    | map({
+        id: ("keybind:" + .keys + ":" + .description),
+        kind: "keybind",
+        icon: "input-keyboard",
+        title: .description,
+        subtitle: .keys,
+        keywords: [.keys, .description],
+        actions: [
+          {id: "run", title: "Run", command: .command}
+        ]
+      })
+  '
+}
+
+confirm_exit_json() {
+  if ! have_cmd jq; then
+    echo '[]'
+    return
+  fi
+  actions_json | jq '[.[] | select(.id == "system:exit-hyprland")]'
+}
+
+bluetooth_json() {
+  if ! have_cmd jq || ! have_cmd bluetoothctl; then
+    echo '[]'
+    return
+  fi
+
+  # bluetoothctl blocks on D-Bus for the full timeout with no adapter present; check /sys/class/bluetooth first since it's instant.
+  if [ ! -d /sys/class/bluetooth ] || [ -z "$(ls -A /sys/class/bluetooth 2>/dev/null)" ]; then
+    jq -n '[{
+      id: "bt:no-adapter",
+      kind: "bluetooth",
+      icon: "bluetooth-disabled",
+      title: "No Bluetooth adapter",
+      subtitle: "Nothing to connect to",
+      keywords: ["bluetooth", "bt"],
+      actions: []
+    }]'
+    return
+  fi
+
+  if ! timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+    jq -n '[{
+      id: "bt:power-on",
+      kind: "bluetooth",
+      icon: "bluetooth-disabled",
+      title: "Bluetooth is off",
+      subtitle: "Turn on the adapter",
+      keywords: ["bluetooth", "bt", "power", "on", "enable"],
+      actions: [{id: "power-on", title: "Turn On", command: "bluetoothctl power on"}]
+    }]'
+    return
+  fi
+
+  local paired
+  paired="$(timeout 2 bluetoothctl devices Paired 2>/dev/null || true)"
+
+  local first=1
+  printf '['
+  jq -n '{
+    id: "bt:power-off",
+    kind: "bluetooth",
+    icon: "bluetooth-active",
+    title: "Bluetooth: On",
+    subtitle: "Turn off the adapter",
+    keywords: ["bluetooth", "bt", "power", "off", "disable"],
+    actions: [{id: "power-off", title: "Turn Off", command: "bluetoothctl power off"}]
+  }'
+  first=0
+
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    local mac name connected action action_title
+    mac="$(awk '{print $2}' <<<"$line")"
+    name="$(cut -d' ' -f3- <<<"$line")"
+    [ -n "$mac" ] || continue
+
+    connected="false"
+    if timeout 2 bluetoothctl info "$mac" 2>/dev/null | grep -q "Connected: yes"; then
+      connected="true"
+    fi
+
+    if [ "$connected" = "true" ]; then
+      action="disconnect"
+      action_title="Disconnect"
+    else
+      action="connect"
+      action_title="Connect"
+    fi
+
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    jq -n \
+      --arg id "bt:$mac" \
+      --arg title "$name" \
+      --arg mac "$mac" \
+      --argjson connected "$connected" \
+      --arg action_title "$action_title" \
+      --arg command "bluetoothctl $action $mac" \
+      '{
+        id: $id,
+        kind: "bluetooth",
+        icon: (if $connected then "bluetooth-active" else "bluetooth" end),
+        title: $title,
+        subtitle: ($mac + " - " + (if $connected then "Connected" else "Disconnected" end)),
+        keywords: ["bluetooth", "bt", $title, $mac],
+        actions: [
+          {id: "toggle", title: $action_title, command: $command}
+        ]
+      }'
+  done <<<"$paired"
+  printf ']'
+}
+
+calculator_json() {
+  if ! have_cmd jq || ! have_cmd qalc; then
+    echo '[]'
+    return
+  fi
+
+  local expression="$query"
+  expression="${expression#"${expression%%[![:space:]]*}"}"
+  expression="${expression%"${expression##*[![:space:]]}"}"
+  if [ -z "$expression" ]; then
+    echo '[]'
+    return
+  fi
+
+  if ! grep -Eq '(^|[[:space:]])[0-9.]+|[+*/^=()%-]|[[:space:]](to|in)[[:space:]]' <<<"$expression"; then
+    echo '[]'
+    return
+  fi
+
+  local result
+  result="$(timeout 2 qalc -t "$expression" 2>/dev/null | head -n 1 || true)"
+  result="${result#"${result%%[![:space:]]*}"}"
+  result="${result%"${result##*[![:space:]]}"}"
+  if [ -z "$result" ]; then
+    echo '[]'
+    return
+  fi
+
+  jq -n \
+    --arg id "calculator:$expression" \
+    --arg title "$result" \
+    --arg subtitle "$expression" \
+    --arg expression "$expression" \
+    --arg copy_result "printf '%s' $(printf '%q' "$result") | wl-copy" \
+    --arg copy_input "printf '%s' $(printf '%q' "$expression") | wl-copy" \
+    '[{
+      id: $id,
+      kind: "calculator",
+      icon: "accessories-calculator",
+      title: $title,
+      subtitle: $subtitle,
+      keywords: ["calculator", "calc", $expression, $title],
+      actions: [
+        {id: "copy-result", title: "Copy Result", command: $copy_result},
+        {id: "copy-input", title: "Copy Input", command: $copy_input}
+      ]
+    }]'
+}
+
+case "$mode" in
+  apps) apps_json ;;
+  non-apps)
+    require_cmd jq
+    jq -s 'add' <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(prs_json) <(bluetooth_json)
+    ;;
+  actions) actions_json ;;
+  windows) windows_json ;;
+  states) states_json ;;
+  tabs) tabs_json ;;
+  prs) prs_json ;;
+  bluetooth) bluetooth_json ;;
+  keybinds) keybinds_json ;;
+  confirm-exit) confirm_exit_json ;;
+  calculator) calculator_json ;;
+  all)
+    require_cmd jq
+    jq -s 'add' <(apps_json) <(actions_json) <(windows_json) <(states_json) <(tabs_json) <(prs_json) <(bluetooth_json)
+    ;;
+esac

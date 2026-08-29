@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+libexec_dir="$bin_dir/../libexec/launcher"
+
+case "${1:-}" in
+  items) shift; exec "$libexec_dir/items" "$@" ;;
+  open-desktop) shift; exec "$libexec_dir/open-desktop" "$@" ;;
+  switch-firefox-tab) shift; exec "$libexec_dir/switch-firefox-tab" "$@" ;;
+esac
+
+mode="all"
+
+usage() {
+  cat <<'EOF'
+Usage: launcher [--all|--apps|--actions|--windows|--states|--tabs|--prs|--bluetooth|--keybinds|--confirm-exit] [--open|--toggle|--close|--ping]
+       launcher items [--all|--apps|--actions|--windows|--states|--tabs|--prs|--bluetooth|--keybinds|--confirm-exit|--calculator <query>]
+       launcher open-desktop <desktop-file-or-id>
+       launcher switch-firefox-tab <tabId> <windowId>
+
+Control the Quickshell launcher surface.
+EOF
+}
+
+verb="toggle"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --all) mode="all"; shift ;;
+    --apps) mode="apps"; shift ;;
+    --actions) mode="actions"; shift ;;
+    --windows) mode="windows"; shift ;;
+    --states) mode="states"; shift ;;
+    --tabs) mode="tabs"; shift ;;
+    --prs) mode="prs"; shift ;;
+    --bluetooth) mode="bluetooth"; shift ;;
+    --keybinds) mode="keybinds"; shift ;;
+    --confirm-exit) mode="confirm-exit"; shift ;;
+    --open) verb="open"; shift ;;
+    --toggle) verb="toggle"; shift ;;
+    --close) verb="close"; shift ;;
+    --ping) verb="ping"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 1 ;;
+  esac
+done
+
+case "$verb" in
+  open|toggle)
+    quickshell ipc call launcher "$verb" "$mode"
+    ;;
+  close|ping)
+    quickshell ipc call launcher "$verb"
+    ;;
+esac

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# "consume" only pulls the *next* (rightward) column in, with no mirrored "previous" version; on the
+# rightmost column, fall back to focusing the previous column and consuming from there, then restore focus.
+
+active_json="$(hyprctl activewindow -j)"
+active_addr="$(jq -r '.address // empty' <<<"$active_json")"
+[ -z "$active_addr" ] && exit 0
+
+active_x="$(jq -r '.at[0]' <<<"$active_json")"
+active_mon="$(jq -r '.monitor' <<<"$active_json")"
+
+clients="$(hyprctl clients -j)"
+
+has_next="$(jq -r --argjson x "$active_x" --argjson mon "$active_mon" '
+  [.[] | select(.monitor == $mon and .floating == false and .at[0] > $x)] | length > 0
+' <<<"$clients")"
+
+if [ "$has_next" = "true" ]; then
+  hyprctl dispatch 'hl.dsp.layout("consume")' >/dev/null
+  exit 0
+fi
+
+prev_addr="$(jq -r --argjson x "$active_x" --argjson mon "$active_mon" '
+  [.[] | select(.monitor == $mon and .floating == false and .at[0] < $x)]
+  | sort_by(-.at[0]) | .[0].address // empty
+' <<<"$clients")"
+
+[ -z "$prev_addr" ] && exit 0
+
+hyprctl dispatch "hl.dsp.focus({ window = \"address:$prev_addr\" })" >/dev/null
+hyprctl dispatch 'hl.dsp.layout("consume")' >/dev/null
+hyprctl dispatch "hl.dsp.focus({ window = \"address:$active_addr\" })" >/dev/null

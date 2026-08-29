@@ -1,0 +1,255 @@
+#!/usr/bin/env python3
+"""Linux port of hammerspoon's text_expander.lua, without adopting a
+third-party tool (espanso) or its own GUI/chooser -- user explicitly wants
+neither. Wayland doesn't allow global keystroke interception/injection from
+regular userspace apps the way macOS's Accessibility APIs do, so this reads
+raw keyboard events via evdev and injects the replacement via a synthetic
+uinput virtual keyboard, instead of Hammerspoon's CGEvent tap.
+
+No feedback loop by construction: this only reads from the real keyboard
+device node(s) present at startup, and injects through a *new* uinput
+device it creates itself, which was never in that read set.
+
+Usage:
+  text-expander              run the watcher daemon (systemd service)
+  text-expander --toggle     enable/disable expansion
+  text-expander --status     print enabled/disabled
+"""
+import argparse
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
+from datetime import datetime
+
+import evdev
+from evdev import UInput
+from evdev import ecodes as e
+
+STATE_DIR = os.path.expanduser("~/.local/state/text-expander")
+DISABLED_FLAG = os.path.join(STATE_DIR, "disabled")
+TRIGGERS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "text-expander-triggers.json")
+PERSONAL_TRIGGERS_FILE = os.path.expanduser("~/.config/text-expander/personal.json")
+
+# (unshifted, shifted) per keycode -- covers what the trigger set and its
+# static/dynamic replacements actually use (letters, digits, space, and the
+# punctuation appearing in lorem ipsum / dates / IPs). Assumes a US QWERTY
+# layout, matching this repo's en_US locale -- not layout-aware like a real
+# xkbcommon-backed implementation would be.
+KEY_CHAR_MAP = {
+    e.KEY_A: ("a", "A"), e.KEY_B: ("b", "B"), e.KEY_C: ("c", "C"), e.KEY_D: ("d", "D"),
+    e.KEY_E: ("e", "E"), e.KEY_F: ("f", "F"), e.KEY_G: ("g", "G"), e.KEY_H: ("h", "H"),
+    e.KEY_I: ("i", "I"), e.KEY_J: ("j", "J"), e.KEY_K: ("k", "K"), e.KEY_L: ("l", "L"),
+    e.KEY_M: ("m", "M"), e.KEY_N: ("n", "N"), e.KEY_O: ("o", "O"), e.KEY_P: ("p", "P"),
+    e.KEY_Q: ("q", "Q"), e.KEY_R: ("r", "R"), e.KEY_S: ("s", "S"), e.KEY_T: ("t", "T"),
+    e.KEY_U: ("u", "U"), e.KEY_V: ("v", "V"), e.KEY_W: ("w", "W"), e.KEY_X: ("x", "X"),
+    e.KEY_Y: ("y", "Y"), e.KEY_Z: ("z", "Z"),
+    e.KEY_1: ("1", "!"), e.KEY_2: ("2", "@"), e.KEY_3: ("3", "#"), e.KEY_4: ("4", "$"),
+    e.KEY_5: ("5", "%"), e.KEY_6: ("6", "^"), e.KEY_7: ("7", "&"), e.KEY_8: ("8", "*"),
+    e.KEY_9: ("9", "("), e.KEY_0: ("0", ")"),
+    e.KEY_SPACE: (" ", " "),
+    e.KEY_MINUS: ("-", "_"),
+    e.KEY_EQUAL: ("=", "+"),
+    e.KEY_COMMA: (",", "<"),
+    e.KEY_DOT: (".", ">"),
+    e.KEY_SLASH: ("/", "?"),
+    e.KEY_SEMICOLON: (";", ":"),
+    e.KEY_APOSTROPHE: ("'", '"'),
+    e.KEY_GRAVE: ("`", "~"),
+    e.KEY_BACKSLASH: ("\\", "|"),
+    e.KEY_LEFTBRACE: ("[", "{"),
+    e.KEY_RIGHTBRACE: ("]", "}"),
+}
+CHAR_TO_KEY = {}
+for _kc, (_lo, _hi) in KEY_CHAR_MAP.items():
+    CHAR_TO_KEY.setdefault(_lo, (_kc, False))
+    if _hi != _lo:
+        CHAR_TO_KEY.setdefault(_hi, (_kc, True))
+
+RESET_KEYS = {e.KEY_ENTER, e.KEY_KPENTER, e.KEY_TAB, e.KEY_ESC, e.KEY_UP, e.KEY_DOWN, e.KEY_LEFT, e.KEY_RIGHT}
+MODIFIER_KEYS = {
+    e.KEY_LEFTCTRL, e.KEY_RIGHTCTRL, e.KEY_LEFTALT, e.KEY_RIGHTALT,
+    e.KEY_LEFTMETA, e.KEY_RIGHTMETA,
+}
+
+
+def is_enabled():
+    return not os.path.isfile(DISABLED_FLAG)
+
+
+def notify(msg):
+    try:
+        subprocess.run(["notify-send", "Text Expander", msg], check=False, timeout=2)
+    except Exception:
+        pass
+
+
+def toggle():
+    os.makedirs(STATE_DIR, exist_ok=True)
+    if is_enabled():
+        open(DISABLED_FLAG, "w").close()
+        notify("Text expansion disabled")
+    else:
+        os.remove(DISABLED_FLAG)
+        notify("Text expansion enabled")
+
+
+def load_triggers():
+    with open(TRIGGERS_FILE) as f:
+        triggers = json.load(f)
+    if os.path.isfile(PERSONAL_TRIGGERS_FILE):
+        with open(PERSONAL_TRIGGERS_FILE) as f:
+            triggers.update(json.load(f))
+    return triggers
+
+
+def resolve(entry):
+    if isinstance(entry, str):
+        return entry
+    kind = entry.get("type")
+    try:
+        if kind == "date":
+            return datetime.now().strftime(entry.get("value", ""))
+        if kind == "unixtime":
+            return str(int(time.time()))
+        if kind == "http":
+            # stdlib only -- no curl/external process needed for a plain GET.
+            with urllib.request.urlopen(entry.get("value", ""), timeout=5) as resp:
+                return resp.read().decode().strip()
+        if kind == "localip":
+            # Local IPv4 without shelling out to `ip`/`iproute2`: connecting a
+            # UDP socket doesn't actually send packets, just makes the kernel
+            # pick the real outbound interface/address for that route.
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("8.8.8.8", 80))
+                return s.getsockname()[0]
+    except Exception:
+        return ""
+    return ""
+
+
+def find_keyboards():
+    keyboards = []
+    for path in evdev.list_devices():
+        dev = evdev.InputDevice(path)
+        caps = dev.capabilities().get(e.EV_KEY, [])
+        if e.KEY_A in caps and e.KEY_SPACE in caps:
+            keyboards.append(dev)
+    return keyboards
+
+
+class Expander:
+    def __init__(self, triggers):
+        self.triggers = triggers
+        self.max_len = max(len(t) for t in triggers)
+        self.trigger_lengths = sorted({len(t) for t in triggers}, reverse=True)
+        self.buffer = ""
+        self.shift = False
+        self.ui = UInput()
+
+    def _tap(self, keycode, shift=False):
+        if shift:
+            self.ui.write(e.EV_KEY, e.KEY_LEFTSHIFT, 1)
+            self.ui.syn()
+        self.ui.write(e.EV_KEY, keycode, 1)
+        self.ui.syn()
+        self.ui.write(e.EV_KEY, keycode, 0)
+        self.ui.syn()
+        if shift:
+            self.ui.write(e.EV_KEY, e.KEY_LEFTSHIFT, 0)
+            self.ui.syn()
+        time.sleep(0.005)
+
+    def backspace(self, n):
+        for _ in range(n):
+            self._tap(e.KEY_BACKSPACE)
+
+    def type_text(self, text):
+        for ch in text:
+            mapping = CHAR_TO_KEY.get(ch)
+            if not mapping:
+                continue
+            keycode, shift = mapping
+            self._tap(keycode, shift)
+
+    def handle_key(self, keycode, value):
+        if keycode in MODIFIER_KEYS and value != 0:
+            # A held modifier (other than shift, e.g. a real shortcut) means
+            # this isn't plain typing -- matches the original's flags check.
+            self.buffer = ""
+            return
+        if keycode in (e.KEY_LEFTSHIFT, e.KEY_RIGHTSHIFT):
+            self.shift = value != 0
+            return
+        if value == 0:
+            return  # key release, nothing else to do
+        if not is_enabled():
+            return
+        if keycode == e.KEY_BACKSPACE:
+            self.buffer = self.buffer[:-1]
+            return
+        if keycode in RESET_KEYS:
+            self.buffer = ""
+            return
+        mapping = KEY_CHAR_MAP.get(keycode)
+        if not mapping:
+            return
+        ch = mapping[1] if self.shift else mapping[0]
+        self.buffer = (self.buffer + ch)[-self.max_len :]
+        for trigger_len in self.trigger_lengths:
+            if len(self.buffer) < trigger_len:
+                continue
+            suffix = self.buffer[-trigger_len:]
+            if suffix in self.triggers:
+                replacement = resolve(self.triggers[suffix])
+                self.buffer = ""
+                self.backspace(trigger_len)
+                self.type_text(replacement)
+                break
+
+
+def run_daemon():
+    triggers = load_triggers()
+    expander = Expander(triggers)
+    keyboards = find_keyboards()
+    if not keyboards:
+        print("text-expander: no keyboard devices found", file=sys.stderr)
+        sys.exit(1)
+
+    import selectors
+
+    selector = selectors.DefaultSelector()
+    for kb in keyboards:
+        selector.register(kb, selectors.EVENT_READ)
+
+    while True:
+        for key, _ in selector.select():
+            device = key.fileobj
+            try:
+                for ev in device.read():
+                    if ev.type == e.EV_KEY:
+                        expander.handle_key(ev.code, ev.value)
+            except OSError:
+                selector.unregister(device)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--toggle", action="store_true")
+    parser.add_argument("--status", action="store_true")
+    args = parser.parse_args()
+
+    if args.toggle:
+        toggle()
+        return
+    if args.status:
+        print("enabled" if is_enabled() else "disabled")
+        return
+    run_daemon()
+
+
+if __name__ == "__main__":
+    main()

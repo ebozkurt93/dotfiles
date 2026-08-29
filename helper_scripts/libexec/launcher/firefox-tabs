@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Emits launcher items for open Firefox tabs via the native-messaging bridge (firefox/native-host/*.py); wired in as LAUNCHER_TABS_COMMAND.
+
+bridge_send="$HOME/dotfiles/firefox/native-host/bridge_send.py"
+
+command -v python3 >/dev/null 2>&1 || { echo '[]'; exit 0; }
+[ -f "$bridge_send" ] || { echo '[]'; exit 0; }
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+printf '{"type": "getTabs"}' >"$tmp"
+
+result="$(python3 "$bridge_send" "$tmp" 2>/dev/null || true)"
+[ -n "$result" ] || { echo '[]'; exit 0; }
+
+echo "$result" | jq --arg home "$HOME" '
+  .tabs? // []
+  | map(select(.tabId and .windowId))
+  | map({
+      id: ("tab:" + (.tabId | tostring) + ":" + (.windowId | tostring)),
+      kind: "tab",
+      icon: "browser",
+      iconUrl: (.favIconUrl // ""),
+      title: (if (.title // "") != "" then .title else .url end),
+      subtitle: ("Window " + (.windowIndex | tostring) + " Tab " + (.tabIndex | tostring) + "  " + .url),
+      keywords: [(.title // ""), (.url // "")],
+      actions: [
+        {
+          id: "switch",
+          title: "Switch to Tab",
+          command: ($home + "/bin/launcher switch-firefox-tab " + (.tabId | tostring) + " " + (.windowId | tostring))
+        }
+      ]
+    })
+' 2>/dev/null || echo '[]'
