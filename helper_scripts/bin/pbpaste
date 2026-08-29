@@ -1,6 +1,8 @@
-#!/bin/bash
-if is_macos; then
+#!/usr/bin/env bash
+if [ "$(uname)" = "Darwin" ]; then
   /usr/bin/pbpaste
+elif [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
+  wl-paste --no-newline
 else
   xclip -selection clipboard -o
 fi
