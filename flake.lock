@@ -144,12 +144,33 @@
         "type": "github"
       }
     },
+    "quickshell": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787224109,
+        "narHash": "sha256-stV8Dxkrry6AbK8unyEjLNeDZcQtNE1TCgmjc8hdcxw=",
+        "owner": "quickshell-mirror",
+        "repo": "quickshell",
+        "rev": "9f807554e106f6b0670e60ead82b63f3c0c2ac26",
+        "type": "github"
+      },
+      "original": {
+        "owner": "quickshell-mirror",
+        "repo": "quickshell",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "bw-nixpkgs": "bw-nixpkgs",
         "home-manager": "home-manager",
         "llm-agents-nix": "llm-agents-nix",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_2",
+        "quickshell": "quickshell"
       }
     },
     "systems": {
