@@ -6,6 +6,37 @@ import (
 	"time"
 )
 
+func TestParseNotificationConfig(t *testing.T) {
+	cases := []struct {
+		name       string
+		value      string
+		wantSound  bool
+		wantBanner bool
+		wantMode   string
+		wantOK     bool
+	}{
+		{name: "empty defaults to all", value: "", wantSound: true, wantBanner: true, wantMode: "all", wantOK: true},
+		{name: "all", value: "all", wantSound: true, wantBanner: true, wantMode: "all", wantOK: true},
+		{name: "banner", value: "banner", wantBanner: true, wantMode: "banner", wantOK: true},
+		{name: "sound", value: "sound", wantSound: true, wantMode: "sound", wantOK: true},
+		{name: "off", value: "off", wantMode: "off", wantOK: true},
+		{name: "trim and fold case", value: " Banner\n", wantBanner: true, wantMode: "banner", wantOK: true},
+		{name: "invalid falls back to all", value: "quiet", wantSound: true, wantBanner: true, wantMode: "all", wantOK: false},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, ok := parseNotificationConfig(c.value)
+			if ok != c.wantOK {
+				t.Fatalf("ok = %v, want %v", ok, c.wantOK)
+			}
+			if got.Sound != c.wantSound || got.Banner != c.wantBanner || got.Mode != c.wantMode {
+				t.Fatalf("config = %+v, want sound=%v banner=%v mode=%q", got, c.wantSound, c.wantBanner, c.wantMode)
+			}
+		})
+	}
+}
+
 func TestBuildPersistedAgentStatus(t *testing.T) {
 	agents := map[string]AgentState{
 		"%1": {Kind: AgentClaude, Status: AgentStatusWaiting},
@@ -32,6 +63,89 @@ func TestBuildPersistedAgentStatus(t *testing.T) {
 	}
 	if !byID["%2"].Unseen || byID["%2"].UnseenSince != "2026-01-01T00:00:00Z" {
 		t.Fatalf("expected %%2 to be unseen with a formatted timestamp, got %+v", byID["%2"])
+	}
+}
+
+func TestWatchTickNotificationConfigControlsDeliveryButMarksUnseen(t *testing.T) {
+	cases := []struct {
+		name       string
+		cfg        notificationConfig
+		wantSound  int
+		wantBanner int
+	}{
+		{name: "all", cfg: notificationConfig{Sound: true, Banner: true, Mode: "all"}, wantSound: 1, wantBanner: 1},
+		{name: "banner", cfg: notificationConfig{Banner: true, Mode: "banner"}, wantBanner: 1},
+		{name: "sound", cfg: notificationConfig{Sound: true, Mode: "sound"}, wantSound: 1},
+		{name: "off", cfg: notificationConfig{Mode: "off"}},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("HOME", t.TempDir())
+
+			fake := &fakeRunner{respond: func(args []string) (string, error) {
+				joined := strings.Join(args, " ")
+				switch {
+				case joined == "list-sessions -F #{session_id}\t#{session_name}":
+					return "$0\twork\n", nil
+				case joined == "list-windows -a -F #{window_id}\t#{session_id}\t#{window_index}\t#{window_name}\t#{window_active}":
+					return "@1\t$0\t0\teditor\t1\n", nil
+				case joined == "list-panes -a -F #{pane_id}\t#{window_id}\t#{session_id}\t#{pane_index}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_title}\t#{pane_pid}\t#{pane_active}":
+					return "%1\t@1\t$0\t0\t/tmp\tclaude\tBuild setting\t100\t1\n", nil
+				case joined == "capture-pane -p -e -J -t %1":
+					return "Welcome back\n", nil
+				case joined == "list-clients -F #{client_tty}":
+					return "", nil
+				default:
+					return "", nil
+				}
+			}}
+			prevRunner := tmuxRunner
+			tmuxRunner = fake
+			t.Cleanup(func() { tmuxRunner = prevRunner })
+
+			prevLoadConfig := loadNotificationConfigFunc
+			prevSound := notifySoundFunc
+			prevBanner := notifyBannerFunc
+			t.Cleanup(func() {
+				loadNotificationConfigFunc = prevLoadConfig
+				notifySoundFunc = prevSound
+				notifyBannerFunc = prevBanner
+			})
+
+			loadNotificationConfigFunc = func() (notificationConfig, error) {
+				return c.cfg, nil
+			}
+			soundCalls := 0
+			bannerCalls := 0
+			notifySoundFunc = func() (string, error) {
+				soundCalls++
+				return "test-sound", nil
+			}
+			notifyBannerFunc = func(title, subtitle, body, execute string) (string, error) {
+				bannerCalls++
+				return "test-banner", nil
+			}
+
+			agents := map[string]AgentState{
+				"%1": {
+					Kind:            AgentClaude,
+					Status:          AgentStatusBusy,
+					LastContent:     "Welcome back\n",
+					StableSince:     time.Now().Add(-AgentIdleDebounce),
+					KindConfirmedAt: time.Now(),
+					PID:             "100",
+				},
+			}
+
+			got, _ := watchTick(agents, map[string]probeRecord{}, 1)
+			if soundCalls != c.wantSound || bannerCalls != c.wantBanner {
+				t.Fatalf("delivery calls = sound:%d banner:%d, want sound:%d banner:%d", soundCalls, bannerCalls, c.wantSound, c.wantBanner)
+			}
+			if !got["%1"].Unseen {
+				t.Fatalf("expected pane to still be marked unseen")
+			}
+		})
 	}
 }
 

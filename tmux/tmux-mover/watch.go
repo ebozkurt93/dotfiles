@@ -156,11 +156,19 @@ func watchTick(agents map[string]AgentState, probedNonAgents map[string]probeRec
 			next.UnseenSince = now
 			title, subtitle, body := agentTransitionNotification(next, pane, sessionByID, windowByID)
 			watchLogger.Printf("watch-agents: tick %d: NOTIFY pane %s: %q / %q / %q", tickCount, paneID, title, subtitle, body)
-			if soundTool, soundErr := notifySound(); soundErr != nil {
-				watchLogger.Printf("watch-agents: tick %d: notifySound (%s) failed for pane %s: %v", tickCount, soundTool, paneID, soundErr)
+			cfg, cfgErr := loadNotificationConfigFunc()
+			if cfgErr != nil {
+				watchLogger.Printf("watch-agents: tick %d: notification config failed, using %s: %v", tickCount, cfg.Mode, cfgErr)
 			}
-			if bannerTool, bannerErr := notifyBanner(title, subtitle, body, tmuxJumpCommand(pane)); bannerErr != nil {
-				watchLogger.Printf("watch-agents: tick %d: notifyBanner (%s) failed for pane %s: %v", tickCount, bannerTool, paneID, bannerErr)
+			if cfg.Sound {
+				if soundTool, soundErr := notifySoundFunc(); soundErr != nil {
+					watchLogger.Printf("watch-agents: tick %d: notifySound (%s) failed for pane %s: %v", tickCount, soundTool, paneID, soundErr)
+				}
+			}
+			if cfg.Banner {
+				if bannerTool, bannerErr := notifyBannerFunc(title, subtitle, body, tmuxJumpCommand(pane)); bannerErr != nil {
+					watchLogger.Printf("watch-agents: tick %d: notifyBanner (%s) failed for pane %s: %v", tickCount, bannerTool, paneID, bannerErr)
+				}
 			}
 		}
 

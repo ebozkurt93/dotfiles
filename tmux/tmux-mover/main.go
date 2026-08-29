@@ -47,6 +47,10 @@ Usage:
                              does its own live detection independently and
                              doesn't require this to be running.
                                $ tmux-mover --watch-agents &
+                             Notification delivery is controlled live through
+                             tmux option @tmux-mover-notify:
+                               $ tmux set -g @tmux-mover-notify off
+                             Values: all (default), banner, sound, off.
 
   tmux-mover --agents-status One-line human-readable summary of AI-CLI pane
                              status across all tmux sessions. Prefers the

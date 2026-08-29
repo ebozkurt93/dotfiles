@@ -6,6 +6,48 @@ import (
 	"strings"
 )
 
+const tmuxMoverNotifyOption = "@tmux-mover-notify"
+
+type notificationConfig struct {
+	Sound  bool
+	Banner bool
+	Mode   string
+}
+
+func parseNotificationConfig(value string) (notificationConfig, bool) {
+	mode := strings.ToLower(strings.TrimSpace(value))
+	switch mode {
+	case "", "all":
+		return notificationConfig{Sound: true, Banner: true, Mode: "all"}, true
+	case "sound":
+		return notificationConfig{Sound: true, Mode: "sound"}, true
+	case "banner":
+		return notificationConfig{Banner: true, Mode: "banner"}, true
+	case "off":
+		return notificationConfig{Mode: "off"}, true
+	default:
+		return notificationConfig{Sound: true, Banner: true, Mode: "all"}, false
+	}
+}
+
+func loadNotificationConfig() (notificationConfig, error) {
+	out, err := tmuxOutput("show-option", "-gqv", tmuxMoverNotifyOption)
+	if err != nil {
+		return notificationConfig{Sound: true, Banner: true, Mode: "all"}, err
+	}
+	cfg, ok := parseNotificationConfig(out)
+	if !ok {
+		return cfg, fmt.Errorf("invalid %s value %q (expected all, banner, sound, or off)", tmuxMoverNotifyOption, strings.TrimSpace(out))
+	}
+	return cfg, nil
+}
+
+var (
+	loadNotificationConfigFunc = loadNotificationConfig
+	notifySoundFunc            = notifySound
+	notifyBannerFunc           = notifyBanner
+)
+
 // notifyBanner shows an OS notification banner with title/subtitle/body, so
 // an agent state change is visible even when the machine is muted. All three
 // are passed as argv to the underlying tool rather than interpolated into a
