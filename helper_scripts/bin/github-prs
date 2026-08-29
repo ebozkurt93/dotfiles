@@ -52,9 +52,10 @@ run_gh_with_query() {
   local query="$2"
   local json_format="$3"
 
-  # Query files are personal config and historically used gh/xargs shell-word
-  # syntax. xargs preserves that behavior without eval.
-  printf 'gh %s %s --json %s\n' "$subcommand" "$query" "$json_format" | xargs
+  # Query files are personal config and historically relied on shell word
+  # splitting, so subcommand/query are intentionally left unquoted here.
+  # shellcheck disable=SC2086
+  gh $subcommand $query --json "$json_format"
 }
 
 prs_json() {
@@ -141,6 +142,17 @@ bitbar_menu() {
   if [ "$length" != 0 ]; then
     jq -r --arg gh_username "${GH_USERNAME:-}" --arg style "$style" '
       .[]
+      | (
+          [ (.reviews // [] | map(select(.author.login == $gh_username)) | .[].submittedAt),
+            (.comments // [] | map(select(.author.login == $gh_username)) | .[].createdAt)
+          ] | if length > 0 then max else null end
+        ) as $my_last
+      | (
+          [ (.commits // [] | .[].committedDate),
+            (.comments // [] | map(select(.author.login != $gh_username)) | .[].createdAt),
+            (.reviews // [] | map(select(.author.login != $gh_username)) | .[].submittedAt)
+          ] | if length > 0 then max else null end
+        ) as $others_last
       | {
           name: ((.headRepository.name + "#" + (.number | tostring)) | gsub("[\t\n]"; " ")),
           title: (.title | gsub("[\t\n]"; " ")),
@@ -156,7 +168,10 @@ bitbar_menu() {
           mergeable: (if .mergeable == "MERGEABLE" then "" else "Not mergeable" end),
           checks: (.statusCheckRollup | '"$checks_status_filter"'),
           url: .url,
-          color: (if .author.login == $gh_username then " color=teal " elif .author.login == "app/dependabot" then " color=dimgray " else "" end)
+          color: (if .author.login == "app/dependabot" then " color=dimgray "
+                  elif .author.login == $gh_username then " color=teal "
+                  elif ($my_last != null and $others_last != null and $others_last > $my_last) then " color=mediumpurple "
+                  else "" end)
         }
       | @base64
     ' <<<"$content" | while IFS= read -r row; do
