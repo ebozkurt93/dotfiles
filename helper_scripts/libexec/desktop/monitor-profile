@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Thin wrapper around the hyprmoncfg CLI for the "Open Editor" flow; the bar widget itself talks to hyprmoncfgd's socket directly.
+
+action="${1:-status}"
+[ "$#" -gt 0 ] && shift
+
+case "$action" in
+  status)
+    hyprmoncfg status --json
+    ;;
+  list)
+    hyprmoncfg profiles
+    ;;
+  apply)
+    name="${1:-}"
+    [ -n "$name" ] || { echo "Usage: monitor-profile apply <name>" >&2; exit 1; }
+    hyprmoncfg apply "$name" --confirm-timeout 0
+    ;;
+  *)
+    echo "Usage: monitor-profile [status|list|apply <name>]" >&2
+    exit 1
+    ;;
+esac

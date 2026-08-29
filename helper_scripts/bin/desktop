@@ -6,7 +6,7 @@ libexec_dir="$bin_dir/../libexec/desktop"
 
 usage() {
   cat <<'EOF'
-Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window|rowresize|mirror-toggle|reconnect-trackpad|text-expander|brightness-ddc|screenshot|notifications-privacy|notifications-dnd|notifications-history|notification-times-watcher|record>
+Usage: desktop <lock|lock-preview|raise-or-launch|keybinds|swap-window|stack-window|rowresize|mirror-toggle|reconnect-trackpad|text-expander|brightness-ddc|screenshot|notifications-privacy|notifications-dnd|notifications-history|notification-times-watcher|record|monitor-profile|monitor-profile-editor>
 
 Control desktop-level Hyprland/Quickshell surfaces.
 EOF
@@ -33,6 +33,8 @@ case "$cmd" in
   notifications-history) exec "$libexec_dir/notifications-history" "$@" ;;
   notification-times-watcher) exec "$libexec_dir/notification-times-watcher" "$@" ;;
   record) exec "$libexec_dir/record" "$@" ;;
+  monitor-profile) exec "$libexec_dir/monitor-profile" "$@" ;;
+  monitor-profile-editor) exec "$libexec_dir/monitor-profile-editor" "$@" ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 1 ;;
 esac

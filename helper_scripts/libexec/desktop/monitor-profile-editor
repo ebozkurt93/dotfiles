@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Raises or launches the hyprmoncfg TUI in a floating Ghostty window, matched by title since Ghostty's single-instance --class is ignored per-invocation.
+
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+  setsid ghostty --title=hyprmoncfg -e hyprmoncfg >/dev/null 2>&1 &
+  exit 0
+fi
+
+address="$(hyprctl clients -j | jq -r '[.[] | select(.title == "hyprmoncfg")] | sort_by(.focusHistoryID) | .[0].address // empty')"
+
+if [ -n "$address" ]; then
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$address\" })" >/dev/null 2>&1 \
+    || hyprctl dispatch focuswindow "address:$address" >/dev/null
+else
+  setsid ghostty --title=hyprmoncfg -e hyprmoncfg >/dev/null 2>&1 &
+fi

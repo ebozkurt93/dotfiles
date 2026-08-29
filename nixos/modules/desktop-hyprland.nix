@@ -128,4 +128,15 @@ in {
       Restart = "on-failure";
     };
   };
+
+  # Watches monitor hotplug/lid/resume and applies the best matching ~/.config/hyprmoncfg/profiles/ profile.
+  systemd.user.services.hyprmoncfgd = {
+    description = "hyprmoncfg monitor-profile daemon";
+    wantedBy = ["default.target"];
+    path = [config.programs.hyprland.package];
+    serviceConfig = {
+      ExecStart = "${pkgs.hyprmoncfg}/bin/hyprmoncfgd";
+      Restart = "on-failure";
+    };
+  };
 }

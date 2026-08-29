@@ -174,6 +174,16 @@ hl.bind(mainMod .. " + ALT + b", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-
 hl.bind(mainMod .. " + ALT + o", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch md.Obsidian obsidian"), { description = "Jump to (or launch) Obsidian" })
 hl.bind(mainMod .. " + ALT + f", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch FreeCAD freecad"), { description = "Jump to (or launch) FreeCAD" })
 hl.bind(mainMod .. " + ALT + c", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch org.gnome.Calendar gnome-calendar"), { description = "Jump to (or launch) Calendar" })
+-- Matched by title, not class -- Ghostty is single-instance, so a second invocation's --class is ignored; see monitor-profile-editor.
+hl.bind(mainMod .. " + ALT + m", hl.dsp.exec_cmd(home .. "/bin/desktop monitor-profile-editor"), { description = "Jump to (or launch) hyprmoncfg layout editor" })
+
+-- Floats/centers the hyprmoncfg TUI launched by monitor-profile-editor above.
+hl.window_rule({
+    name  = "hyprmoncfg-editor",
+    match = { title = "^hyprmoncfg$" },
+    float = true,
+    center = 1,
+})
 
 -- Move focus to / move the focused window to a neighboring monitor,
 -- regardless of whether monitors are arranged side-by-side or stacked.
@@ -215,3 +225,7 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, descr
 hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd(home .. "/bin/launcher --keybinds"), { description = "Show keybindings" })
 
 dofile(home .. "/.config/hypr/media-keys.lua")
+
+-- hyprmoncfg owns this line; errors until `hyprmoncfg` creates a first profile.
+-- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
+dofile(os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua")

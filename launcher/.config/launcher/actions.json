@@ -112,6 +112,28 @@
     ]
   },
   {
+    "id": "action:monitor-layout-open",
+    "kind": "tool",
+    "icon": "video-display",
+    "title": "Open Monitor Layout",
+    "subtitle": "Show the monitor profile/layout panel",
+    "keywords": ["monitor", "display", "layout", "hyprmoncfg", "profile", "panel"],
+    "actions": [
+      {"id": "run", "title": "Open", "command": "quickshell ipc call monitorProfile open"}
+    ]
+  },
+  {
+    "id": "action:monitor-layout-editor",
+    "kind": "tool",
+    "icon": "video-display",
+    "title": "Open Monitor Layout Editor",
+    "subtitle": "hyprmoncfg TUI: layout, brightness, color/HDR, workspaces",
+    "keywords": ["monitor", "display", "layout", "hyprmoncfg", "editor", "brightness", "color", "hdr", "workspace"],
+    "actions": [
+      {"id": "run", "title": "Open", "command": "~/bin/desktop monitor-profile-editor"}
+    ]
+  },
+  {
     "id": "action:notifications-privacy",
     "kind": "setting",
     "icon": "notification-symbolic",

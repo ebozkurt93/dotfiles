@@ -110,6 +110,11 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
 
+        MonitorProfile {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         Weather {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter

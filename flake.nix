@@ -100,6 +100,12 @@
           {
             nixpkgs.config.allowUnfree = true; # obsidian
             nixpkgs.config.input-fonts.acceptLicense = true; # Input Mono font
+            # hyprmoncfg isn't in nixpkgs yet (open PR #552223); see nixos/modules/pkgs/hyprmoncfg.nix.
+            nixpkgs.overlays = [
+              (final: prev: {
+                hyprmoncfg = prev.callPackage ./nixos/modules/pkgs/hyprmoncfg.nix {};
+              })
+            ];
           }
           {
             home-manager.useGlobalPkgs = true;
