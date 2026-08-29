@@ -11,12 +11,14 @@
 
   time.timeZone = "Europe/Stockholm";
   i18n.defaultLocale = "en_US.UTF-8";
+  # avoids locale-not-found warnings for SSH clients using other locales
+  i18n.supportedLocales = ["all"];
 
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
   users.users.erdembozkurt = {
     isNormalUser = true;
-    extraGroups = ["wheel" "docker" "networkmanager"];
+    extraGroups = ["wheel" "docker" "networkmanager" "video"];
     shell = pkgs.zsh;
     initialPassword = "changeme";
     openssh.authorizedKeys.keys = [

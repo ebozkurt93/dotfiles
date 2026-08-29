@@ -38,6 +38,16 @@ in {
     extraPortals = [pkgs.xdg-desktop-portal-hyprland];
   };
 
+  xdg.mime.enable = true;
+  xdg.mime.defaultApplications = {
+    "image/png" = "imv.desktop";
+    "image/jpeg" = "imv.desktop";
+    "image/gif" = "imv.desktop";
+    "image/webp" = "imv.desktop";
+    "image/bmp" = "imv.desktop";
+    "image/svg+xml" = "imv.desktop";
+  };
+
   services.greetd = {
     enable = true;
     settings.default_session = {

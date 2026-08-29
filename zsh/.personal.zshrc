@@ -884,4 +884,6 @@ __ghostty_change_setting $1 $2
 
 if is_macos; then
   source $HOME/.macos.zshrc
+else
+  source $HOME/.linux.zshrc
 fi
