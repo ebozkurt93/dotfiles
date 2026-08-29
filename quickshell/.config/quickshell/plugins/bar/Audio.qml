@@ -24,14 +24,56 @@ Item {
         return list
     }
 
+    readonly property var sourceNodes: {
+        var list = []
+        for (var i = 0; i < nodes.length; i++) {
+            var n = nodes[i]
+            // type is a plain ordinal, not a bitmask -- strict equality, not `&`.
+            if (n && !n.isStream && n.audio
+                && (n.type === PwNodeType.AudioSource || n.type === PwNodeType.AudioDuplex)) list.push(n)
+        }
+        return list
+    }
+
+    // Playback streams only -- per-app mic gain isn't a thing either OS mixer exposes.
+    readonly property var appStreamNodes: {
+        var list = []
+        for (var i = 0; i < nodes.length; i++) {
+            var n = nodes[i]
+            if (n && n.isStream && n.audio && n.type === PwNodeType.AudioOutStream) list.push(n)
+        }
+        return list
+    }
+
     readonly property real volume: sink && sink.audio ? sink.audio.volume : 0
     readonly property bool muted: sink && sink.audio ? sink.audio.muted : false
     readonly property bool hasInput: !!(source && source.audio)
     readonly property bool inputMuted: hasInput ? source.audio.muted : false
+    readonly property real inputVolume: hasInput ? source.audio.volume : 0
 
     // PwNode.audio is inert until the node is tracked here.
     PwObjectTracker { objects: root.sinkNodes }
-    PwObjectTracker { objects: root.source ? [root.source] : [] }
+    PwObjectTracker { objects: root.sourceNodes }
+    PwObjectTracker { objects: root.appStreamNodes }
+
+    IpcHandler {
+        target: "audio"
+
+        function open(): string {
+            root.popupOpen = true
+            return "ok"
+        }
+
+        function close(): string {
+            root.popupOpen = false
+            return "ok"
+        }
+
+        function toggle(): string {
+            root.popupOpen = !root.popupOpen
+            return "ok"
+        }
+    }
 
     function volumeIcon() {
         if (!sink || !sink.audio) return "󰸈"
@@ -55,9 +97,34 @@ Item {
         if (source && source.audio) source.audio.muted = !source.audio.muted
     }
 
+    function setInputVolume(v) {
+        if (!source || !source.audio) return
+        source.audio.volume = Math.max(0, Math.min(1, v))
+    }
+
+    function setAppVolume(node, v) {
+        if (!node || !node.audio) return
+        node.audio.volume = Math.max(0, Math.min(1, v))
+    }
+
+    function toggleAppMute(node) {
+        if (node && node.audio) node.audio.muted = !node.audio.muted
+    }
+
+    function appLabel(node) {
+        if (!node) return ""
+        var props = node.properties || {}
+        return props["application.name"] || nodeLabel(node)
+    }
+
     function setDefaultSink(node) {
         if (!node) return
         Pipewire.preferredDefaultAudioSink = node
+    }
+
+    function setDefaultSource(node) {
+        if (!node) return
+        Pipewire.preferredDefaultAudioSource = node
     }
 
     function nodeLabel(node) {
@@ -289,9 +356,10 @@ Item {
                 }
 
                 Item {
+                    id: micRow
                     visible: root.hasInput
                     width: parent.width
-                    height: Math.max(micIcon.implicitHeight, micLabel.implicitHeight, micSwitch.height)
+                    height: Math.max(micIcon.implicitHeight, micLabel.implicitHeight, micPercent.implicitHeight, micSwitch.height)
 
                     Text {
                         id: micIcon
@@ -307,9 +375,21 @@ Item {
                         anchors.left: micIcon.right
                         anchors.leftMargin: 8
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Microphone"
+                        text: root.nodeLabel(root.source)
                         color: Commons.Color.launcher.text
                         font.pixelSize: 13
+                        elide: Text.ElideRight
+                        width: parent.width - micIcon.width - 8 - micPercent.implicitWidth - 8 - micSwitch.width - 8
+                    }
+
+                    Text {
+                        id: micPercent
+                        anchors.right: micSwitch.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Math.round(root.inputVolume * 100) + "%"
+                        color: Commons.Color.launcher.textMuted
+                        font.pixelSize: 11
                     }
 
                     Rectangle {
@@ -337,6 +417,189 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: root.toggleInputMute()
+                        }
+                    }
+                }
+
+                Item {
+                    id: inputVolumeSliderRow
+                    visible: root.hasInput
+                    width: parent.width
+                    height: 20
+                    opacity: root.inputMuted ? 0.5 : 1.0
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 6
+                        radius: 3
+                        color: Commons.Color.launcher.cardBorder
+
+                        Rectangle {
+                            width: parent.width * Math.max(0, Math.min(1, root.inputVolume))
+                            height: parent.height
+                            radius: 3
+                            color: Commons.Color.launcher.selection
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onPressed: function(mouse) { root.setInputVolume(mouse.x / width) }
+                        onPositionChanged: function(mouse) { if (pressed) root.setInputVolume(mouse.x / width) }
+                    }
+                }
+
+                Text {
+                    visible: root.hasInput
+                    width: parent.width
+                    text: "INPUT"
+                    color: Commons.Color.launcher.textMuted
+                    font.pixelSize: 10
+                }
+
+                Repeater {
+                    model: root.hasInput ? root.sourceNodes : []
+
+                    Rectangle {
+                        id: sourceRow
+                        required property var modelData
+
+                        readonly property bool isActive: root.source && modelData.id === root.source.id
+
+                        width: parent ? parent.width : 0
+                        height: sourceInner.implicitHeight + 12
+                        radius: 6
+                        color: sourceMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+
+                        Row {
+                            id: sourceInner
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.leftMargin: 6
+                            anchors.rightMargin: 6
+                            spacing: 8
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "󰍬"
+                                color: sourceRow.isActive ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
+                                font.pixelSize: 16
+                            }
+
+                            Text {
+                                width: parent.width - 24
+                                text: root.nodeLabel(sourceRow.modelData)
+                                color: Commons.Color.launcher.text
+                                font.pixelSize: 13
+                                font.bold: sourceRow.isActive
+                                elide: Text.ElideRight
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        MouseArea {
+                            id: sourceMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: root.setDefaultSource(sourceRow.modelData)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    visible: root.appStreamNodes.length > 0
+                    width: parent.width
+                    height: 1
+                    color: Commons.Color.launcher.cardBorder
+                }
+
+                Text {
+                    visible: root.appStreamNodes.length > 0
+                    width: parent.width
+                    text: "APPS"
+                    color: Commons.Color.launcher.textMuted
+                    font.pixelSize: 10
+                }
+
+                Repeater {
+                    model: root.appStreamNodes
+
+                    Column {
+                        id: appRow
+                        required property var modelData
+                        width: parent ? parent.width : 0
+                        spacing: 4
+
+                        readonly property real appVolume: modelData.audio ? modelData.audio.volume : 0
+                        readonly property bool appMuted: modelData.audio ? modelData.audio.muted : false
+
+                        Item {
+                            width: parent.width
+                            height: Math.max(appIcon.implicitHeight, appNameText.implicitHeight, appPercent.implicitHeight)
+
+                            Text {
+                                id: appIcon
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: appRow.appMuted ? "󰝟" : "󰎈"
+                                color: appRow.appMuted ? Commons.Color.launcher.textMuted : Commons.Color.launcher.text
+                                font.pixelSize: 14
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: root.toggleAppMute(appRow.modelData)
+                                }
+                            }
+
+                            Text {
+                                id: appNameText
+                                anchors.left: appIcon.right
+                                anchors.leftMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width - appIcon.width - 8 - appPercent.implicitWidth - 8
+                                text: root.appLabel(appRow.modelData)
+                                color: Commons.Color.launcher.text
+                                font.pixelSize: 13
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                id: appPercent
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: Math.round(appRow.appVolume * 100) + "%"
+                                color: Commons.Color.launcher.textMuted
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        Item {
+                            width: parent.width
+                            height: 14
+                            opacity: appRow.appMuted ? 0.5 : 1.0
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width
+                                height: 5
+                                radius: 2.5
+                                color: Commons.Color.launcher.cardBorder
+
+                                Rectangle {
+                                    width: parent.width * Math.max(0, Math.min(1, appRow.appVolume))
+                                    height: parent.height
+                                    radius: 2.5
+                                    color: Commons.Color.launcher.selection
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onPressed: function(mouse) { root.setAppVolume(appRow.modelData, mouse.x / width) }
+                                onPositionChanged: function(mouse) { if (pressed) root.setAppVolume(appRow.modelData, mouse.x / width) }
+                            }
                         }
                     }
                 }
