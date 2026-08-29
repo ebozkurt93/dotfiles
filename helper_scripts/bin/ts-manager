@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 
 PERSONAL_SOCKET="/tmp/tailscale-personal/tailscaled.sock"
@@ -37,6 +37,12 @@ _ts() {
   "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" "$@"
 }
 
+# State-changing commands need root since the socket is root-owned (tailscaled runs via sudo below); read-only ones work fine via _ts.
+_ts_sudo() {
+  _ensure_bins
+  echo "$(_pass)" | sudo -S "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" "$@"
+}
+
 _start_daemon() {
   if _running; then
     echo "daemon already running"
@@ -44,8 +50,14 @@ _start_daemon() {
   fi
   _ensure_bins
   mkdir -p "$(dirname "$PERSONAL_SOCKET")" "$PERSONAL_STATE_DIR"
-  echo "$(_pass)" | sudo -S sh -c \
-    "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1 &"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    echo "$(_pass)" | sudo -S sh -c \
+      "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1 &"
+  else
+    # systemd-run (system-level, via sudo) detaches this from the caller's cgroup/session, same fix as amphetamine.sh's inhibitor.
+    echo "$(_pass)" | sudo -S systemd-run --unit=tailscaled-personal --collect --quiet -- \
+      sh -c "\"$TAILSCALED_BIN\" --socket=\"$PERSONAL_SOCKET\" --state=\"$PERSONAL_STATE_DIR/state\" >> \"$PERSONAL_LOG\" 2>&1"
+  fi
   local i=0
   while [[ ! -S "$PERSONAL_SOCKET" ]] && (( i++ < 20 )); do sleep 0.5; done
   if [[ ! -S "$PERSONAL_SOCKET" ]]; then
@@ -56,43 +68,67 @@ _start_daemon() {
 
 _primary_service() {
   local iface
-  iface=$(route -n get default 2>/dev/null | awk '/interface:/{print $2}')
-  networksetup -listnetworkserviceorder 2>/dev/null \
-    | grep -B1 "Device: ${iface})" | head -1 | sed 's/^([0-9]*) //'
+  if [[ "$(uname)" == "Darwin" ]]; then
+    iface=$(route -n get default 2>/dev/null | awk '/interface:/{print $2}')
+    networksetup -listnetworkserviceorder 2>/dev/null \
+      | grep -B1 "Device: ${iface})" | head -1 | sed 's/^([0-9]*) //'
+  else
+    ip route show default 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' | head -1
+  fi
 }
 
 _configure_dns() {
   [[ -f "$PERSONAL_DNS_SAVE" ]] && return
-  local dns_server service saved
+  local dns_server
   dns_server=$(timeout 5 "$TAILSCALE_BIN" --socket "$PERSONAL_SOCKET" debug netmap 2>/dev/null | jq -r '.DNS.Resolvers[0].Addr // empty')
   [[ -z "$dns_server" ]] && { echo "no DNS resolver in netmap, skipping DNS config"; return; }
-  service=$(_primary_service)
-  [[ -z "$service" ]] && { echo "could not detect primary network service"; return; }
-  saved=$(networksetup -getdnsservers "$service" 2>/dev/null)
-  mkdir -p "$(dirname "$PERSONAL_DNS_SAVE")"
-  printf '%s\n%s\n' "$service" "$saved" > "$PERSONAL_DNS_SAVE"
-  echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" "$dns_server"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    local service saved
+    service=$(_primary_service)
+    [[ -z "$service" ]] && { echo "could not detect primary network service"; return; }
+    saved=$(networksetup -getdnsservers "$service" 2>/dev/null)
+    mkdir -p "$(dirname "$PERSONAL_DNS_SAVE")"
+    printf '%s\n%s\n' "$service" "$saved" > "$PERSONAL_DNS_SAVE"
+    echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" "$dns_server"
+  else
+    local iface
+    iface=$(_primary_service)
+    [[ -z "$iface" ]] && { echo "could not detect primary network interface"; return; }
+    mkdir -p "$(dirname "$PERSONAL_DNS_SAVE")"
+    printf '%s\n' "$iface" > "$PERSONAL_DNS_SAVE"
+    echo "$(_pass)" | sudo -S sh -c "printf 'nameserver %s\n' '$dns_server' | resolvconf -a '${iface}.tailscale'"
+  fi
 }
 
 _restore_dns() {
   [[ ! -f "$PERSONAL_DNS_SAVE" ]] && return
-  local service saved
-  service=$(sed -n '1p' "$PERSONAL_DNS_SAVE")
-  saved=$(sed -n '2,$p' "$PERSONAL_DNS_SAVE")
-  if [[ "$saved" == "There aren't any DNS Servers set on"* ]]; then
-    echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" empty
+  if [[ "$(uname)" == "Darwin" ]]; then
+    local service saved
+    service=$(sed -n '1p' "$PERSONAL_DNS_SAVE")
+    saved=$(sed -n '2,$p' "$PERSONAL_DNS_SAVE")
+    if [[ "$saved" == "There aren't any DNS Servers set on"* ]]; then
+      echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" empty
+    else
+      echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" $saved
+    fi
   else
-    echo "$(_pass)" | sudo -S networksetup -setdnsservers "$service" $saved
+    local iface
+    iface=$(sed -n '1p' "$PERSONAL_DNS_SAVE")
+    echo "$(_pass)" | sudo -S resolvconf -d "${iface}.tailscale"
   fi
   rm -f "$PERSONAL_DNS_SAVE"
 }
 
 _stop_daemon() {
+  if [[ "$(uname)" != "Darwin" ]]; then
+    echo "$(_pass)" | sudo -S systemctl stop tailscaled-personal 2>/dev/null
+  fi
+
   local pid
   pid=$(pgrep -f "tailscaled.*tailscale-personal" | head -1)
   if [[ -n "$pid" ]]; then
     echo "$(_pass)" | sudo -S kill "$pid"
-  else
+  elif [[ "$(uname)" == "Darwin" ]]; then
     echo "daemon not running"
   fi
 }
@@ -132,7 +168,7 @@ if [[ "$1" == "cli" ]]; then
   shift
   if [[ "$1" == "up" ]] && [[ "$*" != *"--login-server"* ]]; then
     [[ -z "$HEADSCALE_URL" ]] && { echo "HEADSCALE_URL is not set"; exit 1; }
-    _ts up --login-server "$HEADSCALE_URL" --accept-routes "${@:2}"
+    _ts_sudo up --login-server "$HEADSCALE_URL" --accept-routes "${@:2}"
   else
     _ts "$@"
   fi
@@ -151,7 +187,7 @@ case "$selected" in
     _start_daemon
     state=$(_ts status --json 2>/dev/null | jq -r '.BackendState')
     if [[ "$state" != "Running" ]]; then
-      _ts up --login-server "$HEADSCALE_URL" --accept-routes
+      _ts_sudo up --login-server "$HEADSCALE_URL" --accept-routes
     fi
     _configure_dns
     ;;
@@ -161,7 +197,7 @@ case "$selected" in
       exit 0
     fi
     _restore_dns
-    _ts down
+    _ts_sudo down
     _stop_daemon
     ;;
   status)
@@ -180,9 +216,9 @@ case "$selected" in
     fi
     [[ -z "$selected_node" ]] && exit 0
     if [[ "$selected_node" == "none" ]]; then
-      _ts set --exit-node=
+      _ts_sudo set --exit-node=
     else
-      _ts set --exit-node="$selected_node"
+      _ts_sudo set --exit-node="$selected_node"
     fi
     ;;
   info)
@@ -191,7 +227,7 @@ case "$selected" in
     else
       _ts status --json 2>/dev/null | jq '{
         connected: (.BackendState == "Running"),
-        exit_node: ([.Peer[] | select(.ExitNode == true) | .HostName][0] // null)
+        exit_node: ([(.Peer // {})[] | select(.ExitNode == true) | .HostName][0] // null)
       }'
     fi
     ;;
