@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Toggles hiding notification toasts from screen shares/recordings (see the
+# layer_rule in hyprland.lua). Notifications still show locally either way.
+
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/desktop/notifications-privacy"
+mkdir -p "$(dirname "$state_file")"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Notifications" "$1" || true
+}
+
+action="${1:-toggle}"
+case "$action" in
+  on) enable=true ;;
+  off) enable=false ;;
+  toggle) [ -f "$state_file" ] && enable=false || enable=true ;;
+  status)
+    [ -f "$state_file" ] && echo "on" || echo "off"
+    exit 0
+    ;;
+  *)
+    echo "Usage: notifications-privacy [on|off|toggle|status]" >&2
+    exit 1
+    ;;
+esac
+
+if [ "$enable" = true ]; then
+  touch "$state_file"
+  hyprctl reload >/dev/null
+  notify "Hidden from screen shares/recordings"
+else
+  rm -f "$state_file"
+  hyprctl reload >/dev/null
+  notify "Visible in screen shares/recordings again"
+fi

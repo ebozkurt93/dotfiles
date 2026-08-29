@@ -29,7 +29,19 @@ end)
 hl.env("XCURSOR_SIZE", "24")
 hl.env("XCURSOR_THEME", "Adwaita")
 
+-- Off by default; toggle via `desktop notifications-privacy`.
+do
+    local f = io.open(os.getenv("HOME") .. "/.local/state/desktop/notifications-privacy", "r")
+    if f then
+        f:close()
+        hl.layer_rule({ match = { namespace = "notifications" }, no_screen_share = true })
+    end
+end
+
 hl.config({
+    ecosystem = {
+        no_update_news = true,
+    },
     input = {
         kb_layout = "us",
         follow_mouse = 1,
