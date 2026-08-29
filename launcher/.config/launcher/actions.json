@@ -123,6 +123,50 @@
     ]
   },
   {
+    "id": "action:notifications-dnd",
+    "kind": "setting",
+    "icon": "notification-symbolic",
+    "title": "Toggle Do Not Disturb",
+    "subtitle": "Silence notification popups (still logged to history)",
+    "keywords": ["notifications", "dnd", "do not disturb", "silence", "mute"],
+    "actions": [
+      {"id": "run", "title": "Toggle", "command": "~/bin/desktop notifications-dnd toggle"}
+    ]
+  },
+  {
+    "id": "action:notifications-history-open",
+    "kind": "tool",
+    "icon": "notification-symbolic",
+    "title": "Open Notification History",
+    "subtitle": "Show the notification history panel",
+    "keywords": ["notifications", "history", "panel", "recent"],
+    "actions": [
+      {"id": "run", "title": "Open", "command": "quickshell ipc call notificationHistory open"}
+    ]
+  },
+  {
+    "id": "action:notifications-restore-last",
+    "kind": "setting",
+    "icon": "edit-undo",
+    "title": "Restore Last Dismissed Notification",
+    "subtitle": "Pop the most recently dismissed notification back up",
+    "keywords": ["notifications", "restore", "undo", "history"],
+    "actions": [
+      {"id": "run", "title": "Restore", "command": "~/bin/desktop notifications-history restore"}
+    ]
+  },
+  {
+    "id": "action:notifications-clear",
+    "kind": "setting",
+    "icon": "edit-clear-all",
+    "title": "Clear Notification History",
+    "subtitle": "Hide past notifications from the history panel",
+    "keywords": ["notifications", "clear", "history"],
+    "actions": [
+      {"id": "run", "title": "Clear", "command": "~/bin/desktop notifications-history clear"}
+    ]
+  },
+  {
     "id": "action:screenshot-region",
     "kind": "tool",
     "icon": "applets-screenshooter",

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Real do-not-disturb: toggles mako's "do-not-disturb" mode (see mako/.config/mako/config),
+# which suppresses popups via invisible=1 while still logging to history. Unlike
+# notifications-privacy, this actually silences notifications rather than just hiding
+# them from screen capture.
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Notifications" "$1" || true
+}
+
+is_active() {
+  makoctl mode | grep -qx "do-not-disturb"
+}
+
+action="${1:-toggle}"
+case "$action" in
+  on) makoctl mode -a do-not-disturb >/dev/null ;;
+  off) makoctl mode -r do-not-disturb >/dev/null ;;
+  toggle) makoctl mode -t do-not-disturb >/dev/null ;;
+  status)
+    is_active && echo "on" || echo "off"
+    exit 0
+    ;;
+  *)
+    echo "Usage: notifications-dnd [on|off|toggle|status]" >&2
+    exit 1
+    ;;
+esac
+
+if is_active; then
+  notify "Do Not Disturb enabled"
+else
+  notify "Do Not Disturb disabled"
+fi
+
+quickshell ipc call notificationsDnd refresh >/dev/null 2>&1 || true

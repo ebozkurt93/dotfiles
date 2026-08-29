@@ -24,6 +24,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("zsh -c 'source \"$HOME/.personal.zshrc\" 2>/dev/null; exec quickshell'")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("mako")
+    hl.exec_cmd(os.getenv("HOME") .. "/bin/desktop notification-times-watcher")
 end)
 
 hl.env("XCURSOR_SIZE", "24")
@@ -114,6 +115,8 @@ hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd(home .. "/bin/launcher --windows"),
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"), { description = "Open browser tabs" })
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --bluetooth"), { description = "Open bluetooth devices" })
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-expander --toggle"), { description = "Toggle text expansion" })
+hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd(home .. "/bin/desktop notifications-dnd toggle"), { description = "Toggle do-not-disturb" })
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call notificationHistory toggle"), { description = "Open notification history" })
 
 hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot fullscreen"), { description = "Screenshot: fullscreen" })
 hl.bind(mainMod .. " + SHIFT + 4", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot region"), { description = "Screenshot: region" })

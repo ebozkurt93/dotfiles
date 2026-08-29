@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Thin wrapper around mako's built-in history buffer (see history=1 /
+# max-history in mako/.config/mako/config). mako has no "clear history" D-Bus
+# method (only ListHistory/restore) -- the buffer keeps rotating on its own
+# past max-history regardless. `clear` fakes it client-side: it records the
+# highest id currently in mako's history as a cutoff, and `show` filters
+# anything at or before that cutoff back out. mako still holds those entries
+# internally; we just stop displaying them.
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/desktop"
+times_file="$state_dir/notification-times.jsonl"
+cutoff_file="$state_dir/notification-history-cleared-id"
+
+case "${1:-show}" in
+  show)
+    times_json='[]'
+    if [ -s "$times_file" ]; then
+      times_json="$(jq -s '.' "$times_file" 2>/dev/null || echo '[]')"
+    fi
+    cutoff=0
+    [ -s "$cutoff_file" ] && cutoff="$(cat "$cutoff_file")"
+    makoctl history -j | jq --argjson times "$times_json" --argjson cutoff "$cutoff" '
+      ($times | map({(.id | tostring): .time}) | add // {}) as $timemap
+      | map(select(.id > $cutoff))
+      | map(. + {received_at: ($timemap[(.id | tostring)] // null)})
+    '
+    ;;
+  restore)
+    makoctl restore
+    quickshell ipc call notificationHistory refresh >/dev/null 2>&1 || true
+    ;;
+  clear)
+    mkdir -p "$state_dir"
+    max_id="$(makoctl history -j 2>/dev/null | jq '[.[].id] | max // 0')"
+    echo "$max_id" >"$cutoff_file"
+    quickshell ipc call notificationHistory refresh >/dev/null 2>&1 || true
+    ;;
+  *)
+    echo "Usage: notifications-history [show|restore|clear]" >&2
+    exit 1
+    ;;
+esac

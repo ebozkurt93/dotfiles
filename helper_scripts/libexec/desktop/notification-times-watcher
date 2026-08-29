@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# mako's history JSON has no timestamp field at all (confirmed from mako's
+# own source: id/app_name/app_icon/category/desktop_entry/summary/body/
+# urgency/actions, nothing else) -- this fills that gap by polling
+# `makoctl history -j` and recording the first time each id is observed.
+# Timestamp granularity is the poll interval below, not exact arrival time.
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/desktop"
+mkdir -p "$state_dir"
+times_file="$state_dir/notification-times.jsonl"
+seen_file="$state_dir/notification-times.seen"
+max_lines=500
+
+touch "$times_file" "$seen_file"
+
+trim() {
+  local file="$1"
+  if [ "$(wc -l <"$file")" -gt "$max_lines" ]; then
+    tail -n "$max_lines" "$file" >"$file.tmp" && mv "$file.tmp" "$file"
+  fi
+}
+
+while true; do
+  ids="$(makoctl history -j 2>/dev/null | jq -r '.[].id' 2>/dev/null)"
+  if [ -n "$ids" ]; then
+    now="$(date +%s)"
+    while IFS= read -r id; do
+      [ -n "$id" ] || continue
+      if ! grep -qx "$id" "$seen_file" 2>/dev/null; then
+        echo "$id" >>"$seen_file"
+        printf '{"id": %s, "time": %s}\n' "$id" "$now" >>"$times_file"
+      fi
+    done <<<"$ids"
+    trim "$seen_file"
+    trim "$times_file"
+  fi
+  sleep 3
+done

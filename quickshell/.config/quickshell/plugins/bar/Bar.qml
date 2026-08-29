@@ -70,6 +70,16 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
 
+        Dnd {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        NotificationHistory {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         Network {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter

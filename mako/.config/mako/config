@@ -1,1 +1,6 @@
 default-timeout=3000
+history=1
+max-history=100
+
+[mode=do-not-disturb]
+invisible=1
