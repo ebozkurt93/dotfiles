@@ -9,7 +9,7 @@ NAME="utm-aarch64"
 ARCH="aarch64"
 ISO=""
 DISK_GB=50
-RAM_MB=8192
+RAM_MB=12288
 CPU_CORES=4
 SSH_HOST_PORT=2222
 START=false
@@ -22,7 +22,7 @@ Usage: create-utm-vm.sh --iso PATH [options]
   --name NAME          VM name (default: utm-aarch64)
   --arch ARCH          aarch64 or x86_64 (default: aarch64)
   --disk-size GB        Fixed disk size in GB (default: 50)
-  --ram MB             RAM in MiB (default: 8192)
+  --ram MB             RAM in MiB (default: 12288)
   --cpu N              CPU cores (default: 4)
   --ssh-port PORT      Host port forwarded to guest:22 (default: 2222)
   --start              Start the VM after creating it
