@@ -31,5 +31,5 @@ FILENAME="screenshot-$(date +'%Y-%m-%d_%H-%M-%S').png"
 FILEPATH="$OUTPUT_DIR/$FILENAME"
 
 grim -g "$GEOMETRY" "$FILEPATH"
-wl-copy --type image/png <"$FILEPATH"
+wl-copy --type image/png <"$FILEPATH" >/dev/null 2>&1 &
 notify "Saved to clipboard and $FILEPATH" "$FILEPATH"

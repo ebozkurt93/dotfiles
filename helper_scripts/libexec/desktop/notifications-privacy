@@ -35,3 +35,5 @@ else
   hyprctl reload >/dev/null
   notify "Visible in screen shares/recordings again"
 fi
+
+quickshell ipc call notificationsPrivacy refresh >/dev/null 2>&1 || true

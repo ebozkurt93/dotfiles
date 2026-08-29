@@ -65,6 +65,11 @@ PanelWindow {
         anchors.rightMargin: 8
         spacing: 10
 
+        NotificationPrivacy {
+            shell: root.shell
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         Network {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
