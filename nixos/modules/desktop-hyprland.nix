@@ -74,6 +74,9 @@ in {
   # UPower D-Bus service (battery/device info), separate from power-profiles-daemon; used by plugins/bar/Power.qml.
   services.upower.enable = true;
 
+  # Backing D-Bus service for udiskie (packages.nix) to auto-mount removable drives.
+  services.udisks2.enable = true;
+
   # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
   hardware.bluetooth.enable = true;
 

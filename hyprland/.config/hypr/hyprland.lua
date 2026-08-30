@@ -25,6 +25,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("mako")
     hl.exec_cmd(os.getenv("HOME") .. "/bin/desktop notification-times-watcher")
+    hl.exec_cmd("udiskie --no-tray") -- no systray in the bar; mounts + notifies via mako
 end)
 
 hl.env("XCURSOR_SIZE", "24")
