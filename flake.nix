@@ -101,9 +101,11 @@
             nixpkgs.config.allowUnfree = true; # obsidian
             nixpkgs.config.input-fonts.acceptLicense = true; # Input Mono font
             # hyprmoncfg isn't in nixpkgs yet (open PR #552223); see nixos/modules/pkgs/hyprmoncfg.nix.
+            # hyprland-preview-share-picker isn't in nixpkgs; see nixos/modules/pkgs/hyprland-preview-share-picker.nix.
             nixpkgs.overlays = [
               (final: prev: {
                 hyprmoncfg = prev.callPackage ./nixos/modules/pkgs/hyprmoncfg.nix {};
+                hyprland-preview-share-picker = prev.callPackage ./nixos/modules/pkgs/hyprland-preview-share-picker.nix {};
               })
             ];
           }

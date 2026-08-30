@@ -100,6 +100,7 @@ with pkgs;
     slurp # screenshot region selection
     gpu-screen-recorder # screen recording (helper_scripts/libexec/desktop/record)
     hyprmoncfg # monitor hotplug/lid profile switcher; TUI/CLI, daemon wired in desktop-hyprland.nix
+    hyprland-preview-share-picker # screen-share picker with live window/output previews; wired via xdph.conf in desktop-hyprland.nix
     udiskie # USB auto-mount; run via exec-once in hyprland.lua, needs services.udisks2 (desktop-hyprland.nix)
     xfce.thunar # GUI file manager; opens udiskie's auto-mounts, uses gvfs (desktop-hyprland.nix) for trash
     xfce.tumbler # thumbnailer D-Bus service Thunar's ThunarThumbnailer talks to for image/video previews

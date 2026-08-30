@@ -20,6 +20,8 @@ hl.monitor({
 })
 
 hl.on("hyprland.start", function()
+    -- Hyprland's own hyprland-session.target start doesn't always win the boot-time race; trigger it too (redundant but harmless).
+    hl.exec_cmd("systemctl --user start hyprland-session.target")
     -- Quickshell is launched directly by Hyprland, not a login shell, so source .personal.zshrc first so its Process calls inherit vars like HEADSCALE_URL.
     hl.exec_cmd("zsh -c 'source \"$HOME/.personal.zshrc\" 2>/dev/null; exec quickshell'")
     hl.exec_cmd("hypridle")
@@ -34,6 +36,10 @@ end)
 
 hl.env("XCURSOR_SIZE", "24")
 hl.env("XCURSOR_THEME", "Adwaita")
+
+-- greetd's tuigreet never sets these; apps that gate Wayland behavior on them (e.g. Firefox's portal screen-share) silently degrade without them.
+hl.env("XDG_SESSION_TYPE", "wayland")
+hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 
 -- Off by default; toggle via `desktop notifications-privacy`.
 do
