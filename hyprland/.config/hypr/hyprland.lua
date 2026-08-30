@@ -25,7 +25,6 @@ hl.on("hyprland.start", function()
     -- Quickshell is launched directly by Hyprland, not a login shell, so source .personal.zshrc first so its Process calls inherit vars like HEADSCALE_URL.
     hl.exec_cmd("zsh -c 'source \"$HOME/.personal.zshrc\" 2>/dev/null; exec quickshell'")
     hl.exec_cmd("hypridle")
-    hl.exec_cmd("mako")
     hl.exec_cmd(os.getenv("HOME") .. "/bin/desktop notification-times-watcher")
     hl.exec_cmd("udiskie --no-tray") -- no systray in the bar; mounts + notifies via mako
     -- Not "sunsetr --background": it self-respawns via `hyprctl dispatch exec`, which this

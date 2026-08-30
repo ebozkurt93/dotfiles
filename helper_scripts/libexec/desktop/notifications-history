@@ -19,9 +19,16 @@ case "${1:-show}" in
     if [ -s "$times_file" ]; then
       times_json="$(jq -s '.' "$times_file" 2>/dev/null || echo '[]')"
     fi
+    history_json="$(makoctl history -j)"
     cutoff=0
     [ -s "$cutoff_file" ] && cutoff="$(cat "$cutoff_file")"
-    makoctl history -j | jq --argjson times "$times_json" --argjson cutoff "$cutoff" '
+    # mako's ids reset on restart; a cutoff above the current max is stale, self-heal it.
+    max_id="$(echo "$history_json" | jq '[.[].id] | max // 0')"
+    if [ "$cutoff" -gt "$max_id" ]; then
+      cutoff=0
+      echo 0 >"$cutoff_file"
+    fi
+    echo "$history_json" | jq --argjson times "$times_json" --argjson cutoff "$cutoff" '
       ($times | map({(.id | tostring): .time}) | add // {}) as $timemap
       | map(select(.id > $cutoff))
       | map(. + {received_at: ($timemap[(.id | tostring)] // null)})
