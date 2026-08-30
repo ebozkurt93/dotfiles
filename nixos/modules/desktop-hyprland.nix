@@ -197,6 +197,16 @@ in {
     };
   };
 
+  systemd.user.services.hyprpolkitagent = {
+    description = "Polkit authentication agent";
+    wantedBy = ["graphical-session.target"];
+    after = ["graphical-session.target"];
+    serviceConfig = {
+      ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
+      Restart = "on-failure";
+    };
+  };
+
   # Watches monitor hotplug/lid/resume and applies the best matching ~/.config/hyprmoncfg/profiles/ profile.
   systemd.user.services.hyprmoncfgd = {
     description = "hyprmoncfg monitor-profile daemon";
