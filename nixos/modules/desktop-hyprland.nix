@@ -99,6 +99,36 @@ in {
 
   # services.openssh.openFirewall defaults to true, so SSH stays reachable on hosts that enable it.
   networking.firewall.enable = true;
+
+  # Compressed RAM swap, tuned for zram not disk (values from Omarchy).
+  zramSwap = {
+    enable = true;
+    memoryPercent = 100;
+    priority = 100;
+  };
+
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 150;
+    "vm.vfs_cache_pressure" = 50;
+    "vm.page-cluster" = 0;
+    "vm.watermark_boost_factor" = 0;
+    "vm.watermark_scale_factor" = 125;
+    "vm.dirty_background_bytes" = 67108864;
+    "vm.dirty_bytes" = 268435456;
+    "vm.dirty_writeback_centisecs" = 1500;
+    "fs.inotify.max_user_watches" = 524288;
+  };
+
+  # Fixes flaky USB peripherals under aggressive power management; inert without real USB hardware.
+  boot.extraModprobeConfig = "options usbcore autosuspend=-1";
+
+  # Root/system slices only — no uwsm/app-slice split here yet to safely add user-slice policy without risking the compositor.
+  systemd.oomd = {
+    enable = true;
+    enableRootSlice = true;
+    enableSystemSlice = true;
+  };
+
   services.pipewire = {
     enable = true;
     alsa.enable = true;
