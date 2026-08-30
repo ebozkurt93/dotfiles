@@ -38,6 +38,17 @@ in {
     extraPortals = [pkgs.xdg-desktop-portal-hyprland];
   };
 
+  # nixpkgs' hyprland package doesn't install this, so graphical-session.target (xdg-desktop-portal, gvfs, ...) never activates without it.
+  systemd.user.targets.hyprland-session = {
+    unitConfig = {
+      Description = "Hyprland session";
+      BindsTo = ["graphical-session.target"];
+      Wants = ["graphical-session-pre.target"];
+      After = ["graphical-session-pre.target"];
+      PropagatesStopTo = ["graphical-session.target"];
+    };
+  };
+
   xdg.mime.enable = true;
   xdg.mime.defaultApplications = {
     "image/png" = "imv.desktop";
@@ -108,7 +119,21 @@ in {
     pkgs.ibm-plex # includes IBM Plex Mono
     pkgs.iosevka
     pkgs.cascadia-code
+    pkgs.twemoji-color-font # flat, open-licensed emoji style; set as the default emoji font below
   ];
+
+  fonts.fontconfig.defaultFonts.emoji = ["Twitter Color Emoji"];
+  # signal-desktop bundles its own Noto Color Emoji, which some apps request by name directly, bypassing the alias above.
+  fonts.fontconfig.localConf = ''
+    <?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+    <fontconfig>
+      <match target="pattern">
+        <test name="family"><string>Noto Color Emoji</string></test>
+        <edit name="family" mode="assign" binding="strong"><string>Twitter Color Emoji</string></edit>
+      </match>
+    </fontconfig>
+  '';
 
   # Same firefox/policies/policies.json as macOS; __DOTFILES_DIR__ substituted the same way setup.sh does with sed.
   environment.etc."firefox/policies/policies.json".text =

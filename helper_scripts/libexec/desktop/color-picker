@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Eyedropper: pick a pixel color under the cursor via hyprpicker, copying its hex value to the clipboard.
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Color Picker" "$1" || true
+}
+
+color="$(hyprpicker -a)" || exit 0
+
+if [ -n "$color" ]; then
+  notify "Copied $color to clipboard"
+fi

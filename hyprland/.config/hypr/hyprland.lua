@@ -122,6 +122,8 @@ hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --blue
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-expander --toggle"), { description = "Toggle text expansion" })
 hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd(home .. "/bin/desktop notifications-dnd toggle"), { description = "Toggle do-not-disturb" })
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(home .. "/bin/desktop nightlight toggle"), { description = "Toggle night light" })
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd(home .. "/bin/desktop color-picker"), { description = "Pick a color" })
+hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("smile"), { description = "Open emoji picker" })
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call notificationHistory toggle"), { description = "Open notification history" })
 
 hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot fullscreen"), { description = "Screenshot: fullscreen" })

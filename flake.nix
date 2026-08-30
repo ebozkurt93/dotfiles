@@ -124,6 +124,8 @@
                   name = "Adwaita-dark";
                   package = pkgs.gnome-themes-extra;
                 };
+                # GTK4 dark mode comes from the portal's color-scheme (below), not a theme name.
+                gtk4.theme = null;
               };
               dconf.settings."org/gnome/desktop/interface" = {
                 color-scheme = "prefer-dark";

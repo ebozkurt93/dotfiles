@@ -194,9 +194,31 @@
     "icon": "weather-clear-night",
     "title": "Toggle Night Light",
     "subtitle": "Warm color temperature filter (blue-light reduction)",
-    "keywords": ["night light", "nightlight", "blue light", "temperature", "hyprsunset"],
+    "keywords": ["night light", "nightlight", "blue light", "temperature", "sunsetr"],
     "actions": [
       {"id": "run", "title": "Toggle", "command": "~/bin/desktop nightlight toggle"}
+    ]
+  },
+  {
+    "id": "action:color-picker",
+    "kind": "tool",
+    "icon": "color-select-symbolic",
+    "title": "Color Picker",
+    "subtitle": "Pick a pixel color, copies hex to clipboard",
+    "keywords": ["color", "colour", "picker", "eyedropper", "hex", "hyprpicker"],
+    "actions": [
+      {"id": "run", "title": "Pick", "command": "~/bin/desktop color-picker"}
+    ]
+  },
+  {
+    "id": "action:emoji-picker",
+    "kind": "tool",
+    "icon": "face-smile",
+    "title": "Emoji Picker",
+    "subtitle": "Search and insert an emoji",
+    "keywords": ["emoji", "picker", "smile", "unicode"],
+    "actions": [
+      {"id": "run", "title": "Open", "command": "smile"}
     ]
   },
   {
