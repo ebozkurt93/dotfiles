@@ -57,6 +57,7 @@ in {
     "image/webp" = "imv.desktop";
     "image/bmp" = "imv.desktop";
     "image/svg+xml" = "imv.desktop";
+    "application/pdf" = "org.gnome.Evince.desktop";
   };
 
   services.greetd = {

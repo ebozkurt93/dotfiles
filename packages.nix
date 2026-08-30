@@ -106,6 +106,8 @@ with pkgs;
     sunsetr # night light / blue-light filter (geo-scheduled); helper_scripts/libexec/desktop/nightlight
     hyprpicker # color picker; helper_scripts/libexec/desktop/color-picker
     smile # emoji picker; standalone GTK app, no dmenu/wofi/rofi backend dependency
+    evince # PDF viewer
+    libreoffice-fresh # office suite (docx/xlsx/pptx)
     bitwarden-cli # bw; only wired into macOS's homeConfigurations block before this
     bitwarden-desktop # provides the .desktop file/icons; its own bin/bitwarden is shadowed by the hiPrio wrapper below
     # unlike Chromium-based apps, doesn't auto-detect Wayland via NIXOS_OZONE_WL; plain wrapper (not overrideAttrs) avoids rebuilding the Rust native addon from source.
