@@ -104,6 +104,16 @@ in {
   # LAN AirDrop equivalent; openFirewall defaults to true (TCP+UDP 53317).
   programs.localsend.enable = true;
 
+  # Faster shutdown: don't wait 90s for a hung unit before killing it (values from Omarchy).
+  environment.etc."systemd/system.conf.d/10-faster-shutdown.conf".text = ''
+    [Manager]
+    DefaultTimeoutStopSec=5s
+  '';
+  systemd.services."user@".serviceConfig.TimeoutStopSec = "5s";
+
+  # Gives hypridle's before_sleep_cmd (desktop lock) more time to settle before suspend proceeds anyway.
+  services.logind.settings.Login.InhibitDelayMaxSec = 15;
+
   # Compressed RAM swap, tuned for zram not disk (values from Omarchy).
   zramSwap = {
     enable = true;
