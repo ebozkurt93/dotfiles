@@ -101,6 +101,9 @@ in {
   # services.openssh.openFirewall defaults to true, so SSH stays reachable on hosts that enable it.
   networking.firewall.enable = true;
 
+  # LAN AirDrop equivalent; openFirewall defaults to true (TCP+UDP 53317).
+  programs.localsend.enable = true;
+
   # Compressed RAM swap, tuned for zram not disk (values from Omarchy).
   zramSwap = {
     enable = true;

@@ -192,11 +192,19 @@ hl.bind(mainMod .. " + ALT + c", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-
 hl.bind(mainMod .. " + ALT + e", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch thunar thunar"), { description = "Jump to (or launch) file manager" })
 -- Matched by title, not class -- Ghostty is single-instance, so a second invocation's --class is ignored; see monitor-profile-editor.
 hl.bind(mainMod .. " + ALT + m", hl.dsp.exec_cmd(home .. "/bin/desktop monitor-profile-editor"), { description = "Jump to (or launch) hyprmoncfg layout editor" })
+hl.bind(mainMod .. " + ALT + s", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch localsend_app localsend_app"), { description = "Jump to (or launch) LocalSend" })
 
 -- Floats/centers the hyprmoncfg TUI launched by monitor-profile-editor above.
 hl.window_rule({
     name  = "hyprmoncfg-editor",
     match = { title = "^hyprmoncfg$" },
+    float = true,
+    center = 1,
+})
+
+hl.window_rule({
+    name  = "localsend",
+    match = { class = "^localsend_app$" },
     float = true,
     center = 1,
 })
