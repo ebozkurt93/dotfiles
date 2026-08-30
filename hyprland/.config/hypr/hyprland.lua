@@ -175,6 +175,7 @@ hl.bind(mainMod .. " + ALT + b", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-
 hl.bind(mainMod .. " + ALT + o", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch md.Obsidian obsidian"), { description = "Jump to (or launch) Obsidian" })
 hl.bind(mainMod .. " + ALT + f", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch FreeCAD freecad"), { description = "Jump to (or launch) FreeCAD" })
 hl.bind(mainMod .. " + ALT + c", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch org.gnome.Calendar gnome-calendar"), { description = "Jump to (or launch) Calendar" })
+hl.bind(mainMod .. " + ALT + e", hl.dsp.exec_cmd(home .. "/bin/desktop raise-or-launch thunar thunar"), { description = "Jump to (or launch) file manager" })
 -- Matched by title, not class -- Ghostty is single-instance, so a second invocation's --class is ignored; see monitor-profile-editor.
 hl.bind(mainMod .. " + ALT + m", hl.dsp.exec_cmd(home .. "/bin/desktop monitor-profile-editor"), { description = "Jump to (or launch) hyprmoncfg layout editor" })
 

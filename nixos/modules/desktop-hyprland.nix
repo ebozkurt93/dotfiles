@@ -77,6 +77,9 @@ in {
   # Backing D-Bus service for udiskie (packages.nix) to auto-mount removable drives.
   services.udisks2.enable = true;
 
+  # Trash/network-mount (sftp, etc.) support for Thunar (packages.nix).
+  services.gvfs.enable = true;
+
   # bluetoothctl; helper_scripts/bin/helpers/tmux_bluetooth.sh
   hardware.bluetooth.enable = true;
 
