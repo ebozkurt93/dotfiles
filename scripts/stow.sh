@@ -42,6 +42,7 @@ case "$(uname)" in
       quickshell
       launcher
       mako
+      sunsetr
     )
     ;;
   *)

@@ -1,0 +1,7 @@
+#[Backend]
+backend = "hyprland"
+transition_mode = "static" # Force warm regardless of time, overriding the geo schedule
+
+#[Static config]
+static_temp = 4000
+static_gamma = 100

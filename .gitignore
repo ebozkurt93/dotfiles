@@ -1,1 +1,6 @@
 .DS_Store
+
+# Real coordinates written by `sunsetr geo`; stow tree-folds this whole dir onto
+# ~/.config/sunsetr, so the file lands inside the repo checkout, not just ~/.config.
+sunsetr/.config/sunsetr/geo.toml
+sunsetr/.config/sunsetr/presets/*/geo.toml

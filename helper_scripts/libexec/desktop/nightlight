@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Controls a warm color-temperature filter (blue-light/night-light) via sunsetr.
+# Three modes: "auto" (sunsetr's real geo-scheduled sunset/sunrise, the default),
+# "on" and "off" (static overrides, sunsetr presets "on"/"neutral" -- "off" is a
+# reserved sunsetr preset name, so the off state uses "neutral" internally).
+# `toggle` cycles auto -> on -> off -> auto.
+
+IDENTITY_TEMP=6000
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Night Light" "$1" || true
+}
+
+current_temp() {
+  sunsetr status --json 2>/dev/null | jq -r '.current_temp // empty'
+}
+
+is_tinted() {
+  local temp
+  temp="$(current_temp || true)"
+  [ -n "$temp" ] && awk -v t="$temp" -v i="$IDENTITY_TEMP" 'BEGIN { exit !(t < i) }'
+}
+
+current_mode() {
+  case "$(sunsetr preset active 2>/dev/null || true)" in
+    on) echo "on" ;;
+    neutral) echo "off" ;;
+    *) echo "auto" ;;
+  esac
+}
+
+action="${1:-toggle}"
+
+if [ "$action" = "status" ]; then
+  mode="$(current_mode)"
+  if is_tinted; then tinted="on"; else tinted="off"; fi
+  echo "$mode $tinted"
+  exit 0
+fi
+
+if [ "$action" = "toggle" ]; then
+  case "$(current_mode)" in
+    auto) action="on" ;;
+    on) action="off" ;;
+    off) action="auto" ;;
+  esac
+fi
+
+case "$action" in
+  auto)
+    if [ "$(current_mode)" != "auto" ]; then
+      sunsetr preset default >/dev/null 2>&1
+    fi
+    notify "Auto"
+    ;;
+  on)
+    if [ "$(current_mode)" != "on" ]; then
+      sunsetr preset on >/dev/null 2>&1
+    fi
+    notify "On"
+    ;;
+  off)
+    if [ "$(current_mode)" != "off" ]; then
+      sunsetr preset neutral >/dev/null 2>&1
+    fi
+    notify "Off"
+    ;;
+  *)
+    echo "Usage: nightlight [on|off|auto|toggle|status]" >&2
+    exit 1
+    ;;
+esac
+
+quickshell ipc call nightlight refresh >/dev/null 2>&1 || true

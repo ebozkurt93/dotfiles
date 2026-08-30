@@ -26,6 +26,10 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd(os.getenv("HOME") .. "/bin/desktop notification-times-watcher")
     hl.exec_cmd("udiskie --no-tray") -- no systray in the bar; mounts + notifies via mako
+    -- Not "sunsetr --background": it self-respawns via `hyprctl dispatch exec`, which this
+    -- repo's Hyprland-Lua config parses as a Lua expression and rejects. hl.exec_cmd already
+    -- backgrounds it the same way as every other exec-once entry here.
+    hl.exec_cmd("sunsetr") -- reads sunsetr.toml; geo-scheduled, overridden via desktop nightlight
 end)
 
 hl.env("XCURSOR_SIZE", "24")
@@ -117,6 +121,7 @@ hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(home .. "/bin/launcher --tabs"), { de
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(home .. "/bin/launcher --bluetooth"), { description = "Open bluetooth devices" })
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-expander --toggle"), { description = "Toggle text expansion" })
 hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd(home .. "/bin/desktop notifications-dnd toggle"), { description = "Toggle do-not-disturb" })
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(home .. "/bin/desktop nightlight toggle"), { description = "Toggle night light" })
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call notificationHistory toggle"), { description = "Open notification history" })
 
 hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot fullscreen"), { description = "Screenshot: fullscreen" })

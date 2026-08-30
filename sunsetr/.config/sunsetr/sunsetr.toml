@@ -1,0 +1,13 @@
+#[Backend]
+backend = "hyprland"     # Native hyprland-ctm-control-v1, no hyprsunset dependency
+transition_mode = "geo"  # Real sunrise/sunset, computed from coordinates in geo.toml
+
+#[Time-based config]
+night_temp = 4000
+day_temp = 6500
+night_gamma = 100
+day_gamma = 100
+
+#[Geolocation]
+# Coordinates live in geo.toml (gitignored, machine-local) instead of here --
+# run `sunsetr geo` once per machine to pick a city and populate it.

@@ -11,6 +11,42 @@ Item {
     property var shell
     property bool popupOpen: false
     property string chargeCycles: ""
+    property string nightlightMode: "auto" // "auto", "on", "off"
+    property bool nightlightTinted: false  // whether the filter is visually applying right now
+    property string home: Quickshell.env("HOME")
+
+    function refreshNightlight() {
+        nightlightStatusProvider.running = false
+        nightlightStatusProvider.command = [home + "/bin/desktop", "nightlight", "status"]
+        nightlightStatusProvider.running = true
+    }
+
+    Component.onCompleted: refreshNightlight()
+
+    IpcHandler {
+        target: "nightlight"
+
+        function refresh(): string {
+            root.refreshNightlight()
+            return "ok"
+        }
+    }
+
+    Process {
+        id: nightlightStatusProvider
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var parts = text.trim().split(" ")
+                root.nightlightMode = parts[0] || "auto"
+                root.nightlightTinted = parts[1] === "on"
+            }
+        }
+    }
+
+    Process {
+        id: nightlightToggleAction
+        command: [root.home + "/bin/desktop", "nightlight", "toggle"]
+    }
 
     readonly property var device: UPower.displayDevice
     readonly property bool isPresent: device && device.isPresent
@@ -86,18 +122,37 @@ Item {
         return h > 0 ? (h + "h " + m + "m") : (m + "m")
     }
 
-    implicitWidth: icon.implicitWidth
-    implicitHeight: icon.implicitHeight
+    implicitWidth: iconRow.implicitWidth
+    implicitHeight: iconRow.implicitHeight
 
-    Text {
-        id: icon
+    Row {
+        id: iconRow
         anchors.verticalCenter: parent.verticalCenter
-        color: Commons.Color.bar.text
-        text: root.isPresent ? root.batteryIcon() : root.profileIcon(PowerProfiles.profile)
+        spacing: 4
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.popupOpen = !root.popupOpen
+        Text {
+            id: nightlightIcon
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.nightlightTinted
+            color: Commons.Color.bar.text
+            text: "󰛨"
+
+            MouseArea {
+                anchors.fill: parent
+                onDoubleClicked: nightlightToggleAction.running = true
+            }
+        }
+
+        Text {
+            id: icon
+            anchors.verticalCenter: parent.verticalCenter
+            color: Commons.Color.bar.text
+            text: root.isPresent ? root.batteryIcon() : root.profileIcon(PowerProfiles.profile)
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.popupOpen = !root.popupOpen
+            }
         }
     }
 
@@ -289,6 +344,43 @@ Item {
                                 onClicked: PowerProfiles.profile = profileCell.modelData
                             }
                         }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Commons.Color.launcher.cardBorder
+                }
+
+                Item {
+                    id: nightlightRow
+                    width: parent.width
+                    height: Math.max(nightlightLabel.implicitHeight, nightlightState.implicitHeight)
+
+                    Text {
+                        id: nightlightLabel
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Night Light"
+                        color: Commons.Color.launcher.text
+                        font.pixelSize: 12
+                    }
+
+                    Text {
+                        id: nightlightState
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.nightlightMode === "auto" ? (root.nightlightTinted ? "Auto (on)" : "Auto (off)")
+                            : root.nightlightMode === "on" ? "On"
+                            : "Off"
+                        color: Commons.Color.launcher.textMuted
+                        font.pixelSize: 12
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: nightlightToggleAction.running = true
                     }
                 }
             }

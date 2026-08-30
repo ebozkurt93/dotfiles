@@ -103,6 +103,7 @@ with pkgs;
     udiskie # USB auto-mount; run via exec-once in hyprland.lua, needs services.udisks2 (desktop-hyprland.nix)
     xfce.thunar # GUI file manager; opens udiskie's auto-mounts, uses gvfs (desktop-hyprland.nix) for trash
     xfce.tumbler # thumbnailer D-Bus service Thunar's ThunarThumbnailer talks to for image/video previews
+    sunsetr # night light / blue-light filter (geo-scheduled); helper_scripts/libexec/desktop/nightlight
     bitwarden-cli # bw; only wired into macOS's homeConfigurations block before this
     bitwarden-desktop # provides the .desktop file/icons; its own bin/bitwarden is shadowed by the hiPrio wrapper below
     # unlike Chromium-based apps, doesn't auto-detect Wayland via NIXOS_OZONE_WL; plain wrapper (not overrideAttrs) avoids rebuilding the Rust native addon from source.
