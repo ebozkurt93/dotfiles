@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Region-select a screenshot, decode a QR code from it, and copy the value to the clipboard.
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Capture QR" "$1" || true
+}
+
+geometry="$(slurp)" || exit 0
+[ -n "$geometry" ] || exit 0
+
+# QR-only: dense screen content can false-positive as other barcode symbologies otherwise.
+result="$(grim -g "$geometry" - | zbarimg -q --raw -Sdisable -Sqrcode.enable - 2>/dev/null)" || true
+
+if [ -z "$result" ]; then
+  notify "No QR code found"
+  exit 1
+fi
+
+# QR codes routinely carry secrets (2FA otpauth:// URIs, etc.) -- copy only, never print or notify with the value.
+printf '%s' "$result" | wl-copy --sensitive
+notify "QR code copied to clipboard"

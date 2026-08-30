@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Region-select a screenshot, OCR it, and copy the extracted text to the clipboard.
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send "Capture Text" "$1" || true
+}
+
+geometry="$(slurp)" || exit 0
+[ -n "$geometry" ] || exit 0
+
+text="$(grim -g "$geometry" - | tesseract stdin stdout --oem 1 --psm 6 -l "${DOTFILES_OCR_LANGS:-eng+tur+swe}" --dpi 300 -c preserve_interword_spaces=1 2>/dev/null)" || {
+  notify "OCR failed"
+  exit 1
+}
+
+if [ -z "$text" ]; then
+  notify "No text found"
+  exit 1
+fi
+
+printf '%s' "$text" | wl-copy
+notify "Copied text to clipboard"

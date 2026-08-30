@@ -106,6 +106,8 @@ with pkgs;
     xfce.tumbler # thumbnailer D-Bus service Thunar's ThunarThumbnailer talks to for image/video previews
     sunsetr # night light / blue-light filter (geo-scheduled); helper_scripts/libexec/desktop/nightlight
     hyprpicker # color picker; helper_scripts/libexec/desktop/color-picker
+    (tesseract.override {enableLanguages = ["eng" "tur" "swe"];}) # OCR; helper_scripts/libexec/desktop/capture-text
+    zbar # QR/barcode decoding; helper_scripts/libexec/desktop/capture-qr
     smile # emoji picker; standalone GTK app, no dmenu/wofi/rofi backend dependency
     evince # PDF viewer
     libreoffice-fresh # office suite (docx/xlsx/pptx)

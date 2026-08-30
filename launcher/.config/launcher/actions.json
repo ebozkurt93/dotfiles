@@ -211,6 +211,28 @@
     ]
   },
   {
+    "id": "action:capture-text",
+    "kind": "tool",
+    "icon": "insert-text",
+    "title": "Capture Text (OCR)",
+    "subtitle": "Select a region and copy its text to the clipboard",
+    "keywords": ["ocr", "text", "capture", "screenshot", "tesseract"],
+    "actions": [
+      {"id": "run", "title": "Capture", "command": "~/bin/desktop capture-text"}
+    ]
+  },
+  {
+    "id": "action:capture-qr",
+    "kind": "tool",
+    "icon": "insert-text",
+    "title": "Capture QR Code",
+    "subtitle": "Select a region and copy the decoded QR value",
+    "keywords": ["qr", "qrcode", "barcode", "capture", "screenshot", "zbar"],
+    "actions": [
+      {"id": "run", "title": "Capture", "command": "~/bin/desktop capture-qr"}
+    ]
+  },
+  {
     "id": "action:emoji-picker",
     "kind": "tool",
     "icon": "face-smile",

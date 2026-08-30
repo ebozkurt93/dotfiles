@@ -129,6 +129,8 @@ hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(home .. "/bin/desktop text-ex
 hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd(home .. "/bin/desktop notifications-dnd toggle"), { description = "Toggle do-not-disturb" })
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(home .. "/bin/desktop nightlight toggle"), { description = "Toggle night light" })
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd(home .. "/bin/desktop color-picker"), { description = "Pick a color" })
+hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd(home .. "/bin/desktop capture-text"), { description = "OCR a screen region to clipboard" })
+hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd(home .. "/bin/desktop capture-qr"), { description = "Decode a QR code from a screen region" })
 hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("smile"), { description = "Open emoji picker" })
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call notificationHistory toggle"), { description = "Open notification history" })
 
