@@ -79,6 +79,9 @@ in {
 
   # Quickshell's Networking module (plugins/bar/Network.qml) only has a NetworkManager backend.
   networking.networkmanager.enable = true;
+
+  # services.openssh.openFirewall defaults to true, so SSH stays reachable on hosts that enable it.
+  networking.firewall.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
