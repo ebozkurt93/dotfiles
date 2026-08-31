@@ -12,6 +12,17 @@
     ]
   },
   {
+    "id": "action:theme-next",
+    "kind": "setting",
+    "icon": "preferences-desktop-theme",
+    "title": "Next Theme",
+    "subtitle": "Cycle nvim/terminal/GTK/bar/notification theme",
+    "keywords": ["theme", "colorscheme", "color scheme", "dark", "light", "appearance"],
+    "actions": [
+      {"id": "run", "title": "Switch", "command": "~/bin/desktop theme next"}
+    ]
+  },
+  {
     "id": "action:calculator",
     "kind": "tool",
     "icon": "accessories-calculator",

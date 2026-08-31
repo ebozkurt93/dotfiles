@@ -568,6 +568,13 @@ function __theme_helper() {
 	local kitty_theme=$(__theme_helper get_custom_kitty_theme $2)
 	if [[ -f $kitty_conf/themes/$kitty_theme.conf ]]; then
 	  cp $kitty_conf/themes/$kitty_theme.conf $kitty_conf/current-theme.conf
+	  # This branch skips kitty generation, but mako/Quickshell/mode still need generating from nvim.
+	  rm -f ~/.cache/dotfiles-theme-mode
+	  nvim_remote_exec "lua require('ebozkurt.theme-gen').generate_extras('$kitty_theme')" > /dev/null 2>&1
+	  if [[ ! -f ~/.cache/dotfiles-theme-mode ]]; then
+	    local nvim_cmd="$(__nvim_cmd)"
+	    [[ -n "$nvim_cmd" ]] && "$nvim_cmd" --headless -c "lua require('ebozkurt.theme-gen').generate_extras('$kitty_theme')" -c qa > /dev/null 2>&1
+	  fi
 	else
 	  nvim_remote_exec "lua require('ebozkurt.theme-gen').generate('$kitty_theme')" > /dev/null 2>&1
 	  if [[ ! -f $kitty_conf/themes/$kitty_theme.conf ]]; then
@@ -587,6 +594,20 @@ function __theme_helper() {
 	__reload_wezterm_config
 	~/bin/helpers/kitty-to-ghostty ~/.config/kitty/current-theme.conf ~/.config/ghostty/theme
 	__reload_ghostty_config
+	if [[ "$(uname)" == "Linux" ]]; then
+	  # Quickshell watches Commons/Color.qml itself and hot-reloads on change; mako needs an explicit reload.
+	  command -v makoctl > /dev/null 2>&1 && makoctl reload > /dev/null 2>&1
+	  local mode_file=~/.cache/dotfiles-theme-mode
+	  if command -v dconf > /dev/null 2>&1 && [[ -f $mode_file ]]; then
+	    if [[ "$(<$mode_file)" == "light" ]]; then
+	      dconf write /org/gnome/desktop/interface/color-scheme "'default'"
+	      dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita'"
+	    else
+	      dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
+	      dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita-dark'"
+	    fi
+	  fi
+	fi
 	return
   fi
   if [[ "$1" == "preview_theme" ]]; then

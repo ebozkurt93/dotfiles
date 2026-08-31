@@ -231,8 +231,8 @@ Item {
 
                         Repeater {
                             model: [
-                                { label: "Sleep", command: "systemctl suspend", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.text },
-                                { label: "Restart", command: "systemctl reboot", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.text },
+                                { label: "Sleep", command: "systemctl suspend", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
+                                { label: "Restart", command: "systemctl reboot", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
                                 { label: "Shutdown", command: "systemctl poweroff", color: Commons.Color.lock.dangerButtonBackground, border: Commons.Color.lock.dangerButtonBorder, text: Commons.Color.lock.dangerButtonText }
                             ]
 
@@ -343,8 +343,8 @@ Item {
 
                     Repeater {
                         model: [
-                            { label: "Sleep", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.text },
-                            { label: "Restart", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.text },
+                            { label: "Sleep", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
+                            { label: "Restart", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
                             { label: "Shutdown", color: Commons.Color.lock.dangerButtonBackground, border: Commons.Color.lock.dangerButtonBorder, text: Commons.Color.lock.dangerButtonText }
                         ]
 

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Non-interactive entry point into the same theme engine Alt-T drives
+# (zsh's __theme_helper in ~/.personal.zshrc) -- lets the Hyprland
+# launcher/actions.json trigger a theme switch without a terminal open.
+# Does not reimplement the reload sequence; just calls through to zsh so
+# there is exactly one place that logic lives.
+
+run_theme_helper() {
+  zsh -c "source \$HOME/.personal.zshrc >/dev/null 2>&1; __theme_helper $*"
+}
+
+usage() {
+  cat <<'EOF'
+Usage: theme <list|current|next|set <name>>
+
+  list            List available theme names
+  current         Print the currently active nvim theme
+  next            Switch to the next theme in the list (wraps), for a single no-argument launcher action
+  set <name>      Switch nvim + kitty/wezterm/ghostty/tmux + (Linux) mako/GTK/Quickshell to <name>
+EOF
+}
+
+set_theme() {
+  local name="$1"
+  run_theme_helper set_nvim_theme "$name"
+  run_theme_helper set_kitty_theme "$name"
+  command -v notify-send >/dev/null 2>&1 && notify-send "Theme" "Switched to $name" || true
+}
+
+cmd="${1:-}"
+[ "$#" -gt 0 ] && shift
+
+case "$cmd" in
+  list) run_theme_helper get_themes ;;
+  current) run_theme_helper current_nvim_theme ;;
+  set)
+    name="${1:-}"
+    [ -z "$name" ] && { echo "Usage: theme set <name>" >&2; exit 1; }
+    set_theme "$name"
+    ;;
+  next)
+    read -r -a themes <<< "$(run_theme_helper get_themes)"
+    current="$(run_theme_helper current_nvim_theme)"
+    idx=0
+    for i in "${!themes[@]}"; do
+      [ "${themes[$i]}" = "$current" ] && idx=$i && break
+    done
+    next_name="${themes[$(( (idx + 1) % ${#themes[@]} ))]}"
+    set_theme "$next_name"
+    ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage >&2; exit 1 ;;
+esac

@@ -645,7 +645,7 @@ PanelWindow {
                         Text {
                             width: parent.width - keysText.implicitWidth - parent.spacing
                             text: title
-                            color: Commons.Color.launcher.text
+                            color: index === root.launcherSelected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                             font.pixelSize: 14
                             elide: Text.ElideRight
                         }
@@ -653,7 +653,7 @@ PanelWindow {
                         Text {
                             id: keysText
                             text: subtitle
-                            color: Commons.Color.launcher.textMuted
+                            color: index === root.launcherSelected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                             font.pixelSize: 12
                         }
                     }
@@ -718,7 +718,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 text: title
-                                color: Commons.Color.launcher.text
+                                color: index === root.launcherSelected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 15
                                 elide: Text.ElideRight
                             }
@@ -726,7 +726,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 text: subtitle || kind
-                                color: Commons.Color.launcher.textMuted
+                                color: index === root.launcherSelected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                 font.pixelSize: 12
                                 elide: Text.ElideRight
                             }

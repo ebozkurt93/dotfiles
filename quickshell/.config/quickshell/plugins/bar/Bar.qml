@@ -32,7 +32,7 @@ PanelWindow {
                 Text {
                     anchors.centerIn: parent
                     text: modelData.name
-                    color: Commons.Color.bar.text
+                    color: modelData.active ? Commons.Color.bar.textOnWorkspaceActive : Commons.Color.bar.textOnWorkspaceInactive
                 }
             }
         }
