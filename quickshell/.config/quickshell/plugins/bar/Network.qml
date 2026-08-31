@@ -1,6 +1,5 @@
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import Quickshell.Networking
 import QtQuick
 
@@ -534,45 +533,16 @@ Item {
         }
     }
 
-    PanelWindow {
+    Commons.PopupPanel {
         id: popupPanel
-        visible: root.popupOpen
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
-        }
-        color: Commons.Color.transparent
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "dotfiles-network-popup"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: root.passwordSsid !== "" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        open: root.popupOpen
+        namespace: "dotfiles-network-popup"
+        wantsKeyboardFocus: root.passwordSsid !== ""
+        cardWidth: 300
+        cardHeight: Math.min(620, popupColumn.implicitHeight + 24)
+        onDismissRequested: root.popupOpen = false
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.popupOpen = false
-        }
-
-        Rectangle {
-            id: popupCard
-            width: 300
-            height: Math.min(620, popupColumn.implicitHeight + 24)
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 36
-            anchors.rightMargin: 8
-            radius: 8
-            color: Commons.Color.launcher.cardBackground
-            border.color: Commons.Color.launcher.cardBorder
-            border.width: 1
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            Flickable {
+        Flickable {
                 anchors.fill: parent
                 anchors.margins: 12
                 contentHeight: popupColumn.implicitHeight
@@ -934,7 +904,6 @@ Item {
                         }
                     }
                 }
-            }
         }
     }
 

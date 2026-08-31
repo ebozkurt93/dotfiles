@@ -1,6 +1,5 @@
 import Quickshell
 import Quickshell.Services.Mpris
-import Quickshell.Wayland
 import QtQuick
 
 import "../../Commons" as Commons
@@ -162,46 +161,15 @@ Item {
         }
     }
 
-    PanelWindow {
+    Commons.PopupPanel {
         id: nowPlayingPopupPanel
-        visible: root.nowPlayingPopupOpen
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
-        }
-        color: Commons.Color.transparent
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "dotfiles-now-playing-popup"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        open: root.nowPlayingPopupOpen
+        namespace: "dotfiles-now-playing-popup"
+        cardWidth: 320
+        cardHeight: popupColumn.implicitHeight + 28
+        onDismissRequested: root.nowPlayingPopupOpen = false
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.nowPlayingPopupOpen = false
-        }
-
-        Rectangle {
-            id: popupCard
-            visible: root.activePlayer !== null
-            width: 320
-            height: popupColumn.implicitHeight + 28
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 36
-            anchors.rightMargin: 8
-            radius: 8
-            color: Commons.Color.launcher.cardBackground
-            border.color: Commons.Color.launcher.cardBorder
-            border.width: 1
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            Column {
+        Column {
                 id: popupColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -469,7 +437,6 @@ Item {
                         }
                     }
                 }
-            }
         }
     }
 }

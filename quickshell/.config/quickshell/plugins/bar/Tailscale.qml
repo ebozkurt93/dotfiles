@@ -1,6 +1,5 @@
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import QtQuick
 
 import "../../Commons" as Commons
@@ -203,45 +202,15 @@ Item {
         }
     }
 
-    PanelWindow {
+    Commons.PopupPanel {
         id: popupPanel
-        visible: root.popupOpen
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
-        }
-        color: Commons.Color.transparent
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "dotfiles-tailscale-popup"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        open: root.popupOpen
+        namespace: "dotfiles-tailscale-popup"
+        cardWidth: 280
+        cardHeight: Math.min(420, popupColumn.implicitHeight + 24)
+        onDismissRequested: root.popupOpen = false
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.popupOpen = false
-        }
-
-        Rectangle {
-            id: popupCard
-            width: 280
-            height: Math.min(420, popupColumn.implicitHeight + 24)
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 36
-            anchors.rightMargin: 8
-            radius: 8
-            color: Commons.Color.launcher.cardBackground
-            border.color: Commons.Color.launcher.cardBorder
-            border.width: 1
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            Flickable {
+        Flickable {
                 anchors.fill: parent
                 anchors.margins: 12
                 contentHeight: popupColumn.implicitHeight
@@ -400,7 +369,6 @@ Item {
                         }
                     }
                 }
-            }
         }
     }
 }

@@ -1,6 +1,5 @@
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import QtQuick
 
 import "../../Commons" as Commons
@@ -120,51 +119,23 @@ Item {
         onTriggered: root.items = root.items.slice()
     }
 
-    PanelWindow {
+    Commons.PopupPanel {
         id: popupPanel
-        visible: root.popupOpen
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
-        }
-        color: Commons.Color.transparent
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "dotfiles-notification-history-popup"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: root.popupOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        open: root.popupOpen
+        namespace: "dotfiles-notification-history-popup"
+        wantsKeyboardFocus: true
+        cardWidth: 340
+        cardRadius: 10
+        // listView's own height is derived from this height (anchored to headerColumn.bottom below), so
+        // sizing off listView.contentHeight here would be circular -- it only resolves correctly after
+        // some other relayout (e.g. scrolling) forces Qt to re-settle the binding. Estimate from
+        // items.length instead, which is known synchronously with no layout feedback involved.
+        readonly property real estimatedRowHeight: 54
+        readonly property real listAreaHeight: root.items.length === 0 ? 40 : Math.min(root.items.length * estimatedRowHeight, 420)
+        cardHeight: headerColumn.implicitHeight + 24 + listAreaHeight + 12
+        onDismissRequested: root.close()
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.close()
-        }
-
-        Rectangle {
-            id: popupCard
-            width: 340
-            // listView's own height is derived from this height (anchored to popupCard.bottom below), so
-            // sizing off listView.contentHeight here would be circular -- it only resolves correctly after
-            // some other relayout (e.g. scrolling) forces Qt to re-settle the binding. Estimate from
-            // items.length instead, which is known synchronously with no layout feedback involved.
-            readonly property real estimatedRowHeight: 54
-            readonly property real listAreaHeight: root.items.length === 0 ? 40 : Math.min(root.items.length * estimatedRowHeight, 420)
-            height: headerColumn.implicitHeight + 24 + listAreaHeight + 12
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 36
-            anchors.rightMargin: 8
-            radius: 10
-            color: Commons.Color.launcher.cardBackground
-            border.color: Commons.Color.launcher.cardBorder
-            border.width: 1
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            Column {
+        Column {
                 id: headerColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -419,7 +390,6 @@ Item {
                         }
                     }
                 }
-            }
         }
     }
 }
