@@ -566,33 +566,13 @@ Item {
                             font.pixelSize: 22
                         }
 
-                        Rectangle {
+                        Commons.ToggleSwitch {
                             id: radioSwitch
                             visible: root.wifiStationAvailable
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 40
-                            height: 22
-                            radius: 11
-                            color: Networking.wifiEnabled ? Commons.Color.launcher.selection : Commons.Color.launcher.cardBorder
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: Commons.Color.launcher.cardBackground
-                                anchors.verticalCenter: parent.verticalCenter
-                                x: Networking.wifiEnabled ? parent.width - width - 2 : 2
-
-                                Behavior on x {
-                                    NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: root.toggleWifiRadio()
-                            }
+                            checked: Networking.wifiEnabled
+                            onToggled: root.toggleWifiRadio()
                         }
 
                         Column {

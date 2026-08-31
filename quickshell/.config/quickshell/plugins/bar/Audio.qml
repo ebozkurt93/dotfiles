@@ -361,32 +361,12 @@ Item {
                         font.pixelSize: 11
                     }
 
-                    Rectangle {
+                    Commons.ToggleSwitch {
                         id: micSwitch
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 40
-                        height: 22
-                        radius: 11
-                        color: root.inputMuted ? Commons.Color.launcher.cardBorder : Commons.Color.launcher.selection
-
-                        Rectangle {
-                            width: 18
-                            height: 18
-                            radius: 9
-                            color: Commons.Color.launcher.cardBackground
-                            anchors.verticalCenter: parent.verticalCenter
-                            x: root.inputMuted ? 2 : parent.width - width - 2
-
-                            Behavior on x {
-                                NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: root.toggleInputMute()
-                        }
+                        checked: !root.inputMuted
+                        onToggled: root.toggleInputMute()
                     }
                 }
 

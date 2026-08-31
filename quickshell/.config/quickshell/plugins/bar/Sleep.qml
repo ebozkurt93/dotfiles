@@ -193,31 +193,11 @@ Item {
                         }
                     }
 
-                    Rectangle {
+                    Commons.ToggleSwitch {
                         id: activeSwitch
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 40
-                        height: 22
-                        radius: 11
-                        color: root.active ? Commons.Color.launcher.selection : Commons.Color.launcher.cardBorder
-
-                        Rectangle {
-                            width: 18
-                            height: 18
-                            radius: 9
-                            color: Commons.Color.launcher.cardBackground
-                            anchors.verticalCenter: parent.verticalCenter
-                            x: root.active ? parent.width - width - 2 : 2
-
-                            Behavior on x {
-                                NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: root.toggle()
-                        }
+                        checked: root.active
+                        onToggled: root.toggle()
                     }
                 }
 
