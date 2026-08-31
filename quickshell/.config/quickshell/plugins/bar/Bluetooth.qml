@@ -1,5 +1,5 @@
 import Quickshell
-import Quickshell.Io
+import Quickshell.Bluetooth
 import QtQuick
 
 import "../../Commons" as Commons
@@ -8,57 +8,20 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
-    property string home: Quickshell.env("HOME")
-    property var items: []
 
-    readonly property bool hasAdapter: items.length > 0 && items[0].id !== "bt:no-adapter"
-    readonly property bool isOn: items.length > 0 && items[0].id !== "bt:no-adapter" && items[0].id !== "bt:power-on"
-    readonly property var powerItem: items.length > 0 ? items[0] : null
-    readonly property var deviceItems: {
-        var list = []
-        for (var i = 0; i < items.length; i++) {
-            var it = items[i]
-            if (it.id && it.id.indexOf("bt:") === 0 && it !== root.powerItem) list.push(it)
-        }
-        return list
-    }
-    readonly property var connectedDevices: deviceItems.filter(function(d) { return d.subtitle && d.subtitle.indexOf("Connected") !== -1 })
-    readonly property var availableDevices: deviceItems.filter(function(d) { return !(d.subtitle && d.subtitle.indexOf("Connected") !== -1) })
+    readonly property var adapter: Bluetooth.defaultAdapter
+    readonly property bool hasAdapter: adapter !== null
+    readonly property bool isOn: hasAdapter && adapter.enabled
+
+    readonly property var allDevices: Bluetooth.devices ? Bluetooth.devices.values : []
+    readonly property var pairedDevices: allDevices.filter(function(d) { return d && d.paired })
+    readonly property var connectedDevices: pairedDevices.filter(function(d) { return d.connected })
+    readonly property var availableDevices: pairedDevices.filter(function(d) { return !d.connected })
     readonly property int connectedCount: connectedDevices.length
 
-    function refresh() {
-        bluetoothProvider.run([home + "/bin/launcher", "items", "--bluetooth"])
-    }
-
-    Component.onCompleted: refresh()
-
-    Timer {
-        interval: 5000
-        running: true
-        repeat: true
-        onTriggered: root.refresh()
-    }
-
-    Commons.JsonProcess {
-        id: bluetoothProvider
-        label: "bluetooth provider"
-        onParsed: function(data) { root.items = Array.isArray(data) ? data : [] }
-    }
-
-    Process {
-        id: bluetoothAction
-        onExited: root.refresh()
-    }
-
-    function runAction(command) {
-        if (!command) return
-        bluetoothAction.command = ["bash", "-lc", command]
-        bluetoothAction.running = true
-    }
-
     function togglePower() {
-        if (!root.powerItem || !root.powerItem.actions || root.powerItem.actions.length === 0) return
-        root.runAction(root.powerItem.actions[0].command)
+        if (!root.adapter) return
+        root.adapter.enabled = !root.adapter.enabled
     }
 
     implicitWidth: icon.implicitWidth
@@ -74,10 +37,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: {
-                root.popupOpen = !root.popupOpen
-                if (root.popupOpen) root.refresh()
-            }
+            onClicked: root.popupOpen = !root.popupOpen
         }
     }
 
@@ -156,8 +116,8 @@ Item {
 
                     Text {
                         width: parent.width
-                        visible: root.items.length === 0
-                        text: "Loading…"
+                        visible: root.hasAdapter && root.pairedDevices.length === 0
+                        text: "No paired devices"
                         color: Commons.Color.launcher.textMuted
                         font.pixelSize: 12
                     }
@@ -195,8 +155,6 @@ Item {
         id: deviceRow
         required property var modelData
 
-        readonly property bool isConnected: modelData.subtitle && modelData.subtitle.indexOf("Connected") !== -1
-
         width: parent ? parent.width : 0
         height: rowInner.implicitHeight + 12
         radius: 6
@@ -213,8 +171,8 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: deviceRow.isConnected ? "󰂱" : "󰂯"
-                color: deviceRow.isConnected ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
+                text: deviceRow.modelData.connected ? "󰂱" : "󰂯"
+                color: deviceRow.modelData.connected ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
                 font.pixelSize: 16
             }
 
@@ -224,7 +182,7 @@ Item {
 
                 Text {
                     width: parent.width
-                    text: deviceRow.modelData.title || ""
+                    text: deviceRow.modelData.name || deviceRow.modelData.deviceName || ""
                     color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                     font.pixelSize: 13
                     elide: Text.ElideRight
@@ -232,11 +190,10 @@ Item {
 
                 Text {
                     width: parent.width
-                    text: deviceRow.modelData.subtitle || ""
+                    text: deviceRow.modelData.address + (deviceRow.modelData.connected ? " · Connected" : "")
                     color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                     font.pixelSize: 11
                     elide: Text.ElideRight
-                    visible: text.length > 0
                 }
             }
         }
@@ -245,10 +202,9 @@ Item {
             id: rowMouse
             anchors.fill: parent
             hoverEnabled: true
-            enabled: deviceRow.modelData.actions && deviceRow.modelData.actions.length > 0
             onClicked: {
-                var actions = deviceRow.modelData.actions
-                if (actions && actions.length > 0) root.runAction(actions[0].command)
+                if (deviceRow.modelData.connected) deviceRow.modelData.disconnect()
+                else deviceRow.modelData.connect()
             }
         }
     }
