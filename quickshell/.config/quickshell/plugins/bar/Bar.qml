@@ -65,14 +65,20 @@ PanelWindow {
         anchors.rightMargin: 8
         spacing: 10
 
-        NotificationPrivacy {
+        Commons.DesktopToggleIcon {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
+            ipcTarget: "notificationsPrivacy"
+            desktopCommand: "notifications-privacy"
+            glyph: "\u{F009B}"
         }
 
-        Dnd {
+        Commons.DesktopToggleIcon {
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
+            ipcTarget: "notificationsDnd"
+            desktopCommand: "notifications-dnd"
+            glyph: "\u{F0F65}"
         }
 
         NotificationHistory {
