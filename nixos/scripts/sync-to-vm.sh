@@ -9,6 +9,7 @@ SSH_KEY="${SSH_KEY:-$HOME/.ssh/nixos_vm_utm}"
 
 rsync -avz --delete \
   --exclude 'nixos/hosts/*/hardware-configuration.nix' \
+  --exclude 'hyprland/.config/hypr/hyprmoncfg-monitors.lua' \
   -e "ssh -p $SSH_PORT -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
   "$REPO/" "$SSH_USER@localhost:/home/$SSH_USER/dotfiles/"
 

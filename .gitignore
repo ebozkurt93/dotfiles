@@ -4,3 +4,6 @@
 # ~/.config/sunsetr, so the file lands inside the repo checkout, not just ~/.config.
 sunsetr/.config/sunsetr/geo.toml
 sunsetr/.config/sunsetr/presets/*/geo.toml
+
+# Per-machine hardware state (EDID-matched monitor layout); regenerate with `hyprmoncfg apply`.
+hyprland/.config/hypr/hyprmoncfg-monitors.lua

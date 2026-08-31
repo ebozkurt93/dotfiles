@@ -27,15 +27,11 @@ Item {
     }
 
     function refresh() {
-        infoProvider.running = false
-        infoProvider.command = [home + "/bin/ts-manager", "info"]
-        infoProvider.running = true
+        infoProvider.run([home + "/bin/ts-manager", "info"])
     }
 
     function refreshPeers() {
-        peersProvider.running = false
-        peersProvider.command = [home + "/bin/ts-manager", "cli", "status", "--json"]
-        peersProvider.running = true
+        peersProvider.run([home + "/bin/ts-manager", "cli", "status", "--json"])
     }
 
     Component.onCompleted: refresh()
@@ -47,75 +43,51 @@ Item {
         onTriggered: root.refresh()
     }
 
-    Process {
+    Commons.JsonProcess {
         id: infoProvider
-        property string buffer: ""
-        stdout: SplitParser {
-            onRead: function(data) { infoProvider.buffer += data + "\n" }
-        }
-        onStarted: infoProvider.buffer = ""
-        onExited: function(exitCode, exitStatus) {
+        label: "ts-manager info"
+        onParsed: function(data) {
             root.infoLoaded = true
-            if (exitCode !== 0 || exitStatus !== 0) {
-                root.connected = false
-                root.exitNode = ""
-                return
-            }
-            try {
-                var parsed = JSON.parse(infoProvider.buffer)
-                root.connected = parsed.connected === true
-                root.exitNode = parsed.exit_node || ""
-            } catch (e) {
-                console.warn("ts-manager info returned invalid JSON:", e)
-                root.connected = false
-                root.exitNode = ""
-            }
+            root.connected = data.connected === true
+            root.exitNode = data.exit_node || ""
+        }
+        onFailed: {
+            root.infoLoaded = true
+            root.connected = false
+            root.exitNode = ""
         }
     }
 
-    Process {
+    Commons.JsonProcess {
         id: peersProvider
-        property string buffer: ""
-        stdout: SplitParser {
-            onRead: function(data) { peersProvider.buffer += data + "\n" }
-        }
-        onStarted: peersProvider.buffer = ""
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode !== 0 || exitStatus !== 0) {
-                root.peers = []
-                return
+        label: "ts-manager cli status --json"
+        onParsed: function(data) {
+            var peerMap = data.Peer || {}
+            var list = []
+            for (var key in peerMap) {
+                var p = peerMap[key]
+                var ips = p.TailscaleIPs || []
+                var ip = ips.length > 0 ? ips[0] : ""
+                // Prefer DNSName's first label (the tailnet "given name") over the raw, possibly-stale HostName.
+                var dnsLabel = p.DNSName ? p.DNSName.split(".")[0] : ""
+                var name = dnsLabel || p.HostName || "unknown"
+                // Secondary line shows the raw hostname only when it differs from the display name.
+                var altName = (p.HostName && p.HostName !== name) ? p.HostName : ""
+                list.push({ name: name, ip: ip, altName: altName, os: p.OS || "", online: p.Online === true })
             }
-            try {
-                var parsed = JSON.parse(peersProvider.buffer)
-                var peerMap = parsed.Peer || {}
-                var list = []
-                for (var key in peerMap) {
-                    var p = peerMap[key]
-                    var ips = p.TailscaleIPs || []
-                    var ip = ips.length > 0 ? ips[0] : ""
-                    // Prefer DNSName's first label (the tailnet "given name") over the raw, possibly-stale HostName.
-                    var dnsLabel = p.DNSName ? p.DNSName.split(".")[0] : ""
-                    var name = dnsLabel || p.HostName || "unknown"
-                    // Secondary line shows the raw hostname only when it differs from the display name.
-                    var altName = (p.HostName && p.HostName !== name) ? p.HostName : ""
-                    list.push({ name: name, ip: ip, altName: altName, os: p.OS || "", online: p.Online === true })
-                }
-                list.sort(function(a, b) {
-                    if (a.online !== b.online) return a.online ? -1 : 1
-                    return a.name.localeCompare(b.name)
-                })
-                root.peers = list
+            list.sort(function(a, b) {
+                if (a.online !== b.online) return a.online ? -1 : 1
+                return a.name.localeCompare(b.name)
+            })
+            root.peers = list
 
-                var self = parsed.Self || {}
-                var selfIps = self.TailscaleIPs || []
-                var selfDnsLabel = self.DNSName ? self.DNSName.split(".")[0] : ""
-                root.selfName = selfDnsLabel || self.HostName || ""
-                root.selfIp = selfIps.length > 0 ? selfIps[0] : ""
-            } catch (e) {
-                console.warn("ts-manager cli status --json returned invalid JSON:", e)
-                root.peers = []
-            }
+            var self = data.Self || {}
+            var selfIps = self.TailscaleIPs || []
+            var selfDnsLabel = self.DNSName ? self.DNSName.split(".")[0] : ""
+            root.selfName = selfDnsLabel || self.HostName || ""
+            root.selfIp = selfIps.length > 0 ? selfIps[0] : ""
         }
+        onFailed: root.peers = []
     }
 
     Process {

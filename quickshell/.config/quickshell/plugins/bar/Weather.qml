@@ -1,5 +1,4 @@
 import Quickshell
-import Quickshell.Io
 import QtQuick
 
 import "../../Commons" as Commons
@@ -38,18 +37,14 @@ Item {
     }
 
     function refresh() {
-        weatherProvider.running = false
-        weatherProvider.command = [home + "/bin/weather"]
-        weatherProvider.running = true
+        weatherProvider.run([home + "/bin/weather"])
     }
 
     property bool forcedRefreshPending: false
 
     function forceRefresh() {
         forcedRefreshPending = true
-        weatherProvider.running = false
-        weatherProvider.command = [home + "/bin/weather", "--force"]
-        weatherProvider.running = true
+        weatherProvider.run([home + "/bin/weather", "--force"])
     }
 
     function yrUrl() {
@@ -73,26 +68,17 @@ Item {
         onTriggered: root.refresh()
     }
 
-    Process {
+    Commons.JsonProcess {
         id: weatherProvider
-        property string buffer: ""
-        stdout: SplitParser {
-            onRead: function(data) { weatherProvider.buffer += data }
+        label: "weather"
+        onParsed: function(data) {
+            root.forcedRefreshPending = false
+            root.weatherData = data
         }
-        onStarted: weatherProvider.buffer = ""
-        onExited: function(exitCode, exitStatus) {
+        onFailed: {
             var wasForced = root.forcedRefreshPending
             root.forcedRefreshPending = false
-            if (exitCode !== 0 || exitStatus !== 0) {
-                if (wasForced) Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refresh failed"])
-                return
-            }
-            try {
-                root.weatherData = JSON.parse(weatherProvider.buffer)
-            } catch (e) {
-                console.warn("weather returned invalid JSON:", e)
-                if (wasForced) Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refresh failed"])
-            }
+            if (wasForced) Quickshell.execDetached(["notify-send", "-t", "3000", "Weather", "Refresh failed"])
         }
     }
 

@@ -27,9 +27,7 @@ Item {
     readonly property int connectedCount: connectedDevices.length
 
     function refresh() {
-        bluetoothProvider.running = false
-        bluetoothProvider.command = [home + "/bin/launcher", "items", "--bluetooth"]
-        bluetoothProvider.running = true
+        bluetoothProvider.run([home + "/bin/launcher", "items", "--bluetooth"])
     }
 
     Component.onCompleted: refresh()
@@ -41,22 +39,10 @@ Item {
         onTriggered: root.refresh()
     }
 
-    Process {
+    Commons.JsonProcess {
         id: bluetoothProvider
-        property string buffer: ""
-        stdout: SplitParser {
-            onRead: function(data) { bluetoothProvider.buffer += data + "\n" }
-        }
-        onStarted: bluetoothProvider.buffer = ""
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode !== 0 || exitStatus !== 0) return
-            try {
-                var parsed = JSON.parse(bluetoothProvider.buffer)
-                root.items = Array.isArray(parsed) ? parsed : []
-            } catch (e) {
-                console.warn("bluetooth provider returned invalid JSON:", e)
-            }
-        }
+        label: "bluetooth provider"
+        onParsed: function(data) { root.items = Array.isArray(data) ? data : [] }
     }
 
     Process {

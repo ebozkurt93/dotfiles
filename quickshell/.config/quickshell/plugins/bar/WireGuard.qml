@@ -19,9 +19,7 @@ Item {
     }
 
     function refresh() {
-        statusProvider.running = false
-        statusProvider.command = [home + "/bin/wg-manager", "status-json"]
-        statusProvider.running = true
+        statusProvider.run([home + "/bin/wg-manager", "status-json"])
     }
 
     Component.onCompleted: refresh()
@@ -33,22 +31,10 @@ Item {
         onTriggered: root.refresh()
     }
 
-    Process {
+    Commons.JsonProcess {
         id: statusProvider
-        property string buffer: ""
-        stdout: SplitParser {
-            onRead: function(data) { statusProvider.buffer += data + "\n" }
-        }
-        onStarted: statusProvider.buffer = ""
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode !== 0 || exitStatus !== 0) return
-            try {
-                var parsed = JSON.parse(statusProvider.buffer)
-                root.interfaces = Array.isArray(parsed) ? parsed : []
-            } catch (e) {
-                console.warn("wg-manager status-json returned invalid JSON:", e)
-            }
-        }
+        label: "wg-manager status-json"
+        onParsed: function(data) { root.interfaces = Array.isArray(data) ? data : [] }
     }
 
     Process {
