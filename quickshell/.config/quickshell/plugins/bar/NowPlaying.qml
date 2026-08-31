@@ -430,7 +430,7 @@ Item {
 
                                 Text {
                                     text: sourceRow.player && sourceRow.player.isPlaying ? "⏸" : "▶"
-                                    color: Commons.Color.launcher.text
+                                    color: sourceRow.selected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                     font.pixelSize: 12
                                     width: 16
                                     horizontalAlignment: Text.AlignHCenter
@@ -445,7 +445,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: sourceRow.sourceTitle
-                                        color: Commons.Color.launcher.text
+                                        color: sourceRow.selected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                         font.pixelSize: 12
                                         font.bold: sourceRow.selected
                                         elide: Text.ElideRight
@@ -454,7 +454,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: sourceRow.sourceDetail
-                                        color: Commons.Color.launcher.textMuted
+                                        color: sourceRow.selected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                         font.pixelSize: 10
                                         elide: Text.ElideRight
                                         visible: text.length > 0

@@ -335,7 +335,7 @@ PanelWindow {
                             anchors.rightMargin: 10
                             verticalAlignment: Text.AlignVCenter
                             text: modelData.isImage ? ("🖼 " + modelData.preview) : modelData.preview
-                            color: Commons.Color.launcher.text
+                            color: index === root.selectedIndex ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                             font.pixelSize: 13
                             elide: Text.ElideRight
                         }

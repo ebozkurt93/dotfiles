@@ -769,7 +769,7 @@ Item {
                                 Text {
                                     anchors.centerIn: parent
                                     text: dnsPill.modelData
-                                    color: Commons.Color.launcher.text
+                                    color: dnsPill.active ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                     font.pixelSize: 10
                                 }
 
@@ -966,7 +966,7 @@ Item {
             Text {
                 width: parent.width - 20 - (lockIcon.visible ? lockIcon.width + 4 : 0)
                 text: wifiRow.modelData.ssid
-                color: Commons.Color.launcher.text
+                color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                 font.pixelSize: 13
                 font.bold: wifiRow.modelData.connected
                 elide: Text.ElideRight

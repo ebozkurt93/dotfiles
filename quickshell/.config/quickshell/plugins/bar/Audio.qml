@@ -331,7 +331,7 @@ Item {
                             Text {
                                 width: parent.width - 24
                                 text: root.nodeLabel(sinkRow.modelData)
-                                color: Commons.Color.launcher.text
+                                color: sinkMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 13
                                 font.bold: sinkRow.isActive
                                 elide: Text.ElideRight
@@ -491,7 +491,7 @@ Item {
                             Text {
                                 width: parent.width - 24
                                 text: root.nodeLabel(sourceRow.modelData)
-                                color: Commons.Color.launcher.text
+                                color: sourceMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 13
                                 font.bold: sourceRow.isActive
                                 elide: Text.ElideRight

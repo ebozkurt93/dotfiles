@@ -166,7 +166,7 @@ Item {
                             Text {
                                 width: parent.width - 70
                                 text: ifaceRow.modelData.name || ""
-                                color: Commons.Color.launcher.text
+                                color: ifaceMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 12
                                 elide: Text.ElideRight
                             }
@@ -175,7 +175,7 @@ Item {
                                 width: 70
                                 horizontalAlignment: Text.AlignRight
                                 text: ifaceRow.modelData.up ? "Up" : "Down"
-                                color: ifaceRow.modelData.up ? Commons.Color.launcher.text : Commons.Color.launcher.textMuted
+                                color: ifaceMouse.containsMouse ? Commons.Color.launcher.textOnMuted : (ifaceRow.modelData.up ? Commons.Color.launcher.text : Commons.Color.launcher.textMuted)
                                 font.pixelSize: 12
                             }
                         }

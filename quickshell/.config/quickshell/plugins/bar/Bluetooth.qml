@@ -291,7 +291,7 @@ Item {
                 Text {
                     width: parent.width
                     text: deviceRow.modelData.title || ""
-                    color: Commons.Color.launcher.text
+                    color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                     font.pixelSize: 13
                     elide: Text.ElideRight
                 }
@@ -299,7 +299,7 @@ Item {
                 Text {
                     width: parent.width
                     text: deviceRow.modelData.subtitle || ""
-                    color: Commons.Color.launcher.textMuted
+                    color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                     font.pixelSize: 11
                     elide: Text.ElideRight
                     visible: text.length > 0

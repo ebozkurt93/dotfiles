@@ -323,7 +323,7 @@ Item {
                                 visible: !rowDelegate.hasImage
                                 anchors.centerIn: parent
                                 text: "\u{F009C}"
-                                color: Commons.Color.launcher.textMuted
+                                color: rowArea.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                 opacity: 0.6
                                 font.pixelSize: 14
                             }
@@ -341,7 +341,7 @@ Item {
                                     id: titleText
                                     width: parent.width - timeLabel.implicitWidth - 6
                                     text: rowDelegate.modelData.summary || "Notification"
-                                    color: rowDelegate.modelData.urgency === "critical" ? Commons.Color.danger : Commons.Color.launcher.text
+                                    color: rowArea.containsMouse ? Commons.Color.launcher.textOnMuted : (rowDelegate.modelData.urgency === "critical" ? Commons.Color.danger : Commons.Color.launcher.text)
                                     font.pixelSize: 12
                                     font.bold: true
                                     elide: Text.ElideRight
@@ -357,7 +357,7 @@ Item {
                                 Text {
                                     id: timeLabel
                                     text: root.formatAgo(rowDelegate.modelData.received_at)
-                                    color: Commons.Color.launcher.textMuted
+                                    color: rowArea.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                     font.pixelSize: 9
                                 }
                             }
@@ -366,7 +366,7 @@ Item {
                                 width: parent.width
                                 visible: !!rowDelegate.modelData.app_name
                                 text: rowDelegate.modelData.app_name || ""
-                                color: Commons.Color.launcher.textMuted
+                                color: rowArea.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                 font.pixelSize: 10
                                 elide: Text.ElideRight
                             }
@@ -376,7 +376,7 @@ Item {
                                 width: parent.width
                                 visible: !!rowDelegate.modelData.body
                                 text: rowDelegate.modelData.body || ""
-                                color: Commons.Color.launcher.textMuted
+                                color: rowArea.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                 font.pixelSize: 10
                                 wrapMode: Text.WordWrap
                                 maximumLineCount: 3

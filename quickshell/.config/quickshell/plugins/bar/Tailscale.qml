@@ -306,7 +306,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: root.connected ? "Disconnect" : "Connect"
-                            color: Commons.Color.launcher.text
+                            color: toggleMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                             font.pixelSize: 12
                         }
 
@@ -364,7 +364,7 @@ Item {
 
                                 Text {
                                     text: root.osIcon(peerRow.modelData.os)
-                                    color: Commons.Color.launcher.text
+                                    color: peerMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                     font.pixelSize: 12
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -376,7 +376,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: peerRow.modelData.name
-                                        color: Commons.Color.launcher.text
+                                        color: peerMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                         font.pixelSize: 12
                                         elide: Text.ElideRight
                                     }
@@ -384,7 +384,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: [peerRow.modelData.ip, peerRow.modelData.altName].filter(function(s) { return s && s.length > 0 }).join(" · ")
-                                        color: Commons.Color.launcher.textMuted
+                                        color: peerMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                                         font.pixelSize: 10
                                         elide: Text.ElideRight
                                     }

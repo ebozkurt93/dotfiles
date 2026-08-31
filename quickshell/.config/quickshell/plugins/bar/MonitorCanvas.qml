@@ -71,7 +71,7 @@ Item {
                     Text {
                         width: parent.width
                         text: String(card.modelData.name || "Display")
-                        color: Commons.Color.launcher.text
+                        color: card.selected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                         font.pixelSize: 10
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
@@ -82,7 +82,7 @@ Item {
                         visible: parent.parent.height >= 56
                         width: parent.width
                         text: Model.displayModelLabel(card.modelData, true)
-                        color: Commons.Color.launcher.textMuted
+                        color: card.selected ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.textMuted
                         font.pixelSize: 9
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight

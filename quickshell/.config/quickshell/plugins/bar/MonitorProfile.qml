@@ -245,7 +245,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "Confirm"
-                            color: Commons.Color.launcher.text
+                            color: Commons.Color.launcher.textOnMuted
                             font.pixelSize: 10
                             font.bold: true
                         }
@@ -319,7 +319,7 @@ Item {
                             Text {
                                 width: parent.width - (recommendedTag.visible ? recommendedTag.width + 8 : 0)
                                 text: modelData.name
-                                color: Commons.Color.launcher.text
+                                color: modelData.active ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 12
                                 font.bold: modelData.active
                                 elide: Text.ElideRight

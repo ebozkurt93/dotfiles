@@ -327,14 +327,14 @@ Item {
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.profileIcon(profileCell.modelData)
-                                    color: Commons.Color.launcher.text
+                                    color: profileCell.active ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                     font.pixelSize: 16
                                 }
 
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.profileName(profileCell.modelData)
-                                    color: Commons.Color.launcher.text
+                                    color: profileCell.active ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                     font.pixelSize: 9
                                 }
                             }

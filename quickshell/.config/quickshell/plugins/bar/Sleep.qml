@@ -296,7 +296,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: presetCell.modelData.label
-                                color: Commons.Color.launcher.text
+                                color: presetCell.isActive ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
                                 font.pixelSize: 10
                                 horizontalAlignment: Text.AlignHCenter
                             }
