@@ -680,122 +680,17 @@ Item {
                         color: Commons.Color.launcher.cardBorder
                     }
 
-                    Text {
-                        width: parent.width
-                        text: "DNS" + (root.dnsProvider !== "" ? " · " + root.dnsProvider : "")
-                        color: Commons.Color.launcher.textMuted
-                        font.pixelSize: 10
-                    }
-
-                    Commons.InfoRow {
-                        visible: root.effectiveDnsServers !== ""
-                        label: "Servers"
-                        value: root.effectiveDnsServers
-                    }
-
-                    Row {
-                        id: dnsRow
-                        width: parent.width
-                        spacing: 6
-
-                        readonly property real cellWidth: (width - spacing * (root.dnsProviders.length - 1)) / root.dnsProviders.length
-
-                        Repeater {
-                            model: root.dnsProviders
-
-                            Rectangle {
-                                id: dnsPill
-                                required property string modelData
-
-                                readonly property bool active: root.dnsProvider === modelData
-
-                                width: dnsRow.cellWidth
-                                height: 26
-                                radius: 6
-                                color: active ? Commons.Color.launcher.selectionBackground : "transparent"
-                                border.color: active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
-                                border.width: 1
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: dnsPill.modelData
-                                    color: dnsPill.active ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
-                                    font.pixelSize: 10
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        if (dnsPill.modelData === "Custom") root.openCustomDns()
-                                        else root.setDns(dnsPill.modelData)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Item {
-                        visible: root.customDnsOpen
-                        width: parent.width
-                        height: visible ? customDnsColumn.implicitHeight : 0
-
-                        Column {
-                            id: customDnsColumn
-                            width: parent.width
-                            spacing: 6
-
-                            Text {
-                                width: parent.width
-                                text: "Custom DNS servers (space-separated)"
-                                color: Commons.Color.launcher.textMuted
-                                font.pixelSize: 10
-                                elide: Text.ElideRight
-                            }
-
-                            Rectangle {
-                                width: parent.width
-                                height: 30
-                                radius: 6
-                                color: Commons.Color.launcher.inputBackground
-                                border.color: Commons.Color.launcher.inputBorder
-                                border.width: 1
-
-                                TextInput {
-                                    id: customDnsInput
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    verticalAlignment: TextInput.AlignVCenter
-                                    color: Commons.Color.launcher.text
-                                    font.pixelSize: 12
-                                    focus: root.customDnsOpen
-                                    text: root.customDnsText
-                                    onTextChanged: root.customDnsText = text
-                                    onAccepted: root.setDns("Custom")
-                                    Keys.onEscapePressed: root.cancelCustomDns()
-                                }
-                            }
-
-                            Row {
-                                spacing: 8
-                                anchors.right: parent.right
-
-                                Text {
-                                    text: "Cancel"
-                                    color: Commons.Color.launcher.textMuted
-                                    font.pixelSize: 11
-                                    MouseArea { anchors.fill: parent; onClicked: root.cancelCustomDns() }
-                                }
-
-                                Text {
-                                    text: "Set"
-                                    color: Commons.Color.launcher.selection
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    MouseArea { anchors.fill: parent; onClicked: root.setDns("Custom") }
-                                }
-                            }
-                        }
+                    NetworkDns {
+                        provider: root.dnsProvider
+                        providers: root.dnsProviders
+                        effectiveServers: root.effectiveDnsServers
+                        customOpen: root.customDnsOpen
+                        customText: root.customDnsText
+                        onProviderPicked: function(provider) { root.setDns(provider) }
+                        onCustomDnsRequested: root.openCustomDns()
+                        onCustomTextEdited: function(text) { root.customDnsText = text }
+                        onCustomSubmitted: root.setDns("Custom")
+                        onCustomCancelled: root.cancelCustomDns()
                     }
 
                     Rectangle {
@@ -815,7 +710,10 @@ Item {
 
                     Repeater {
                         model: root.wifiStationAvailable ? root.wifiNetworks : []
-                        delegate: WifiRow {}
+                        delegate: NetworkWifiRow {
+                            onActivateRequested: root.activateRow(modelData)
+                            onForgetRequested: root.forgetNetwork(modelData.ssid)
+                        }
                     }
 
                     Item {
@@ -887,72 +785,4 @@ Item {
         }
     }
 
-    component WifiRow: Rectangle {
-        id: wifiRow
-        required property var modelData
-
-        width: parent ? parent.width : 0
-        height: rowInner.implicitHeight + 12
-        radius: 6
-        color: rowMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
-
-        Row {
-            id: rowInner
-            anchors.left: parent.left
-            anchors.right: forgetIcon.visible ? forgetIcon.left : parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: 6
-            anchors.rightMargin: 6
-            spacing: 8
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.wifiIconFor(wifiRow.modelData.signal)
-                color: wifiRow.modelData.connected ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
-                font.pixelSize: 15
-            }
-
-            Text {
-                width: parent.width - 20 - (lockIcon.visible ? lockIcon.width + 4 : 0)
-                text: wifiRow.modelData.ssid
-                color: rowMouse.containsMouse ? Commons.Color.launcher.textOnMuted : Commons.Color.launcher.text
-                font.pixelSize: 13
-                font.bold: wifiRow.modelData.connected
-                elide: Text.ElideRight
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Text {
-                id: lockIcon
-                visible: root.requiresCredentials(wifiRow.modelData.security)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "󰌾"
-                color: Commons.Color.launcher.textMuted
-                font.pixelSize: 11
-            }
-        }
-
-        Text {
-            id: forgetIcon
-            visible: wifiRow.modelData.known && !wifiRow.modelData.connected
-            anchors.right: parent.right
-            anchors.rightMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-            text: "󰅗"
-            color: Commons.Color.launcher.textMuted
-            font.pixelSize: 13
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.forgetNetwork(wifiRow.modelData.ssid)
-            }
-        }
-
-        MouseArea {
-            id: rowMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: root.activateRow(wifiRow.modelData)
-        }
-    }
 }
