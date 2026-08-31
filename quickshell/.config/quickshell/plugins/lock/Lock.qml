@@ -143,129 +143,50 @@ Item {
                     onClicked: lockPasswordInput.forceActiveFocus()
                 }
 
-                Column {
+                Commons.LockCenterColumn {
                     id: lockStack
-                    anchors.centerIn: parent
-                    width: Math.min(parent.width - 48, 560)
-                    spacing: 12
+                    username: root.currentUser
+                    passwordBoxBorderColor: root.lockFailure ? Commons.Color.lock.borderError : Commons.Color.lock.border
+                    onPowerAction: function(command) { root.runLockPowerAction(command) }
 
-                    Text {
-                        width: parent.width
-                        text: Qt.formatDateTime(lockClock.date, "dddd, d MMMM")
+                    TextInput {
+                        id: lockPasswordInput
+                        anchors.fill: parent
+                        anchors.leftMargin: 18
+                        anchors.rightMargin: 18
+                        verticalAlignment: TextInput.AlignVCenter
+                        horizontalAlignment: TextInput.AlignHCenter
                         color: Commons.Color.lock.text
-                        opacity: 0.72
-                        font.pixelSize: 22
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: Qt.formatDateTime(lockClock.date, "hh:mm")
-                        color: Commons.Color.lock.text
-                        font.pixelSize: 116
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: root.currentUser
-                        color: Commons.Color.lock.text
-                        opacity: 0.72
-                        font.pixelSize: 24
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Rectangle {
-                        width: 340
-                        height: 58
-                        radius: 12
-                        color: Commons.Color.lock.passwordBoxBackground
-                        border.color: root.lockFailure ? Commons.Color.lock.borderError : Commons.Color.lock.border
-                        border.width: 1
-                        anchors.horizontalCenter: parent.horizontalCenter
-
-                        TextInput {
-                            id: lockPasswordInput
-                            anchors.fill: parent
-                            anchors.leftMargin: 18
-                            anchors.rightMargin: 18
-                            verticalAlignment: TextInput.AlignVCenter
-                            horizontalAlignment: TextInput.AlignHCenter
-                            color: Commons.Color.lock.text
-                            selectionColor: Commons.Color.lock.selection
-                            selectedTextColor: Commons.Color.lock.textOnAccent
-                            echoMode: TextInput.Password
-                            passwordCharacter: "●"
-                            passwordMaskDelay: 0
-                            enabled: root.lockRequested && !root.lockAuthenticating
-                            focus: root.lockRequested
-                            text: root.lockPassword
-                            font.pixelSize: text.length > 0 ? 24 : 17
-                            Component.onCompleted: root.lockPasswordField = lockPasswordInput
-                            onTextChanged: {
-                                if (text !== root.lockPassword) root.lockPassword = text
-                                if (text.length > 0) root.lockFailure = ""
-                            }
-                            onAccepted: root.submitLockPassword()
-                            Keys.onPressed: function(event) {
-                                if (event.key === Qt.Key_Escape || (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_U)) {
-                                    root.lockPassword = ""
-                                    event.accepted = true
-                                }
-                            }
+                        selectionColor: Commons.Color.lock.selection
+                        selectedTextColor: Commons.Color.lock.textOnAccent
+                        echoMode: TextInput.Password
+                        passwordCharacter: "●"
+                        passwordMaskDelay: 0
+                        enabled: root.lockRequested && !root.lockAuthenticating
+                        focus: root.lockRequested
+                        text: root.lockPassword
+                        font.pixelSize: text.length > 0 ? 24 : 17
+                        Component.onCompleted: root.lockPasswordField = lockPasswordInput
+                        onTextChanged: {
+                            if (text !== root.lockPassword) root.lockPassword = text
+                            if (text.length > 0) root.lockFailure = ""
                         }
-
-                        Text {
-                            anchors.centerIn: parent
-                            visible: lockPasswordInput.text.length === 0 && (root.lockAuthenticating || root.lockFailure.length > 0)
-                            text: root.lockAuthenticating ? "Checking..." : root.lockFailure
-                            color: root.lockFailure ? Commons.Color.lock.textError : Commons.Color.lock.placeholder
-                            font.pixelSize: 17
-                        }
-                    }
-
-                    Row {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 12
-                        topPadding: 18
-
-                        Repeater {
-                            model: [
-                                { label: "Sleep", command: "systemctl suspend", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
-                                { label: "Restart", command: "systemctl reboot", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
-                                { label: "Shutdown", command: "systemctl poweroff", color: Commons.Color.lock.dangerButtonBackground, border: Commons.Color.lock.dangerButtonBorder, text: Commons.Color.lock.dangerButtonText }
-                            ]
-
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: 124
-                                height: 44
-                                radius: 12
-                                color: powerButtonMouse.containsMouse ? Commons.Color.lock.powerButtonHover : modelData.color
-                                border.color: modelData.border
-                                border.width: 1
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.label
-                                    color: modelData.text
-                                    font.pixelSize: 15
-                                }
-
-                                MouseArea {
-                                    id: powerButtonMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: root.runLockPowerAction(modelData.command)
-                                }
+                        onAccepted: root.submitLockPassword()
+                        Keys.onPressed: function(event) {
+                            if (event.key === Qt.Key_Escape || (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_U)) {
+                                root.lockPassword = ""
+                                event.accepted = true
                             }
                         }
                     }
-                }
 
-                SystemClock {
-                    id: lockClock
-                    precision: SystemClock.Seconds
+                    Text {
+                        anchors.centerIn: parent
+                        visible: lockPasswordInput.text.length === 0 && (root.lockAuthenticating || root.lockFailure.length > 0)
+                        text: root.lockAuthenticating ? "Checking..." : root.lockFailure
+                        color: root.lockFailure ? Commons.Color.lock.textError : Commons.Color.lock.placeholder
+                        font.pixelSize: 17
+                    }
                 }
             }
         }
@@ -295,89 +216,9 @@ Item {
                 onClicked: root.lockPreviewOpen = false
             }
 
-            Column {
-                anchors.centerIn: parent
-                width: Math.min(parent.width - 48, 560)
-                spacing: 12
-
-                Text {
-                    width: parent.width
-                    text: Qt.formatDateTime(lockPreviewClock.date, "dddd, d MMMM")
-                    color: Commons.Color.lock.text
-                    opacity: 0.72
-                    font.pixelSize: 22
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Text {
-                    width: parent.width
-                    text: Qt.formatDateTime(lockPreviewClock.date, "hh:mm")
-                    color: Commons.Color.lock.text
-                    font.pixelSize: 116
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Text {
-                    width: parent.width
-                    text: root.currentUser
-                    color: Commons.Color.lock.text
-                    opacity: 0.72
-                    font.pixelSize: 24
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Rectangle {
-                    width: 340
-                    height: 58
-                    radius: 12
-                    color: Commons.Color.lock.passwordBoxBackground
-                    border.color: Commons.Color.lock.border
-                    border.width: 1
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
-
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 12
-                    topPadding: 18
-
-                    Repeater {
-                        model: [
-                            { label: "Sleep", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
-                            { label: "Restart", color: Commons.Color.lock.powerButtonBackground, border: Commons.Color.lock.powerButtonBorder, text: Commons.Color.lock.textOnMuted },
-                            { label: "Shutdown", color: Commons.Color.lock.dangerButtonBackground, border: Commons.Color.lock.dangerButtonBorder, text: Commons.Color.lock.dangerButtonText }
-                        ]
-
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: 124
-                            height: 44
-                            radius: 12
-                            color: previewButtonMouse.containsMouse ? Commons.Color.lock.powerButtonHover : modelData.color
-                            border.color: modelData.border
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.label
-                                color: modelData.text
-                                font.pixelSize: 15
-                            }
-
-                            MouseArea {
-                                id: previewButtonMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: root.lockPreviewOpen = false
-                            }
-                        }
-                    }
-                }
-            }
-
-            SystemClock {
-                id: lockPreviewClock
-                precision: SystemClock.Seconds
+            Commons.LockCenterColumn {
+                username: root.currentUser
+                onPowerAction: function(command) { root.lockPreviewOpen = false }
             }
 
             Text {
