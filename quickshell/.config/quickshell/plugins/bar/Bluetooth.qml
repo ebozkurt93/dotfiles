@@ -8,9 +8,17 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property alias kbNavScope: kbNav
+
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
 
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool hasAdapter: adapter !== null
+    readonly property bool kbAvailable: hasAdapter
     readonly property bool isOn: hasAdapter && adapter.enabled
 
     readonly property var allDevices: Bluetooth.devices ? Bluetooth.devices.values : []
@@ -26,6 +34,17 @@ Item {
 
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
+
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
 
     Text {
         id: icon
@@ -48,6 +67,11 @@ Item {
         cardWidth: 300
         cardHeight: Math.min(440, popupColumn.implicitHeight + 24)
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Flickable {
                 anchors.fill: parent
@@ -88,9 +112,8 @@ Item {
                             Text {
                                 width: parent.width
                                 text: {
-                                    if (!root.hasAdapter) return "NO ADAPTER"
-                                    if (!root.isOn) return "OFF"
-                                    return root.connectedCount > 0 ? (root.connectedCount + " CONNECTED") : "ON"
+                                    var status = !root.hasAdapter ? "NO ADAPTER" : (!root.isOn ? "OFF" : (root.connectedCount > 0 ? (root.connectedCount + " CONNECTED") : "ON"))
+                                    return root.kbFocused ? status + "  ·  ↑↓ Enter" : status
                                 }
                                 color: Commons.Color.launcher.textMuted
                                 font.pixelSize: 10
@@ -100,9 +123,13 @@ Item {
 
                         Commons.ToggleSwitch {
                             id: powerSwitch
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.togglePower() }
                             visible: root.hasAdapter
                             anchors.verticalCenter: parent.verticalCenter
                             checked: root.isOn
+                            border.color: kbNav.focusedItem === powerSwitch ? Commons.Color.launcher.selectionBorder : "transparent"
+                            border.width: kbNav.focusedItem === powerSwitch ? 2 : 0
                             onToggled: root.togglePower()
                         }
                     }
@@ -132,7 +159,10 @@ Item {
 
                     Repeater {
                         model: root.connectedDevices
-                        delegate: DeviceRow {}
+                        delegate: DeviceRow {
+                            id: connectedRow
+                            navFocused: kbNav.focusedItem === connectedRow
+                        }
                     }
 
                     Text {
@@ -145,7 +175,10 @@ Item {
 
                     Repeater {
                         model: root.availableDevices
-                        delegate: DeviceRow {}
+                        delegate: DeviceRow {
+                            id: availableRow
+                            navFocused: kbNav.focusedItem === availableRow
+                        }
                     }
                 }
         }
@@ -154,11 +187,19 @@ Item {
     component DeviceRow: Rectangle {
         id: deviceRow
         required property var modelData
+        property bool navFocused: false
+        property bool kbNavTarget: true
+        function kbActivate() {
+            if (deviceRow.modelData.connected) deviceRow.modelData.disconnect()
+            else deviceRow.modelData.connect()
+        }
 
         width: parent ? parent.width : 0
         height: rowInner.implicitHeight + 12
         radius: 6
         color: rowMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+        border.color: deviceRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+        border.width: deviceRow.navFocused ? 2 : 0
 
         Row {
             id: rowInner

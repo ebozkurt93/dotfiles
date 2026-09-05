@@ -7,7 +7,14 @@ import "../../Commons" as Commons
 Item {
     id: root
     property var shell
-    property bool nowPlayingPopupOpen: false
+    property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: root.activePlayer !== null
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
     property bool nowPlayingTooltipVisible: false
     property string selectedPlayerKey: ""
 
@@ -39,7 +46,7 @@ Item {
         return sourcePlayers.length > 0 ? sourcePlayers[0] : null
     }
 
-    onActivePlayerChanged: if (!activePlayer) nowPlayingPopupOpen = false
+    onActivePlayerChanged: if (!activePlayer) popupOpen = false
 
     readonly property real activePlayerLength: activePlayer && activePlayer.lengthSupported ? activePlayer.length : 0
     readonly property real seekProgress: activePlayerLength > 0 ? Math.min(1, livePosition / activePlayerLength) : 0
@@ -69,6 +76,17 @@ Item {
 
     implicitWidth: nowPlaying.implicitWidth
     implicitHeight: nowPlaying.implicitHeight
+
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: nowPlaying
+        width: nowPlaying.implicitWidth + 10
+        height: nowPlaying.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
 
     Row {
         id: nowPlaying
@@ -116,7 +134,7 @@ Item {
                 property bool needsScroll: implicitWidth > nowPlayingScrollClip.width
 
                 NumberAnimation on x {
-                    running: nowPlayingLabel.needsScroll && !root.nowPlayingPopupOpen
+                    running: nowPlayingLabel.needsScroll && !root.popupOpen
                     loops: Animation.Infinite
                     duration: Math.max(6000, nowPlayingLabel.implicitWidth * 25)
                     from: nowPlayingScrollClip.width
@@ -128,7 +146,7 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: root.nowPlayingPopupOpen = !root.nowPlayingPopupOpen
+                onClicked: root.popupOpen = !root.popupOpen
                 onEntered: root.nowPlayingTooltipVisible = true
                 onExited: root.nowPlayingTooltipVisible = false
             }
@@ -137,7 +155,7 @@ Item {
 
     Rectangle {
         id: nowPlayingTooltip
-        visible: root.nowPlayingTooltipVisible && root.activePlayer !== null && !root.nowPlayingPopupOpen
+        visible: root.nowPlayingTooltipVisible && root.activePlayer !== null && !root.popupOpen
         width: tooltipText.implicitWidth + 16
         height: tooltipText.implicitHeight + 10
         radius: 6
@@ -163,11 +181,16 @@ Item {
 
     Commons.PopupPanel {
         id: nowPlayingPopupPanel
-        open: root.nowPlayingPopupOpen
+        open: root.popupOpen
         namespace: "dotfiles-now-playing-popup"
         cardWidth: 320
         cardHeight: popupColumn.implicitHeight + 28
-        onDismissRequested: root.nowPlayingPopupOpen = false
+        onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -249,15 +272,24 @@ Item {
 
                     Item {
                         id: seekBarWrap
+                        property bool kbNavTarget: true
+                        function kbActivate() {}
+                        function kbAdjust(delta) {
+                            if (!root.activePlayer || !root.activePlayer.canSeek || root.activePlayerLength <= 0) return
+                            var target = Math.max(0, Math.min(root.activePlayerLength, root.livePosition + delta * 5))
+                            root.activePlayer.position = target
+                            root.livePosition = target
+                        }
+                        readonly property bool navFocused: kbNav.focusedItem === seekBarWrap
                         width: parent.width
                         height: 6
 
                         Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width
-                            height: 2
-                            radius: 1
-                            color: Commons.Color.launcher.cardBorder
+                            height: seekBarWrap.navFocused ? 4 : 2
+                            radius: 2
+                            color: seekBarWrap.navFocused ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
                         }
 
                         Rectangle {
@@ -315,41 +347,89 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 18
 
-                    Text {
+                    Rectangle {
+                        id: prevButton
                         readonly property bool enabledHere: root.activePlayer && root.activePlayer.canGoPrevious
-                        text: "⏮"
-                        font.pixelSize: 18
-                        color: Commons.Color.launcher.text
-                        opacity: enabledHere ? 1.0 : 0.35
+                        property bool kbNavTarget: enabledHere
+                        function kbActivate() { root.activePlayer.previous() }
+                        readonly property bool navFocused: kbNav.focusedItem === prevButton
+                        width: prevText.implicitWidth + 10
+                        height: prevText.implicitHeight + 6
+                        radius: 4
+                        color: "transparent"
+                        border.color: prevButton.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: prevButton.navFocused ? 2 : 0
+
+                        Text {
+                            id: prevText
+                            anchors.centerIn: parent
+                            text: "⏮"
+                            font.pixelSize: 18
+                            color: Commons.Color.launcher.text
+                            opacity: prevButton.enabledHere ? 1.0 : 0.35
+                        }
+
                         MouseArea {
                             anchors.fill: parent
-                            enabled: parent.enabledHere
+                            enabled: prevButton.enabledHere
                             onClicked: root.activePlayer.previous()
                         }
                     }
 
-                    Text {
+                    Rectangle {
+                        id: playPauseButton
                         readonly property bool enabledHere: root.activePlayer && (root.activePlayer.canTogglePlaying || root.activePlayer.canPlay || root.activePlayer.canPause)
-                        text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                        font.pixelSize: 20
-                        color: Commons.Color.launcher.text
-                        opacity: enabledHere ? 1.0 : 0.35
+                        property bool kbNavTarget: enabledHere
+                        function kbActivate() { root.activePlayer.togglePlaying() }
+                        readonly property bool navFocused: kbNav.focusedItem === playPauseButton
+                        width: playPauseText.implicitWidth + 10
+                        height: playPauseText.implicitHeight + 6
+                        radius: 4
+                        color: "transparent"
+                        border.color: playPauseButton.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: playPauseButton.navFocused ? 2 : 0
+
+                        Text {
+                            id: playPauseText
+                            anchors.centerIn: parent
+                            text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
+                            font.pixelSize: 20
+                            color: Commons.Color.launcher.text
+                            opacity: playPauseButton.enabledHere ? 1.0 : 0.35
+                        }
+
                         MouseArea {
                             anchors.fill: parent
-                            enabled: parent.enabledHere
+                            enabled: playPauseButton.enabledHere
                             onClicked: root.activePlayer.togglePlaying()
                         }
                     }
 
-                    Text {
+                    Rectangle {
+                        id: nextButton
                         readonly property bool enabledHere: root.activePlayer && root.activePlayer.canGoNext
-                        text: "⏭"
-                        font.pixelSize: 18
-                        color: Commons.Color.launcher.text
-                        opacity: enabledHere ? 1.0 : 0.35
+                        property bool kbNavTarget: enabledHere
+                        function kbActivate() { root.activePlayer.next() }
+                        readonly property bool navFocused: kbNav.focusedItem === nextButton
+                        width: nextText.implicitWidth + 10
+                        height: nextText.implicitHeight + 6
+                        radius: 4
+                        color: "transparent"
+                        border.color: nextButton.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: nextButton.navFocused ? 2 : 0
+
+                        Text {
+                            id: nextText
+                            anchors.centerIn: parent
+                            text: "⏭"
+                            font.pixelSize: 18
+                            color: Commons.Color.launcher.text
+                            opacity: nextButton.enabledHere ? 1.0 : 0.35
+                        }
+
                         MouseArea {
                             anchors.fill: parent
-                            enabled: parent.enabledHere
+                            enabled: nextButton.enabledHere
                             onClicked: root.activePlayer.next()
                         }
                     }
@@ -374,6 +454,9 @@ Item {
                         Rectangle {
                             id: sourceRow
                             required property var modelData
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.selectedPlayerKey = root.playerKey(sourceRow.player) }
+                            readonly property bool navFocused: kbNav.focusedItem === sourceRow
 
                             readonly property var player: modelData
                             readonly property bool selected: root.activePlayer && player && root.playerKey(root.activePlayer) === root.playerKey(player)
@@ -384,8 +467,8 @@ Item {
                             height: sourceInner.implicitHeight + 10
                             radius: 6
                             color: selected ? Commons.Color.launcher.selectionBackground : "transparent"
-                            border.color: selected ? Commons.Color.launcher.selectionBorder : "transparent"
-                            border.width: 1
+                            border.color: sourceRow.navFocused ? Commons.Color.launcher.selection : (selected ? Commons.Color.launcher.selectionBorder : "transparent")
+                            border.width: sourceRow.navFocused ? 2 : 1
 
                             Row {
                                 id: sourceInner

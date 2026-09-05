@@ -7,6 +7,14 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        root.refresh()
+        kbNav.reset()
+    }
     property string home: Quickshell.env("HOME")
     // Named weatherData, not data: `data` is QtQuick.Item's own default property, and shadowing it silently breaks every child in this file from attaching.
     property var weatherData: null
@@ -109,6 +117,17 @@ Item {
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: row
+        width: row.implicitWidth + 10
+        height: row.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Row {
         id: row
         spacing: 4
@@ -154,6 +173,11 @@ Item {
         cardWidth: 240
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -243,13 +267,27 @@ Item {
                     font.pixelSize: 10
                 }
 
-                Text {
+                Rectangle {
+                    id: yrLink
+                    property bool kbNavTarget: true
+                    function kbActivate() { root.openInYr() }
+                    readonly property bool navFocused: kbNav.focusedItem === yrLink
                     visible: root.hasData && root.yrUrl() !== ""
                     width: parent.width
-                    text: "Open in Yr"
-                    color: Commons.Color.launcher.selection
-                    font.pixelSize: 11
-                    font.bold: true
+                    height: yrLinkText.implicitHeight + 8
+                    radius: 6
+                    color: "transparent"
+                    border.color: yrLink.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                    border.width: yrLink.navFocused ? 2 : 0
+
+                    Text {
+                        id: yrLinkText
+                        anchors.centerIn: parent
+                        text: "Open in Yr"
+                        color: Commons.Color.launcher.selection
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
 
                     MouseArea {
                         anchors.fill: parent

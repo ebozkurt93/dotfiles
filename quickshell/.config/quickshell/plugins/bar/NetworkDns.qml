@@ -12,6 +12,7 @@ Column {
     property string effectiveServers: ""
     property bool customOpen: false
     property string customText: ""
+    property var kbNavScope: null
 
     signal providerPicked(string provider)
     signal customDnsRequested()
@@ -45,15 +46,21 @@ Column {
             Rectangle {
                 id: dnsPill
                 required property string modelData
+                property bool kbNavTarget: true
+                function kbActivate() {
+                    if (dnsPill.modelData === "Custom") root.customDnsRequested()
+                    else root.providerPicked(dnsPill.modelData)
+                }
 
                 readonly property bool active: root.provider === modelData
+                readonly property bool navFocused: root.kbNavScope && root.kbNavScope.focusedItem === dnsPill
 
                 width: dnsRow.cellWidth
                 height: 26
                 radius: 6
                 color: active ? Commons.Color.launcher.selectionBackground : "transparent"
-                border.color: active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
-                border.width: 1
+                border.color: navFocused ? Commons.Color.launcher.selection : (active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder)
+                border.width: navFocused ? 2 : 1
 
                 Text {
                     anchors.centerIn: parent

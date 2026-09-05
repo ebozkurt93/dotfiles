@@ -8,6 +8,14 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        root.refresh()
+        kbNav.reset()
+    }
     property string home: Quickshell.env("HOME")
 
     property bool active: false
@@ -126,6 +134,17 @@ Item {
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -146,10 +165,16 @@ Item {
         id: popupPanel
         open: root.popupOpen
         namespace: "dotfiles-sleep-popup"
-        wantsKeyboardFocus: true
+        // Only grab real focus for the custom-duration input (matches Network's password prompt), else it'd steal focus from kb-nav.
+        wantsKeyboardFocus: root.customDurationOpen
         cardWidth: 280
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -195,8 +220,12 @@ Item {
 
                     Commons.ToggleSwitch {
                         id: activeSwitch
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.toggle() }
                         anchors.verticalCenter: parent.verticalCenter
                         checked: root.active
+                        border.color: kbNav.focusedItem === activeSwitch ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: kbNav.focusedItem === activeSwitch ? 2 : 0
                         onToggled: root.toggle()
                     }
                 }
@@ -233,6 +262,9 @@ Item {
                         Rectangle {
                             id: presetCell
                             required property var modelData
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.setProfile(presetCell.modelData.flags) }
+                            readonly property bool navFocused: kbNav.focusedItem === presetCell
 
                             readonly property bool isActive: root.flags === modelData.flags
 
@@ -240,8 +272,8 @@ Item {
                             height: 36
                             radius: 6
                             color: isActive ? Commons.Color.launcher.selectionBackground : "transparent"
-                            border.color: isActive ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
-                            border.width: 1
+                            border.color: presetCell.navFocused ? Commons.Color.launcher.selection : (isActive ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder)
+                            border.width: presetCell.navFocused ? 2 : 1
 
                             Text {
                                 anchors.centerIn: parent
@@ -279,13 +311,19 @@ Item {
                         Rectangle {
                             id: durationCell
                             required property var modelData
+                            property bool kbNavTarget: true
+                            function kbActivate() {
+                                if (durationCell.modelData.value.length === 0) root.openCustomDuration()
+                                else root.start(durationCell.modelData.value)
+                            }
+                            readonly property bool navFocused: kbNav.focusedItem === durationCell
 
                             width: durationRow.cellWidth
                             height: 30
                             radius: 6
                             color: "transparent"
-                            border.color: Commons.Color.launcher.cardBorder
-                            border.width: 1
+                            border.color: durationCell.navFocused ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
+                            border.width: durationCell.navFocused ? 2 : 1
 
                             Text {
                                 anchors.centerIn: parent
@@ -373,13 +411,17 @@ Item {
                 }
 
                 Rectangle {
+                    id: stopButton
+                    property bool kbNavTarget: true
+                    function kbActivate() { root.stop() }
+                    readonly property bool navFocused: kbNav.focusedItem === stopButton
                     visible: root.active
                     width: parent.width
                     height: 30
                     radius: 6
                     color: "transparent"
-                    border.color: Commons.Color.launcher.cardBorder
-                    border.width: 1
+                    border.color: stopButton.navFocused ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
+                    border.width: stopButton.navFocused ? 2 : 1
 
                     Text {
                         anchors.centerIn: parent

@@ -9,6 +9,13 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
@@ -134,6 +141,17 @@ Item {
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -165,6 +183,11 @@ Item {
         cardWidth: 280
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -227,6 +250,10 @@ Item {
 
                 Item {
                     id: volumeSliderRow
+                    property bool kbNavTarget: true
+                    function kbActivate() { root.toggleMute() }
+                    function kbAdjust(delta) { root.setVolume(root.volume + delta * 0.05) }
+                    readonly property bool navFocused: kbNav.focusedItem === volumeSliderRow
                     width: parent.width
                     height: 20
                     opacity: root.muted ? 0.5 : 1.0
@@ -235,9 +262,11 @@ Item {
                         id: sliderTrack
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
-                        height: 6
-                        radius: 3
+                        height: volumeSliderRow.navFocused ? 8 : 6
+                        radius: 4
                         color: Commons.Color.launcher.cardBorder
+                        border.color: volumeSliderRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: volumeSliderRow.navFocused ? 1.5 : 0
 
                         Rectangle {
                             width: parent.width * Math.max(0, Math.min(1, root.volume))
@@ -273,6 +302,9 @@ Item {
                     Rectangle {
                         id: sinkRow
                         required property var modelData
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.setDefaultSink(sinkRow.modelData) }
+                        readonly property bool navFocused: kbNav.focusedItem === sinkRow
 
                         readonly property bool isActive: root.sink && modelData.id === root.sink.id
 
@@ -280,6 +312,8 @@ Item {
                         height: sinkInner.implicitHeight + 12
                         radius: 6
                         color: sinkMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+                        border.color: sinkRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: sinkRow.navFocused ? 2 : 0
 
                         Row {
                             id: sinkInner
@@ -363,15 +397,23 @@ Item {
 
                     Commons.ToggleSwitch {
                         id: micSwitch
+                        property bool kbNavTarget: root.hasInput
+                        function kbActivate() { root.toggleInputMute() }
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         checked: !root.inputMuted
+                        border.color: kbNav.focusedItem === micSwitch ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: kbNav.focusedItem === micSwitch ? 2 : 0
                         onToggled: root.toggleInputMute()
                     }
                 }
 
                 Item {
                     id: inputVolumeSliderRow
+                    property bool kbNavTarget: root.hasInput
+                    function kbActivate() { root.toggleInputMute() }
+                    function kbAdjust(delta) { root.setInputVolume(root.inputVolume + delta * 0.05) }
+                    readonly property bool navFocused: kbNav.focusedItem === inputVolumeSliderRow
                     visible: root.hasInput
                     width: parent.width
                     height: 20
@@ -380,9 +422,11 @@ Item {
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
-                        height: 6
-                        radius: 3
+                        height: inputVolumeSliderRow.navFocused ? 8 : 6
+                        radius: 4
                         color: Commons.Color.launcher.cardBorder
+                        border.color: inputVolumeSliderRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: inputVolumeSliderRow.navFocused ? 1.5 : 0
 
                         Rectangle {
                             width: parent.width * Math.max(0, Math.min(1, root.inputVolume))
@@ -413,6 +457,9 @@ Item {
                     Rectangle {
                         id: sourceRow
                         required property var modelData
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.setDefaultSource(sourceRow.modelData) }
+                        readonly property bool navFocused: kbNav.focusedItem === sourceRow
 
                         readonly property bool isActive: root.source && modelData.id === root.source.id
 
@@ -420,6 +467,8 @@ Item {
                         height: sourceInner.implicitHeight + 12
                         radius: 6
                         color: sourceMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+                        border.color: sourceRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: sourceRow.navFocused ? 2 : 0
 
                         Row {
                             id: sourceInner
@@ -478,6 +527,10 @@ Item {
                     Column {
                         id: appRow
                         required property var modelData
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.toggleAppMute(appRow.modelData) }
+                        function kbAdjust(delta) { root.setAppVolume(appRow.modelData, appRow.appVolume + delta * 0.05) }
+                        readonly property bool navFocused: kbNav.focusedItem === appRow
                         width: parent ? parent.width : 0
                         spacing: 4
 
@@ -532,14 +585,16 @@ Item {
                             Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: parent.width
-                                height: 5
-                                radius: 2.5
+                                height: appRow.navFocused ? 7 : 5
+                                radius: height / 2
                                 color: Commons.Color.launcher.cardBorder
+                                border.color: appRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                                border.width: appRow.navFocused ? 1.5 : 0
 
                                 Rectangle {
                                     width: parent.width * Math.max(0, Math.min(1, appRow.appVolume))
                                     height: parent.height
-                                    radius: 2.5
+                                    radius: height / 2
                                     color: Commons.Color.launcher.selection
                                 }
                             }

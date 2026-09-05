@@ -10,6 +10,14 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: root.daemonRunning || root.statusProfiles.length > 0
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.open()
+        root.refreshEditor()
+        kbNav.reset()
+    }
     property string home: Quickshell.env("HOME")
 
     property var editorDocument: null
@@ -131,6 +139,17 @@ Item {
         command: [root.home + "/bin/desktop", "monitor-profile-editor"]
     }
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -154,6 +173,11 @@ Item {
         cardWidth: 320
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -207,12 +231,14 @@ Item {
 
                     Rectangle {
                         id: confirmBtn
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.confirmTransaction() }
                         width: 60
                         height: 24
                         radius: 5
                         color: Commons.Color.launcher.selectionBackground
-                        border.color: Commons.Color.launcher.selectionBorder
-                        border.width: 1
+                        border.color: kbNav.focusedItem === confirmBtn ? Commons.Color.launcher.selection : Commons.Color.launcher.selectionBorder
+                        border.width: kbNav.focusedItem === confirmBtn ? 2 : 1
 
                         Text {
                             anchors.centerIn: parent
@@ -227,12 +253,14 @@ Item {
 
                     Rectangle {
                         id: revertBtn
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.revertTransaction() }
                         width: 50
                         height: 24
                         radius: 5
                         color: "transparent"
-                        border.color: Commons.Color.launcher.cardBorder
-                        border.width: 1
+                        border.color: kbNav.focusedItem === revertBtn ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
+                        border.width: kbNav.focusedItem === revertBtn ? 2 : 1
 
                         Text {
                             anchors.centerIn: parent
@@ -272,14 +300,18 @@ Item {
                     model: root.statusProfiles
 
                     Rectangle {
+                        id: profileRow
                         required property var modelData
+                        property bool kbNavTarget: !modelData.active
+                        function kbActivate() { root.applyProfile(profileRow.modelData.name) }
+                        readonly property bool navFocused: kbNav.focusedItem === profileRow
 
                         width: parent.width
                         height: 36
                         radius: 6
                         color: modelData.active ? Commons.Color.launcher.selectionBackground : "transparent"
-                        border.color: modelData.active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
-                        border.width: 1
+                        border.color: profileRow.navFocused ? Commons.Color.launcher.selection : (modelData.active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder)
+                        border.width: profileRow.navFocused ? 2 : 1
 
                         Row {
                             anchors.left: parent.left
@@ -315,12 +347,15 @@ Item {
                 }
 
                 Rectangle {
+                    id: openEditorButton
+                    property bool kbNavTarget: true
+                    function kbActivate() { root.openEditor() }
                     width: parent.width
                     height: openEditorColumn.implicitHeight + 16
                     radius: 6
                     color: "transparent"
-                    border.color: Commons.Color.launcher.cardBorder
-                    border.width: 1
+                    border.color: kbNav.focusedItem === openEditorButton ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
+                    border.width: kbNav.focusedItem === openEditorButton ? 2 : 1
 
                     Column {
                         id: openEditorColumn

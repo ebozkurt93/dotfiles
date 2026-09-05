@@ -15,6 +15,8 @@ PanelWindow {
     property int rightMargin: 8
 
     default property alias content: contentItem.data
+    // Lets KbNavScope scan popups whose content isn't one wrapping container (e.g. NotificationHistory).
+    readonly property alias contentRoot: contentItem
 
     signal dismissRequested()
 

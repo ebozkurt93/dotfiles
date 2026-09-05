@@ -9,6 +9,13 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
     property string chargeCycles: ""
     property string nightlightMode: "auto" // "auto", "on", "off"
     property bool nightlightTinted: false  // whether the filter is visually applying right now
@@ -124,6 +131,17 @@ Item {
     implicitWidth: iconRow.implicitWidth
     implicitHeight: iconRow.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: iconRow
+        width: iconRow.implicitWidth + 10
+        height: iconRow.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Row {
         id: iconRow
         anchors.verticalCenter: parent.verticalCenter
@@ -162,6 +180,11 @@ Item {
         cardWidth: 280
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -279,6 +302,9 @@ Item {
                         Rectangle {
                             id: profileCell
                             required property var modelData
+                            property bool kbNavTarget: true
+                            function kbActivate() { PowerProfiles.profile = profileCell.modelData }
+                            readonly property bool navFocused: kbNav.focusedItem === profileCell
 
                             readonly property bool active: PowerProfiles.profile === modelData
 
@@ -286,8 +312,8 @@ Item {
                             height: 52
                             radius: 6
                             color: active ? Commons.Color.launcher.selectionBackground : "transparent"
-                            border.color: active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder
-                            border.width: 1
+                            border.color: profileCell.navFocused ? Commons.Color.launcher.selection : (active ? Commons.Color.launcher.selectionBorder : Commons.Color.launcher.cardBorder)
+                            border.width: profileCell.navFocused ? 2 : 1
 
                             Column {
                                 anchors.centerIn: parent
@@ -324,8 +350,21 @@ Item {
 
                 Item {
                     id: nightlightRow
+                    property bool kbNavTarget: true
+                    function kbActivate() { nightlightToggleAction.running = true }
+                    readonly property bool navFocused: kbNav.focusedItem === nightlightRow
                     width: parent.width
                     height: Math.max(nightlightLabel.implicitHeight, nightlightState.implicitHeight)
+
+                    Rectangle {
+                        visible: nightlightRow.navFocused
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        radius: 6
+                        color: "transparent"
+                        border.color: Commons.Color.launcher.selectionBorder
+                        border.width: 2
+                    }
 
                     Text {
                         id: nightlightLabel

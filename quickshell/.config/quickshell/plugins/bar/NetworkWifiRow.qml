@@ -6,6 +6,7 @@ import "../../Commons" as Commons
 Rectangle {
     id: wifiRow
     required property var modelData
+    property bool navFocused: false
 
     signal activateRequested()
     signal forgetRequested()
@@ -24,6 +25,8 @@ Rectangle {
     height: rowInner.implicitHeight + 12
     radius: 6
     color: rowMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+    border.color: wifiRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+    border.width: wifiRow.navFocused ? 2 : 0
 
     Row {
         id: rowInner

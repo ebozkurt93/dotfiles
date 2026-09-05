@@ -8,6 +8,15 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        root.refresh()
+        root.refreshPeers()
+        kbNav.reset()
+    }
     property string home: Quickshell.env("HOME")
     property bool connected: false
     property string exitNode: ""
@@ -125,6 +134,17 @@ Item {
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Item {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -181,6 +201,11 @@ Item {
         cardWidth: 280
         cardHeight: Math.min(420, popupColumn.implicitHeight + 24)
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Flickable {
                 anchors.fill: parent
@@ -239,10 +264,15 @@ Item {
 
                     Rectangle {
                         id: toggleButton
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.runToggle() }
+                        readonly property bool navFocused: kbNav.focusedItem === toggleButton
                         width: parent.width
                         height: 30
                         radius: 6
                         color: toggleMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+                        border.color: toggleButton.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: toggleButton.navFocused ? 2 : 0
 
                         Text {
                             anchors.centerIn: parent
@@ -280,11 +310,16 @@ Item {
                         Rectangle {
                             id: peerRow
                             required property var modelData
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.copyIp(peerRow.modelData.ip) }
+                            readonly property bool navFocused: kbNav.focusedItem === peerRow
 
                             width: popupColumn.width
                             height: peerInner.implicitHeight + 8
                             radius: 6
                             color: peerMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+                            border.color: peerRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                            border.width: peerRow.navFocused ? 2 : 0
 
                             Row {
                                 id: peerInner

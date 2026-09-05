@@ -9,6 +9,13 @@ Item {
     property var shell
     property string home: Quickshell.env("HOME")
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.open()
+        kbNav.reset()
+    }
     property var items: []
     onItemsChanged: listView.contentY = 0
 
@@ -98,6 +105,17 @@ Item {
         onExited: root.refresh()
     }
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -123,7 +141,8 @@ Item {
         id: popupPanel
         open: root.popupOpen
         namespace: "dotfiles-notification-history-popup"
-        wantsKeyboardFocus: true
+        // Only grab real focus outside kb-nav -- else this popup's layer-shell surface steals focus from the bar's Exclusive grab.
+        wantsKeyboardFocus: !root.kbFocused
         cardWidth: 340
         cardRadius: 10
         // listView's own height is derived from this height (anchored to headerColumn.bottom below), so
@@ -134,6 +153,11 @@ Item {
         readonly property real listAreaHeight: root.items.length === 0 ? 40 : Math.min(root.items.length * estimatedRowHeight, 420)
         cardHeight: headerColumn.implicitHeight + 24 + listAreaHeight + 12
         onDismissRequested: root.close()
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupPanel.contentRoot
+        }
 
         Column {
                 id: headerColumn
@@ -157,7 +181,7 @@ Item {
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - headerIcon.implicitWidth - restoreLabel.implicitWidth - clearLabel.implicitWidth - 40
+                        width: parent.width - headerIcon.implicitWidth - restoreLabel.width - clearLabel.width - 40
                         spacing: 0
 
                         Text {
@@ -177,12 +201,26 @@ Item {
                         }
                     }
 
-                    Text {
+                    Rectangle {
                         id: restoreLabel
+                        property bool kbNavTarget: true
+                        function kbActivate() { restoreAction.running = true }
+                        readonly property bool navFocused: kbNav.focusedItem === restoreLabel
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Restore"
-                        color: restoreArea.containsMouse ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
-                        font.pixelSize: 11
+                        width: restoreLabelText.implicitWidth + 8
+                        height: restoreLabelText.implicitHeight + 4
+                        radius: 4
+                        color: "transparent"
+                        border.color: restoreLabel.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: restoreLabel.navFocused ? 2 : 0
+
+                        Text {
+                            id: restoreLabelText
+                            anchors.centerIn: parent
+                            text: "Restore"
+                            color: (restoreArea.containsMouse || restoreLabel.navFocused) ? Commons.Color.launcher.selection : Commons.Color.launcher.textMuted
+                            font.pixelSize: 11
+                        }
 
                         MouseArea {
                             id: restoreArea
@@ -193,12 +231,26 @@ Item {
                         }
                     }
 
-                    Text {
+                    Rectangle {
                         id: clearLabel
+                        property bool kbNavTarget: true
+                        function kbActivate() { clearAction.running = true }
+                        readonly property bool navFocused: kbNav.focusedItem === clearLabel
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Clear"
-                        color: clearArea.containsMouse ? Commons.Color.danger : Commons.Color.launcher.textMuted
-                        font.pixelSize: 11
+                        width: clearLabelText.implicitWidth + 8
+                        height: clearLabelText.implicitHeight + 4
+                        radius: 4
+                        color: "transparent"
+                        border.color: clearLabel.navFocused ? Commons.Color.danger : "transparent"
+                        border.width: clearLabel.navFocused ? 2 : 0
+
+                        Text {
+                            id: clearLabelText
+                            anchors.centerIn: parent
+                            text: "Clear"
+                            color: (clearArea.containsMouse || clearLabel.navFocused) ? Commons.Color.danger : Commons.Color.launcher.textMuted
+                            font.pixelSize: 11
+                        }
 
                         MouseArea {
                             id: clearArea

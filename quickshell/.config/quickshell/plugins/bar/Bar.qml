@@ -1,5 +1,7 @@
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
+import Quickshell.Wayland
 import QtQuick
 
 import "../../Commons" as Commons
@@ -7,6 +9,37 @@ import "../../Commons" as Commons
 PanelWindow {
     id: root
     property var shell
+
+    Commons.BarKbNav {
+        id: kbNav
+        // Every keyboard-navigable bar icon; each exposes kbAvailable/kbFocused/kbActivate (+ popupOpen/kbNavScope if it has a popup).
+        candidates: [
+            notificationHistoryItem, networkItem, wireGuardItem, tailscaleItem,
+            bluetoothItem, audioItem, monitorItem, monitorProfileItem,
+            weatherItem, powerItem, sleepItem, nowPlayingItem,
+            notificationsPrivacyItem, notificationsDndItem
+        ]
+    }
+
+    IpcHandler {
+        target: "barNav"
+
+        function toggle(): string {
+            if (kbNav.active) kbNav.close()
+            else { kbNav.open(); navFocusItem.forceActiveFocus() }
+            return "ok"
+        }
+    }
+
+    WlrLayershell.keyboardFocus: kbNav.active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Item {
+        id: navFocusItem
+        anchors.fill: parent
+        focus: kbNav.active
+
+        Keys.onPressed: function(event) { kbNav.handleKey(event) }
+    }
 
     anchors {
         top: true
@@ -54,6 +87,7 @@ PanelWindow {
         }
 
         NowPlaying {
+            id: nowPlayingItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -66,6 +100,7 @@ PanelWindow {
         spacing: 10
 
         Commons.DesktopToggleIcon {
+            id: notificationsPrivacyItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
             ipcTarget: "notificationsPrivacy"
@@ -74,6 +109,7 @@ PanelWindow {
         }
 
         Commons.DesktopToggleIcon {
+            id: notificationsDndItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
             ipcTarget: "notificationsDnd"
@@ -82,56 +118,67 @@ PanelWindow {
         }
 
         NotificationHistory {
+            id: notificationHistoryItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Network {
+            id: networkItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         WireGuard {
+            id: wireGuardItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Tailscale {
+            id: tailscaleItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Bluetooth {
+            id: bluetoothItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Audio {
+            id: audioItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Monitor {
+            id: monitorItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         MonitorProfile {
+            id: monitorProfileItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Weather {
+            id: weatherItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Power {
+            id: powerItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Sleep {
+            id: sleepItem
             shell: root.shell
             anchors.verticalCenter: parent.verticalCenter
         }

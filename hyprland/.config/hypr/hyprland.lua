@@ -132,6 +132,7 @@ hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd(home .. "/bin/desktop capture
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd(home .. "/bin/desktop capture-qr"), { description = "Decode a QR code from a screen region" })
 hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("smile"), { description = "Open emoji picker" })
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call notificationHistory toggle"), { description = "Open notification history" })
+hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("quickshell ipc call barNav toggle"), { description = "Toggle bar keyboard navigation" })
 
 hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot fullscreen"), { description = "Screenshot: fullscreen" })
 hl.bind(mainMod .. " + SHIFT + 4", hl.dsp.exec_cmd(home .. "/bin/desktop screenshot region"), { description = "Screenshot: region" })

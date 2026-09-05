@@ -9,7 +9,15 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    property bool kbAvailable: true
+    readonly property alias kbNavScope: kbNav
     property string home: Quickshell.env("HOME")
+
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
 
     property var routeInfo: ({})  // { iface, ip, gateway }
     property string passwordSsid: ""
@@ -520,6 +528,17 @@ Item {
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -533,11 +552,16 @@ Item {
         }
     }
 
+    Commons.KbNavScope {
+        id: kbNav
+        content: popupColumn
+    }
+
     Commons.PopupPanel {
         id: popupPanel
         open: root.popupOpen
         namespace: "dotfiles-network-popup"
-        wantsKeyboardFocus: root.passwordSsid !== ""
+        wantsKeyboardFocus: root.passwordSsid !== "" || root.customDnsOpen
         cardWidth: 300
         cardHeight: Math.min(620, popupColumn.implicitHeight + 24)
         onDismissRequested: root.popupOpen = false
@@ -568,10 +592,14 @@ Item {
 
                         Commons.ToggleSwitch {
                             id: radioSwitch
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.toggleWifiRadio() }
                             visible: root.wifiStationAvailable
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             checked: Networking.wifiEnabled
+                            border.color: kbNav.focusedItem === radioSwitch ? Commons.Color.launcher.selectionBorder : "transparent"
+                            border.width: kbNav.focusedItem === radioSwitch ? 2 : 0
                             onToggled: root.toggleWifiRadio()
                         }
 
@@ -599,7 +627,11 @@ Item {
 
                             Text {
                                 width: parent.width
-                                text: root.routeInfo.ip || ""
+                                text: {
+                                    var ip = root.routeInfo.ip || ""
+                                    if (!root.kbFocused) return ip
+                                    return ip !== "" ? ip + "  ·  ↑↓ Enter" : "↑↓ Enter"
+                                }
                                 color: Commons.Color.launcher.textMuted
                                 font.pixelSize: 10
                                 elide: Text.ElideRight
@@ -681,6 +713,7 @@ Item {
                     }
 
                     NetworkDns {
+                        kbNavScope: kbNav
                         provider: root.dnsProvider
                         providers: root.dnsProviders
                         effectiveServers: root.effectiveDnsServers
@@ -711,6 +744,10 @@ Item {
                     Repeater {
                         model: root.wifiStationAvailable ? root.wifiNetworks : []
                         delegate: NetworkWifiRow {
+                            id: wifiRow
+                            property bool kbNavTarget: true
+                            function kbActivate() { root.activateRow(modelData) }
+                            navFocused: kbNav.focusedItem === wifiRow
                             onActivateRequested: root.activateRow(modelData)
                             onForgetRequested: root.forgetNetwork(modelData.ssid)
                         }

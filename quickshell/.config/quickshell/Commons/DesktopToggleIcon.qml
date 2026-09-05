@@ -12,6 +12,10 @@ Item {
     property string desktopCommand: ""
     property string glyph: ""
 
+    property bool kbFocused: false
+    readonly property bool kbAvailable: root.active
+    function kbActivate() { disableAction.running = true }
+
     implicitWidth: icon.implicitWidth
     implicitHeight: icon.implicitHeight
     visible: root.active
@@ -43,6 +47,17 @@ Item {
     Process {
         id: disableAction
         command: [home + "/bin/desktop", desktopCommand, "off"]
+    }
+
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Color.launcher.selectionBackground
+        border.color: Color.launcher.selectionBorder
+        border.width: 1.5
     }
 
     Text {

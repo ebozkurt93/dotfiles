@@ -10,6 +10,13 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: root.monitors.length > 0
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        kbNav.reset()
+    }
     property var monitors: [] // [{connector, brightness}]
     property string home: Quickshell.env("HOME")
 
@@ -110,6 +117,17 @@ Item {
         onTriggered: root.refreshBrightness()
     }
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -137,6 +155,11 @@ Item {
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
 
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
+
         Column {
                 id: popupColumn
                 anchors.left: parent.left
@@ -157,7 +180,12 @@ Item {
                     model: root.monitors
 
                     Column {
+                        id: monitorRow
                         required property var modelData
+                        property bool kbNavTarget: true
+                        function kbActivate() {}
+                        function kbAdjust(delta) { root.setBrightness(monitorRow.modelData.connector, monitorRow.modelData.brightness + delta * 5) }
+                        readonly property bool navFocused: kbNav.focusedItem === monitorRow
 
                         width: parent.width
                         spacing: 4
@@ -192,6 +220,8 @@ Item {
                                 height: 6
                                 radius: 3
                                 color: Commons.Color.launcher.cardBorder
+                                border.color: monitorRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                                border.width: monitorRow.navFocused ? 2 : 0
 
                                 Rectangle {
                                     width: parent.width * Math.max(0, Math.min(1, modelData.brightness / 100))

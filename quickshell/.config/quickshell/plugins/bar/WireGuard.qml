@@ -8,6 +8,14 @@ Item {
     id: root
     property var shell
     property bool popupOpen: false
+    property bool kbFocused: false
+    readonly property bool kbAvailable: root.interfaces.length > 0
+    readonly property alias kbNavScope: kbNav
+    function kbActivate() {
+        root.popupOpen = true
+        root.refresh()
+        kbNav.reset()
+    }
     property string home: Quickshell.env("HOME")
     property var interfaces: []
 
@@ -50,6 +58,17 @@ Item {
     implicitWidth: icon.visible ? icon.implicitWidth : 0
     implicitHeight: icon.visible ? icon.implicitHeight : 0
 
+    Rectangle {
+        visible: root.kbFocused
+        anchors.centerIn: icon
+        width: icon.implicitWidth + 10
+        height: icon.implicitHeight + 6
+        radius: 4
+        color: Commons.Color.launcher.selectionBackground
+        border.color: Commons.Color.launcher.selectionBorder
+        border.width: 1.5
+    }
+
     Text {
         id: icon
         anchors.verticalCenter: parent.verticalCenter
@@ -74,6 +93,11 @@ Item {
         cardWidth: 260
         cardHeight: popupColumn.implicitHeight + 24
         onDismissRequested: root.popupOpen = false
+
+        Commons.KbNavScope {
+            id: kbNav
+            content: popupColumn
+        }
 
         Column {
                 id: popupColumn
@@ -105,11 +129,16 @@ Item {
                     Rectangle {
                         id: ifaceRow
                         required property var modelData
+                        property bool kbNavTarget: true
+                        function kbActivate() { root.runToggle(ifaceRow.modelData.name, ifaceRow.modelData.up) }
+                        readonly property bool navFocused: kbNav.focusedItem === ifaceRow
 
                         width: popupColumn.width
                         height: 30
                         radius: 6
                         color: ifaceMouse.containsMouse ? Commons.Color.launcher.selectionBackground : "transparent"
+                        border.color: ifaceRow.navFocused ? Commons.Color.launcher.selectionBorder : "transparent"
+                        border.width: ifaceRow.navFocused ? 2 : 0
 
                         Row {
                             anchors.left: parent.left
