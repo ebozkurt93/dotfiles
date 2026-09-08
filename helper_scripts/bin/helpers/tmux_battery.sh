@@ -14,7 +14,7 @@ if [ "$(uname)" = "Darwin" ]; then
 		pwr_source=''
 	fi
 
-	pwr=$(pmset -g | grep lowpowermode | awk -F' ' '{ print$2 }')
+	pwr=$(pmset -g | grep -E 'lowpowermode|powermode' | awk -F' ' '{ print$2 }' || true)
 	if [[ $pwr == '1' ]]; then
 		pwr='L'
 	else
