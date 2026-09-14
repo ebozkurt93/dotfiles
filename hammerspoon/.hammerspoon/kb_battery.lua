@@ -59,4 +59,4 @@ end
 local timer = hs.timer.doEvery(60, updateBatteryStatus):start()
 updateBatteryStatus()
 
-return { timer, batteryStatus }
+return { timer, batteryStatus, refresh = updateBatteryStatus }

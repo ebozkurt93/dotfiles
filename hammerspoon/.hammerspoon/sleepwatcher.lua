@@ -1,5 +1,8 @@
 local helpers = require("helpers")
 local macos_helpers = require("macos_helpers")
+local kb_battery = require("kb_battery")
+local weather = require("weather")
+local now_playing = require("now-playing")
 
 local btConnectedDevices = {}
 local previousBluetoothStatus = nil
@@ -23,14 +26,13 @@ hs.urlevent.bind('sleepWatcher', function(eventName, params)
   print('handling event: ' .. eventName)
   P(params)
 
-  if not isConnectedToAllowedNetwork() then
+  local event = params.event
+  local onAllowedNetwork = isConnectedToAllowedNetwork()
+
+  if not onAllowedNetwork then
     previousBluetoothStatus = nil
     btConnectedDevices = {}
-    return
-  end
-
-  local event = params.event
-  if event == 'onSleep' then
+  elseif event == 'onSleep' then
     previousBluetoothStatus = macos_helpers.isBluetoothOn()
     if previousBluetoothStatus then
       btConnectedDevices = macos_helpers.getBluetoothDevices()
@@ -43,6 +45,18 @@ hs.urlevent.bind('sleepWatcher', function(eventName, params)
         macos_helpers.connectToBluetoothDevice(deviceAddress)
       end
     end)
+  end
+
+  if event == 'onWake' then
+    -- BitBar and our own hs.timer-driven menubar widgets have no wake
+    -- handling of their own, so their refresh timers can silently stop
+    -- firing after the system sleeps. Refresh content in place (rather
+    -- than relaunching BitBar or hs.reload()) so menubar item order
+    -- doesn't get shuffled. Unlike Bluetooth, this isn't network-scoped.
+    macos_helpers.refreshBitBarPlugins()
+    kb_battery.refresh()
+    weather.update(false)
+    now_playing.refresh()
   end
 end)
 

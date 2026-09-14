@@ -56,6 +56,11 @@ local function updateNowPlaying()
   end, { expandedPath }):start()
 end
 
+local function refresh()
+  runTask()
+  updateNowPlaying()
+end
+
 -- Run every second
 local timer = hs.timer.doEvery(1, updateNowPlaying):start()
 
@@ -106,4 +111,4 @@ nowPlayingMenu:setMenu({
 })
 
 -- Return for reusability
-return { timer, menubar = nowPlayingMenu, enabled, taskTimer }
+return { timer, menubar = nowPlayingMenu, enabled, taskTimer, refresh = refresh }
