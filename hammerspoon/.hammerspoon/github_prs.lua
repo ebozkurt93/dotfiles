@@ -1,14 +1,52 @@
+local helpers = require("helpers")
+
 local home = os.getenv("HOME")
 local ghPrsBinary = home .. "/bin/github-prs"
 local stateSwitcherBinary = home .. "/bin/state-switcher"
 
-local menu = hs.menubar.new()
+local menu = nil
 local refresh
 
+-- hs.task inherits Hammerspoon's own (launchd-minimal) PATH, which doesn't
+-- include ~/.nix-profile/bin where gh/jq live, so those binaries would
+-- otherwise fail to be found.
+local taskPath = home .. "/.nix-profile/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+-- The streaming callback drains the pipe incrementally to avoid a deadlock
+-- on large output, but once one's registered, the completion callback's own
+-- stdOut is no longer populated, so we accumulate manually. hs.task's docs
+-- warn the streaming callback may fire once more (with task == nil) right
+-- after termination, so defer finalizing by one tick to catch that chunk.
+local function runWithPath(binary, args, callback)
+  local outputChunks = {}
+  local finished = false
+
+  local function finish(exitCode, stdErr)
+    if finished then return end
+    finished = true
+    local stdOut = table.concat(outputChunks)
+    if exitCode ~= 0 then
+      print(string.format("github_prs.lua: %s exited %s: %s", binary, tostring(exitCode), stdErr or ""))
+    end
+    callback(exitCode, stdOut, stdErr)
+  end
+
+  local task = hs.task.new(binary, function(exitCode, _, stdErr)
+    hs.timer.doAfter(0.1, function() finish(exitCode, stdErr) end)
+  end, function(_, stdOut)
+    if stdOut and stdOut ~= "" then
+      table.insert(outputChunks, stdOut)
+    end
+    return true
+  end, args)
+  task:setEnvironment({ PATH = taskPath, HOME = home })
+  task:start()
+end
+
 local function checkEnabled(callback)
-  hs.task.new(stateSwitcherBinary, function(exitCode)
+  runWithPath(stateSwitcherBinary, { "is-state-enabled", "instabee" }, function(exitCode)
     callback(exitCode == 0)
-  end, { "is-state-enabled", "instabee" }):start()
+  end)
 end
 
 local function checksLabel(statusCheckRollup)
@@ -29,7 +67,18 @@ local function checksLabel(statusCheckRollup)
   return "Passing"
 end
 
-local ghUsername = os.getenv("GH_USERNAME") or ""
+-- Hammerspoon.app is launched by launchd/Finder, not a login shell, so it
+-- never sees GH_USERNAME (exported in .personal.zshrc) -- ask `gh` directly.
+local ghUsername = ""
+local ghBinary = home .. "/.nix-profile/bin/gh"
+local function fetchGhUsername()
+  runWithPath(ghBinary, { "config", "get", "-h", "github.com", "user" }, function(exitCode, stdOut)
+    if exitCode == 0 then
+      ghUsername = (stdOut or ""):gsub("%s+$", "")
+    end
+  end)
+end
+fetchGhUsername()
 
 local function maxTimestamp(a, b)
   if not a then return b end
@@ -70,48 +119,87 @@ local function othersLastActivity(pr)
   return last
 end
 
+-- Named colors, since hs.styledtext doesn't resolve { list = "X11", name = ... }
+-- the way BitBar's `color=name` did; every other widget in this config uses
+-- explicit RGB tables, so match that.
+local dimgray = { red = 0.412, green = 0.412, blue = 0.412 }
+local teal = { red = 0, green = 0.502, blue = 0.502 }
+local mediumpurple = { red = 0.576, green = 0.439, blue = 0.859 }
+
 local function prColor(pr)
   local authorLogin = pr.author and pr.author.login
   if authorLogin == "app/dependabot" then
-    return { list = "X11", name = "dimgray" }
+    return dimgray
   end
   if authorLogin == ghUsername then
-    return { list = "X11", name = "teal" }
+    return teal
   end
 
   local myLast = lastActivityBy(pr, function(author) return author and author.login == ghUsername end)
   local othersLast = othersLastActivity(pr)
   if myLast and othersLast and othersLast > myLast then
-    return { list = "X11", name = "mediumpurple" }
+    return mediumpurple
   end
   return nil
 end
 
-local function prMenuItem(pr)
-  local name = (pr.headRepository and pr.headRepository.name or "?") .. "#" .. tostring(pr.number)
-  local flags = {}
-  if pr.isDraft then table.insert(flags, "Draft") end
-  if pr.reviewDecision == "APPROVED" then table.insert(flags, "Approved")
-  elseif pr.reviewDecision == "REVIEW_REQUIRED" then table.insert(flags, "Review required")
-  elseif pr.reviewDecision == "CHANGES_REQUESTED" then table.insert(flags, "Changes requested")
+-- NSMenuItem's attributedTitle doesn't reliably honor NSParagraphStyle tab
+-- stops in practice (columns drifted regardless of content length), so align
+-- columns the guaranteed way instead: a monospace font with fixed-width,
+-- space-padded fields.
+local monoFont = { name = "JetBrainsMono-Regular", size = 12 }
+
+local function charLen(text)
+  return utf8 and utf8.len(text) or #text
+end
+
+local function truncate(text, maxLen)
+  text = text or ""
+  if charLen(text) > maxLen then
+    local cutAt = utf8 and utf8.offset(text, maxLen) or maxLen
+    return text:sub(1, cutAt - 1) .. "…"
   end
-  if pr.mergeable ~= "MERGEABLE" then table.insert(flags, "Not mergeable") end
+  return text
+end
+
+local function padRight(text, width)
+  text = text or ""
+  local len = charLen(text)
+  if len >= width then
+    return text
+  end
+  return text .. string.rep(" ", width - len)
+end
+
+local function prMenuItem(pr)
+  local name = truncate((pr.headRepository and pr.headRepository.name or "?") .. "#" .. tostring(pr.number), 22)
+  local draftText = pr.isDraft and "Draft" or ""
+  local reviewText = ""
+  if pr.reviewDecision == "APPROVED" then reviewText = "Approved"
+  elseif pr.reviewDecision == "REVIEW_REQUIRED" then reviewText = "Review required"
+  elseif pr.reviewDecision == "CHANGES_REQUESTED" then reviewText = "Changes requested"
+  end
+  local mergeableText = pr.mergeable ~= "MERGEABLE" and "Not mergeable" or ""
   local checks = checksLabel(pr.statusCheckRollup)
-  if checks ~= "" then table.insert(flags, checks) end
+  local flags = {}
+  for _, flag in ipairs({ draftText, reviewText, mergeableText, checks }) do
+    if flag ~= "" then table.insert(flags, flag) end
+  end
+  local flagsText = truncate(table.concat(flags, ", "), 40)
 
-  local titleText = string.format(
-    "%s  %s  👤 %s  💬 %d  📜+%d-%d%s",
-    name,
-    pr.title,
-    pr.author and pr.author.login or "?",
-    pr.comments and #pr.comments or 0,
-    pr.additions or 0,
-    pr.deletions or 0,
-    #flags > 0 and ("  [" .. table.concat(flags, ", ") .. "]") or ""
-  )
+  local titleText = table.concat({
+    padRight(name, 24),
+    padRight(truncate(pr.title, 45), 47),
+    padRight("👤 " .. truncate(pr.author and pr.author.login or "?", 12), 18),
+    padRight("💬 " .. tostring(pr.comments and #pr.comments or 0), 8),
+    padRight(string.format("📜+%d-%d", pr.additions or 0, pr.deletions or 0), 14),
+    flagsText,
+  })
 
+  local style = { font = monoFont }
   local color = prColor(pr)
-  local title = color and hs.styledtext.new(titleText, { color = color }) or titleText
+  if color then style.color = color end
+  local title = hs.styledtext.new(titleText, style)
 
   return {
     title = title,
@@ -130,9 +218,9 @@ local function nonDependabotCount(prs)
 end
 
 local function refetch()
-  hs.task.new(ghPrsBinary, function()
+  runWithPath(ghPrsBinary, { "refetch" }, function()
     refresh()
-  end, { "refetch" }):start()
+  end)
 end
 
 local function renderPRs(prs)
@@ -149,29 +237,40 @@ local function renderPRs(prs)
 end
 
 refresh = function()
+  if ghUsername == "" then
+    fetchGhUsername()
+  end
   checkEnabled(function(isEnabled)
     if not isEnabled then
-      menu:removeFromMenuBar()
+      if menu then
+        menu:delete()
+        menu = nil
+      end
       return
     end
 
-    menu:returnToMenuBar()
-    hs.task.new(ghPrsBinary, function(exitCode, stdOut)
+    if not menu then
+      menu = helpers.registerMenubar(hs.menubar.new(true, "eb-github-prs"))
+    end
+    runWithPath(ghPrsBinary, { "json" }, function(exitCode, stdOut)
+      if not menu then return end
       if exitCode ~= 0 then
         menu:setTitle("PRs ?")
         return
       end
       local prs = hs.json.decode(stdOut) or {}
       renderPRs(prs)
-    end, { "json" }):start()
+    end)
   end)
 end
+
+helpers.onStateSwitcherChanged(refresh)
 
 local timer = hs.timer.doEvery(300, refresh):start()
 refresh()
 
 return {
   timer = timer,
-  menubar = menu,
   refresh = refresh,
+  refetch = refetch,
 }

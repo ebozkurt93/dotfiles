@@ -1,4 +1,5 @@
--- menubar enable/disable
+local helpers = require("helpers")
+
 local enabled = false
 local commandString = "~/bin/state-switcher is-state-enabled spotify && [ \"$(~/bin/helpers/macos-now-playing.js | jq -r .appName)\" != \"Spotify\" ]"
 
@@ -16,18 +17,17 @@ end
 
 runTask()
 
+helpers.onStateSwitcherChanged(runTask)
+
 local interval = 10
 local taskTimer = hs.timer.doEvery(interval, runTask)
 
 taskTimer:start()
 
--- Config
 local expandedPath = os.getenv("HOME") .. "/dotfiles/helper_scripts/bin/helpers/macos-now-playing.js"
 
--- Menubar item
-local nowPlayingMenu = hs.menubar.new()
-
--- Cache of last decoded result, reused by menu item callbacks
+local nowPlayingMenuItems
+local nowPlayingMenu = nil
 local lastDecoded = nil
 
 local function applyNowPlaying(decoded)
@@ -39,15 +39,19 @@ local function applyNowPlaying(decoded)
     if decoded.artist and decoded.artist ~= "" and decoded.artist ~= "Unknown" then
       artist = decoded.artist .. " - "
     end
+    if not nowPlayingMenu then
+      nowPlayingMenu = helpers.registerMenubar(hs.menubar.new(true, "eb-now-playing"))
+    end
+    nowPlayingMenu:setMenu(nowPlayingMenuItems)
     nowPlayingMenu:setTitle(isPlaying .. artist .. title)
-    nowPlayingMenu:returnToMenuBar()
   else
-    nowPlayingMenu:setTitle("")
-    nowPlayingMenu:removeFromMenuBar()
+    if nowPlayingMenu then
+      nowPlayingMenu:delete()
+      nowPlayingMenu = nil
+    end
   end
 end
 
--- Non-blocking update: runs osascript as a background task
 local function updateNowPlaying()
   hs.task.new("/usr/bin/osascript", function(exitCode, stdOut, _)
     if exitCode == 0 then
@@ -61,14 +65,13 @@ local function refresh()
   updateNowPlaying()
 end
 
--- Run every second
 local timer = hs.timer.doEvery(1, updateNowPlaying):start()
 
 local function findAppName()
   return lastDecoded and lastDecoded.appName
 end
 
-nowPlayingMenu:setMenu({
+nowPlayingMenuItems = {
   {
     title = "Play/Pause",
     fn = function()
@@ -108,7 +111,6 @@ nowPlayingMenu:setMenu({
       end
     end,
   },
-})
+}
 
--- Return for reusability
-return { timer, menubar = nowPlayingMenu, enabled, taskTimer, refresh = refresh }
+return { timer, enabled, taskTimer, refresh = refresh }

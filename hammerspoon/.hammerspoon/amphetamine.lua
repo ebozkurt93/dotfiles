@@ -1,4 +1,5 @@
-local menu = hs.menubar.new()
+local helpers = require("helpers")
+local menu = helpers.registerMenubar(hs.menubar.new())
 local scriptPath = os.getenv("HOME") .. "/bin/helpers/amphetamine.sh"
 local onIcon = "󰹑"
 local offIcon = "󰶐"

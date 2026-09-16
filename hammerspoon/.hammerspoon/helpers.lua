@@ -28,7 +28,41 @@ DebugLog = function(value)
   return value
 end
 
-M = {}
+local M = {}
+
+-- hs.reload() doesn't delete native NSStatusItems on its own; register here so we can clean them up.
+local _menubars = {}
+
+function M.registerMenubar(menubar)
+  table.insert(_menubars, menubar)
+  return menubar
+end
+
+hs.shutdownCallback = function()
+  for _, menubar in ipairs(_menubars) do
+    pcall(function() menubar:delete() end)
+  end
+end
+
+-- hs.urlevent.bind overwrites any prior callback for a given name, so route
+-- all listeners through here instead of each module binding directly.
+local _stateSwitcherListeners = {}
+
+function M.onStateSwitcherChanged(fn)
+  table.insert(_stateSwitcherListeners, fn)
+end
+
+local function dispatchStateSwitcherChanged()
+  for _, fn in ipairs(_stateSwitcherListeners) do
+    local ok, err = pcall(fn)
+    if not ok then
+      print("stateSwitcherChanged listener error: " .. tostring(err))
+    end
+  end
+end
+
+hs.urlevent.bind("stateSwitcherChanged", dispatchStateSwitcherChanged)
+hs.urlevent.bind("stateswitcherchanged", dispatchStateSwitcherChanged)
 
 function M.escape_magic(s)
   return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1"))

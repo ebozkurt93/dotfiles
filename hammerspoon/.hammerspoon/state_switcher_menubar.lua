@@ -1,7 +1,9 @@
+local helpers = require("helpers")
+
 local home = os.getenv("HOME")
 local binary = home .. "/bin/state-switcher"
 
-local menu = hs.menubar.new()
+local menu = helpers.registerMenubar(hs.menubar.new())
 local refresh
 
 local function loadStates()
@@ -36,6 +38,10 @@ local function runHook(hook, title)
   runCommand({ "run_hook", hook, title })
 end
 
+-- A real tab stop (in points), so the mark lines up in the normal
+-- proportional system font instead of needing a monospace font.
+local stateTabStops = { { location = 220, tabStopType = "left" } }
+
 local function buildMenu(states)
   local items = {}
   for _, state in ipairs(states) do
@@ -43,7 +49,7 @@ local function buildMenu(states)
     local mark = state.enabled and "✅" or "❌"
 
     table.insert(items, {
-      title = displayTitle .. "\t" .. mark,
+      title = hs.styledtext.new(displayTitle .. "\t" .. mark, { paragraphStyle = { tabStops = stateTabStops, lineBreak = "clip" } }),
       fn = function() toggle(state.title) end,
       menu = {
         { title = "Run on_enabled", fn = function() runHook("on_enabled", state.title) end },
@@ -66,9 +72,7 @@ refresh = function()
   menu:setMenu(buildMenu(states))
 end
 
-hs.urlevent.bind("stateSwitcherChanged", function()
-  refresh()
-end)
+helpers.onStateSwitcherChanged(refresh)
 
 local timer = hs.timer.doEvery(60, refresh):start()
 refresh()

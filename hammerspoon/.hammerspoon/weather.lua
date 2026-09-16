@@ -42,7 +42,8 @@ local symbolToDescription = {
   thunderstorm = "Thunderstorm",
 }
 
-local weatherMenu = hs.menubar.new()
+local helpers = require("helpers")
+local weatherMenu = helpers.registerMenubar(hs.menubar.new())
 local lastWeather = nil
 local updateWeather
 

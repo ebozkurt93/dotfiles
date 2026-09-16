@@ -1,4 +1,5 @@
--- menubar enable/disable
+local helpers = require("helpers")
+
 local enabled = false
 local commandString = "~/bin/state-switcher is-state-enabled spotify && [ \"$(~/bin/helpers/macos-now-playing.js | jq -r .appName)\" == \"Spotify\" ]"
 
@@ -16,33 +17,14 @@ end
 
 runTask()
 
+helpers.onStateSwitcherChanged(runTask)
+
 local interval = 10
 local taskTimer = hs.timer.doEvery(interval, runTask)
 
 taskTimer:start()
 
--- menubar contents
-local spotifyStatus = hs.menubar.new()
-
-local function updateSpotifyStatus()
-  local spotifyApp = hs.application.get("Spotify")
-
-  if enabled and spotifyApp and spotifyApp:isRunning() then
-    local isPlaying = hs.spotify.isPlaying() and '' or '󰏤 '
-    local currentTrack = hs.spotify.getCurrentTrack()
-    local currentArtist = hs.spotify.getCurrentArtist()
-
-    spotifyStatus:setTitle("󰓇  " .. isPlaying .. currentArtist .. " - " .. currentTrack)
-    spotifyStatus:returnToMenuBar()
-  else
-    spotifyStatus:setTitle("Spotify status disabled")
-    spotifyStatus:removeFromMenuBar()
-  end
-end
-
-local timer = hs.timer.doEvery(1, updateSpotifyStatus):start()
-
-spotifyStatus:setMenu({
+local spotifyMenuItems = {
   { title = "Play/Pause", fn = hs.spotify.playpause },
   { title = "Next Track", fn = hs.spotify.next },
   { title = "Previous Track", fn = hs.spotify.previous },
@@ -64,6 +46,32 @@ spotifyStatus:setMenu({
       end
     end,
   },
-})
+}
 
-return { timer, spotifyStatus, enabled, taskTimer }
+local spotifyStatus = nil
+
+local function updateSpotifyStatus()
+  local spotifyApp = hs.application.get("Spotify")
+
+  if enabled and spotifyApp and spotifyApp:isRunning() then
+    if not spotifyStatus then
+      spotifyStatus = helpers.registerMenubar(hs.menubar.new(true, "eb-spotify-status"))
+    end
+    spotifyStatus:setMenu(spotifyMenuItems)
+
+    local isPlaying = hs.spotify.isPlaying() and '' or '󰏤 '
+    local currentTrack = hs.spotify.getCurrentTrack()
+    local currentArtist = hs.spotify.getCurrentArtist()
+
+    spotifyStatus:setTitle("󰓇  " .. isPlaying .. currentArtist .. " - " .. currentTrack)
+  else
+    if spotifyStatus then
+      spotifyStatus:delete()
+      spotifyStatus = nil
+    end
+  end
+end
+
+local timer = hs.timer.doEvery(1, updateSpotifyStatus):start()
+
+return { timer, enabled, taskTimer }

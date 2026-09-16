@@ -33,25 +33,29 @@ local criticalCommand = [[
 local arguments = { "-c", batteryCommand }
 local criticalArguments = { "-c", criticalCommand }
 
-local batteryStatus = hs.menubar.new()
+local helpers = require("helpers")
+local batteryStatus = nil
 
 local function updateBatteryStatus()
   hs.task.new(shell, function(exitCode, stdOut, stdErr)
     local out = (stdOut or ""):gsub("%s+$", "")
     if exitCode == 0 and out ~= "" then
       local title = "󰌌  " .. out:gsub("\n+", " | ")
-      -- check if any item is critically low (<= 10) to colorize red
+      if not batteryStatus then
+        batteryStatus = helpers.registerMenubar(hs.menubar.new(true, "eb-kb-battery"))
+      end
+      batteryStatus:setTitle(title)
       hs.task.new(shell, function(cExitCode, cStdOut, _)
         local criticalCount = tonumber((cStdOut or ""):match("%d+")) or 0
-        if cExitCode == 0 and criticalCount > 0 then
+        if cExitCode == 0 and criticalCount > 0 and batteryStatus then
           batteryStatus:setTitle(hs.styledtext.new(title, { color = { red = 0.9, green = 0.35, blue = 0.25 } }))
-        else
-          batteryStatus:setTitle(title)
         end
       end, criticalArguments):start()
-      batteryStatus:returnToMenuBar()
     else
-      batteryStatus:removeFromMenuBar()
+      if batteryStatus then
+        batteryStatus:delete()
+        batteryStatus = nil
+      end
     end
   end, arguments):start()
 end
@@ -59,4 +63,4 @@ end
 local timer = hs.timer.doEvery(60, updateBatteryStatus):start()
 updateBatteryStatus()
 
-return { timer, batteryStatus, refresh = updateBatteryStatus }
+return { timer, refresh = updateBatteryStatus }
