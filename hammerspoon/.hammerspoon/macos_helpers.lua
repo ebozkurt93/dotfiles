@@ -467,19 +467,6 @@ function M.toggleBrightness()
   hs.execute("~/bin/helpers/toggle-brightness.sh", true)
 end
 
-function M.restartBitBar()
-  hs.execute([[
-ps -ef | grep "BitBar.app" | awk '{print $2}' | xargs kill 2> /dev/null;
-  ]])
-  hs.timer.doAfter(2, function()
-    hs.application.open("BitBar")
-  end)
-end
-
-function M.refreshBitBarPlugins()
-  hs.execute([[ open -g "bitbar://refreshPlugin?name=*" ]])
-end
-
 -- Cached — avoids AppleScript overhead in hot paths (e.g. drag event handlers).
 -- Call M.updateDarkModeCache() on startup and whenever the theme changes.
 local _darkModeCache = false
@@ -540,7 +527,6 @@ end
 
 function M.toggleLowPowerMode()
   hs.execute([[ ~/bin/helpers/low-power-mode-toggle.sh ]], true)
-  M.refreshBitBarPlugins()
 end
 
 function M.setWallpaper()

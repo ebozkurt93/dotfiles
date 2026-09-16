@@ -1,7 +1,7 @@
 local helpers = require("helpers")
 
 local home = os.getenv("HOME")
-local stateSwitcherBinary = home .. "/Documents/bitbar_plugins/state-switcher.5m"
+local stateSwitcherBinary = home .. "/bin/state-switcher"
 local iconCache = {}
 
 local showMenu

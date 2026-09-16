@@ -41,8 +41,6 @@ func main() {
 		arg3 = args[2]
 	}
 
-	style := "size=13"
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Println("Error getting home directory:", err)
@@ -81,8 +79,6 @@ func main() {
 	stateIconsFilePath := filepath.Join(stateDir(), "enabled_state_icons.txt")
 
 	switch arg1 {
-	case "":
-		generateBitbarMenu(titles, icons, style)
 	case "enabled-states":
 		var enabledStatesList []string
 		for _, title := range titles {
@@ -193,35 +189,6 @@ func fileExists(filePath string) bool {
 	return !os.IsNotExist(err)
 }
 
-func generateBitbarMenu(titles []string, icons map[string]string, style string) {
-	fmt.Println(" | font='Symbols Nerd Font' size=18")
-	fmt.Println("---")
-	for _, title := range titles {
-		filePath := getFilePath(title)
-		mark := "✅"
-		if !fileExists(filePath) {
-			mark = "❌"
-		}
-		icon := icons[title]
-		var displayTitle string
-		if icon == "" {
-			displayTitle = fmt.Sprintf("___%s", title)
-		} else {
-			displayTitle = fmt.Sprintf("%s %s", icon, title)
-		}
-		fmt.Printf("%s\t%s | bash=%s param1=toggle param2=%s terminal=false %s\n",
-			displayTitle, mark, os.Args[0], title, style)
-		fmt.Printf("--Run on_enabled | bash=%s param1=run_hook param2=on_enabled param3=%s refresh=false terminal=false %s\n",
-			os.Args[0], title, style)
-		fmt.Printf("--Run on_disabled | bash=%s param1=run_hook param2=on_disabled param3=%s refresh=false terminal=false %s\n",
-			os.Args[0], title, style)
-		alternateContent := fmt.Sprintf("%s\t%s", displayTitle, mark)
-		fmt.Printf("%s | bash=%s param1=toggle param2=%s param3=ignore-event alternate=true refresh=true terminal=false %s\n",
-			alternateContent, os.Args[0], title, style)
-	}
-	fmt.Println("Refresh | refresh=true " + style)
-}
-
 func toggleState(arg2, arg3 string, titles []string, icons map[string]string, onEnabledCommands, onDisabledCommands map[string]string, stateIconsFilePath string) {
 	filePath := getFilePath(arg2)
 	if contains(titles, arg2) {
@@ -252,7 +219,7 @@ func toggleState(arg2, arg3 string, titles []string, icons map[string]string, on
 			runOnCommandHook(arg2, command)
 		}
 		if runtime.GOOS == "darwin" {
-			exec.Command("open", "-g", "bitbar://refreshPlugin?name=*").Run()
+			exec.Command("open", "-g", "hammerspoon://stateSwitcherChanged").Run()
 		}
 	}
 }

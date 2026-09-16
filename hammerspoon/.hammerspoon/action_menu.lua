@@ -34,12 +34,6 @@ local originalMenuItems = {
     end,
   },
   {
-    ["text"] = "Restart BitBar",
-    ["action"] = function()
-      macos_helpers.restartBitBar()
-    end,
-  },
-  {
     ["text"] = "Toggle Grayscale",
     ["action"] = function()
       macos_helpers.toggleGrayscale()

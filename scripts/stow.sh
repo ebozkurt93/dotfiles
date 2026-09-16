@@ -29,7 +29,6 @@ case "$(uname)" in
   Darwin)
     directories=(
       "${common_directories[@]}"
-      bitbar
       instabee
       lima
       hammerspoon

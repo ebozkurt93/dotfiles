@@ -29,7 +29,7 @@ zle -N __find_repos
 bindkey "^f" __find_repos
 
 function __open_pr {
-  local p="$(~/Documents/bitbar_plugins/github-prs.5m.sh fzf)"
+  local p="$(~/bin/github-prs fzf)"
   local content="$(cat <(test ${#p[@]} -ne 0 && echo $p))"
 
   if [[ $1 == 'cmd' ]]; then
@@ -45,7 +45,7 @@ function __open_pr {
     return
   fi
 
-  local _gh_pr_script=~/Documents/bitbar_plugins/github-prs.5m.sh
+  local _gh_pr_script=~/bin/github-prs
   local selected_output="$(
     cat <(test ${#p[@]} -ne 0 && echo $p) | fzf --multi --expect=enter \
       --bind "ctrl-f:reload($_gh_pr_script fzf)" \

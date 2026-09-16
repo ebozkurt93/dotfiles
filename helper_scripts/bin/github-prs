@@ -2,17 +2,15 @@
 
 set -euo pipefail
 
-style="size=13"
 search_json_format="assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url"
 pr_json_format="additions,assignees,author,baseRefName,body,changedFiles,closed,closedAt,comments,commits,createdAt,deletions,files,headRefName,headRepository,headRepositoryOwner,id,isCrossRepository,isDraft,labels,latestReviews,maintainerCanModify,mergeCommit,mergeStateStatus,mergeable,mergedAt,mergedBy,milestone,number,potentialMergeCommit,projectCards,reactionGroups,reviewDecision,reviewRequests,reviews,state,statusCheckRollup,title,updatedAt,url"
 
 usage() {
   cat <<'EOF'
-Usage: github-prs [refetch|json|count|fzf|bitbar|launcher-json]
+Usage: github-prs [refetch|json|count|fzf|launcher-json]
 
 Fetch and render GitHub pull-request search results. Queries are read from
-$GITHUB_PRS_QUERIES_FILE, ~/.config/github-prs/queries.txt, or the legacy
-~/Documents/bitbar_plugins/tmp/queries.txt file when it exists.
+$GITHUB_PRS_QUERIES_FILE, or ~/.config/github-prs/queries.txt.
 EOF
 }
 
@@ -20,17 +18,10 @@ have_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
-legacy_tmp_dir="$HOME/Documents/bitbar_plugins/tmp"
 xdg_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/github-prs"
 xdg_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/github-prs"
 
-if [ -n "${GITHUB_PRS_QUERIES_FILE:-}" ]; then
-  queries_file="$GITHUB_PRS_QUERIES_FILE"
-elif [ -f "$legacy_tmp_dir/queries.txt" ]; then
-  queries_file="$legacy_tmp_dir/queries.txt"
-else
-  queries_file="$xdg_config_dir/queries.txt"
-fi
+queries_file="${GITHUB_PRS_QUERIES_FILE:-$xdg_config_dir/queries.txt}"
 
 cache_file="${GITHUB_PRS_CACHE_FILE:-$xdg_cache_dir/prs.json}"
 
@@ -130,74 +121,6 @@ fzf_rows() {
   ' | awk -F'\t' '{printf "%-30s %-80s %-20s %-25s %-25s %-7s %-10s %-60s\n", $1, $2, $3, $4, $5, $6, $7, $8}'
 }
 
-bitbar_menu() {
-  local content length non_dependabot_length
-  content="$(prs_json)"
-  length="$(jq 'length' <<<"$content")"
-  non_dependabot_length="$(jq '[.[] | select(.author.login != "app/dependabot")] | length' <<<"$content")"
-
-  echo "PRs: $length ($non_dependabot_length)| dropdown=true $style"
-  echo "---"
-
-  if [ "$length" != 0 ]; then
-    jq -r --arg gh_username "${GH_USERNAME:-}" --arg style "$style" '
-      .[]
-      | (
-          [ (.reviews // [] | map(select(.author.login == $gh_username)) | .[].submittedAt),
-            (.comments // [] | map(select(.author.login == $gh_username)) | .[].createdAt)
-          ] | if length > 0 then max else null end
-        ) as $my_last
-      | (
-          [ (.commits // [] | .[].committedDate),
-            (.comments // [] | map(select(.author.login != $gh_username)) | .[].createdAt),
-            (.reviews // [] | map(select(.author.login != $gh_username)) | .[].submittedAt)
-          ] | if length > 0 then max else null end
-        ) as $others_last
-      | {
-          name: ((.headRepository.name + "#" + (.number | tostring)) | gsub("[\t\n]"; " ")),
-          title: (.title | gsub("[\t\n]"; " ")),
-          author: .author.login,
-          comments: (.comments | length),
-          additions: .additions,
-          deletions: .deletions,
-          draft: (if .isDraft then "Draft" else "" end),
-          review: (.reviewDecision
-            | gsub("APPROVED"; "Approved")
-            | gsub("REVIEW_REQUIRED"; "Review required")
-            | gsub("CHANGES_REQUESTED"; "Changes requested")),
-          mergeable: (if .mergeable == "MERGEABLE" then "" else "Not mergeable" end),
-          checks: (.statusCheckRollup | '"$checks_status_filter"'),
-          url: .url,
-          color: (if .author.login == "app/dependabot" then " color=dimgray "
-                  elif .author.login == $gh_username then " color=teal "
-                  elif ($my_last != null and $others_last != null and $others_last > $my_last) then " color=mediumpurple "
-                  else "" end)
-        }
-      | @base64
-    ' <<<"$content" | while IFS= read -r row; do
-      local name title author comments additions deletions draft review mergeable checks url color
-      name="$(jq -Rr '@base64d | fromjson | .name' <<<"$row")"
-      title="$(jq -Rr '@base64d | fromjson | .title' <<<"$row")"
-      author="$(jq -Rr '@base64d | fromjson | .author' <<<"$row")"
-      comments="$(jq -Rr '@base64d | fromjson | .comments' <<<"$row")"
-      additions="$(jq -Rr '@base64d | fromjson | .additions' <<<"$row")"
-      deletions="$(jq -Rr '@base64d | fromjson | .deletions' <<<"$row")"
-      draft="$(jq -Rr '@base64d | fromjson | .draft' <<<"$row")"
-      review="$(jq -Rr '@base64d | fromjson | .review' <<<"$row")"
-      mergeable="$(jq -Rr '@base64d | fromjson | .mergeable' <<<"$row")"
-      checks="$(jq -Rr '@base64d | fromjson | .checks' <<<"$row")"
-      url="$(jq -Rr '@base64d | fromjson | .url' <<<"$row")"
-      color="$(jq -Rr '@base64d | fromjson | .color' <<<"$row")"
-      printf "%-30s %-70s %-20s %-2s %-7s %-52s %-10s | href=%s %s %s\n" \
-        "$name" "$title" "👤 $author" "💬 $comments" "📜+$additions-$deletions" "$draft $review $mergeable" "$checks" "$url" "$style" "$color"
-    done
-    echo "---"
-  fi
-
-  echo "Refetch PRs | bash=\"$0\" param1=refetch-prs refresh=true terminal=false $style"
-  echo "Refresh | refresh=true $style"
-}
-
 launcher_json() {
   prs_json | jq '
     reverse
@@ -230,13 +153,12 @@ launcher_json() {
   '
 }
 
-mode="${1:-bitbar}"
+mode="${1:-json}"
 case "$mode" in
   refetch|refetch-prs) refetch_prs ;;
   json) prs_json ;;
   count) count_prs ;;
   fzf) fzf_rows ;;
-  bitbar|"") bitbar_menu ;;
   launcher-json) launcher_json ;;
   -h|--help) usage ;;
   *) usage >&2; exit 1 ;;

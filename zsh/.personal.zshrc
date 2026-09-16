@@ -390,7 +390,7 @@ function wp_change() {
   local wp_file=$(~/bin/helpers/set_wallpaper.sh wp-path)
   local selection=$(~/bin/helpers/set_wallpaper.sh find | fzf --preview 'viu -b {}')
   [[ -z $selection ]] && return
-  echo -e "$selection\n$(cat $wp_file)" > $wp_file
+  echo "$selection" > $wp_file
   ~/bin/helpers/set_wallpaper.sh
 }
 

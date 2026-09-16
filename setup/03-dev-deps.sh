@@ -15,7 +15,6 @@ echo 'Go through personal.zshrc and run any subsequent comments initial install 
 # todo: maybe move this to nix/home-manager
 mise install
 
-mkdir -p ~/Documents/bitbar_plugins/tmp
 mkdir -p ~/personal-repositories
 
 cd $src_pwd
