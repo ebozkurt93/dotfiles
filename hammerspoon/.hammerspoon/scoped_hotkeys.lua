@@ -170,16 +170,6 @@ end
 local reddit         = helpers.keystrokesScopedToApp("bb ", "Google Chrome", redditToggle)
 local firefoxReddit  = helpers.keystrokesScopedToApp("bb ", "Firefox Developer Edition", redditToggle)
 
--- Kasm mute toggle
-local function kasmMute()
-  if not helpers.isCurrentTabUrlStartingWith("http://home:3001") and
-      not helpers.isCurrentTabUrlStartingWith("https://u.local.erdem-bozkurt.com") then return end
-  helpers.runJsOnCurrentBrowserTab("document.querySelector('#audioButton').click()")
-  hs.notify.new({ title = "Kasm Mute Toggle", informativeText = hs.window.focusedWindow():title(), autoWithdraw = true, withdrawAfter = 2 }):send()
-end
-local kasmMuteToggle        = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", kasmMute)
-local firefoxKasmMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Firefox Developer Edition", kasmMute)
-
 -- n.eko mute toggle
 local function nekoMute()
   if not (helpers.isCurrentTabUrlStartingWith("http://home:8083") or
@@ -189,6 +179,21 @@ local function nekoMute()
 end
 local nekoMuteToggle        = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Google Chrome", nekoMute)
 local firefoxNekoMuteToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "m", "Firefox Developer Edition", nekoMute)
+
+-- Selkies DPI scaling toggle (100% / 200%); other scaling_dpi values: 96=100% 120=125% 144=150% 168=175% 192=200% 216=225% 240=250% 264=275% 288=300%
+local selkiesDpiKey = "selkiesDpiScaled"
+local function selkiesDpiToggle()
+  if not (helpers.isCurrentTabUrlStartingWith("https://firefox.local.erdem-bozkurt.com") or
+      helpers.isCurrentTabUrlStartingWith("https://u.local.erdem-bozkurt.com")) then return end
+  local scaled = hs.settings.get(selkiesDpiKey)
+  local dpi = scaled and 96 or 192
+  hs.settings.set(selkiesDpiKey, not scaled)
+  helpers.runJsOnCurrentBrowserTab(string.format(
+    'window.postMessage({type: "settings", settings: {scaling_dpi: %d}}, window.location.origin)', dpi))
+  hs.notify.new({ title = "Selkies DPI Scaling", informativeText = (dpi == 192 and "200%" or "100%"), autoWithdraw = true, withdrawAfter = 2 }):send()
+end
+local selkiesDpiToggleChrome  = helpers.hotkeyScopedToApp({ "shift", "alt" }, "d", "Google Chrome", selkiesDpiToggle)
+local firefoxSelkiesDpiToggle = helpers.hotkeyScopedToApp({ "shift", "alt" }, "d", "Firefox Developer Edition", selkiesDpiToggle)
 
 helpers.hotkeyScopedToApp({ "cmd" }, "c", "Books", function(app)
   app:selectMenuItem({ "Edit", "Copy" })
@@ -328,4 +333,4 @@ local importSupportingApps = helpers.registerKeyDownHandler(function(event)
   return false -- let everything else pass through
 end)
 
-return { reddit, firefoxReddit, kasmMuteToggle, firefoxKasmMuteToggle, nekoMuteToggle, firefoxNekoMuteToggle, importSupportingApps }
+return { reddit, firefoxReddit, nekoMuteToggle, firefoxNekoMuteToggle, selkiesDpiToggleChrome, firefoxSelkiesDpiToggle, importSupportingApps }
