@@ -71,11 +71,12 @@ end
 -- never sees GH_USERNAME (exported in .personal.zshrc) -- ask `gh` directly.
 local ghUsername = ""
 local ghBinary = home .. "/.nix-profile/bin/gh"
-local function fetchGhUsername()
+local function fetchGhUsername(callback)
   runWithPath(ghBinary, { "config", "get", "-h", "github.com", "user" }, function(exitCode, stdOut)
     if exitCode == 0 then
       ghUsername = (stdOut or ""):gsub("%s+$", "")
     end
+    if callback then callback() end
   end)
 end
 fetchGhUsername()
@@ -223,8 +224,17 @@ local function refetch()
   end)
 end
 
+-- Plain system font doesn't include this PUA glyph; needs the Nerd Font
+-- explicitly, same as state_switcher_menubar.lua's title icon.
+local githubIcon = ""
+local iconFont = { name = "Symbols Nerd Font", size = 14 }
+
+local function githubTitle(rest)
+  return hs.styledtext.new(githubIcon, { font = iconFont }) .. hs.styledtext.new(rest)
+end
+
 local function renderPRs(prs)
-  menu:setTitle(string.format("PRs: %d (%d)", #prs, nonDependabotCount(prs)))
+  menu:setTitle(githubTitle(string.format(" %d (%d)", #prs, nonDependabotCount(prs))))
 
   local items = {}
   for _, pr in ipairs(prs) do
@@ -236,10 +246,7 @@ local function renderPRs(prs)
   menu:setMenu(items)
 end
 
-refresh = function()
-  if ghUsername == "" then
-    fetchGhUsername()
-  end
+local function doRefresh()
   checkEnabled(function(isEnabled)
     if not isEnabled then
       if menu then
@@ -255,13 +262,21 @@ refresh = function()
     runWithPath(ghPrsBinary, { "json" }, function(exitCode, stdOut)
       if not menu then return end
       if exitCode ~= 0 then
-        menu:setTitle("PRs ?")
+        menu:setTitle(githubTitle(" ?"))
         return
       end
       local prs = hs.json.decode(stdOut) or {}
       renderPRs(prs)
     end)
   end)
+end
+
+refresh = function()
+  if ghUsername == "" then
+    fetchGhUsername(doRefresh)
+  else
+    doRefresh()
+  end
 end
 
 helpers.onStateSwitcherChanged(refresh)
