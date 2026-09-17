@@ -69,15 +69,15 @@ stow_args=("$@")
 
 if [ "$mode" = "-R" ]; then
   echo "Stowing and unstowing directories: ${directories[@]}"
-  "$0" -D "${stow_args[@]}"
-  "$0" "${stow_args[@]}"
+  "$0" -D "${stow_args[@]+"${stow_args[@]}"}"
+  "$0" "${stow_args[@]+"${stow_args[@]}"}"
 elif [ "$mode" = "-D" ]; then
   # add -D flag to unstow
   echo "Unstowing directories: ${directories[@]}"
-  stow --target="$HOME" "${stow_args[@]}" -D "${directories[@]}"
+  stow --target="$HOME" "${stow_args[@]+"${stow_args[@]}"}" -D "${directories[@]}"
 elif [ "$mode" = "-A" ]; then
   echo "Stowing directories with --adopt: ${directories[@]}"
-  stow --target="$HOME" "${stow_args[@]}" --adopt "${directories[@]}"
+  stow --target="$HOME" "${stow_args[@]+"${stow_args[@]}"}" --adopt "${directories[@]}"
 else
-  stow --target="$HOME" "${stow_args[@]}" "${directories[@]}"
+  stow --target="$HOME" "${stow_args[@]+"${stow_args[@]}"}" "${directories[@]}"
 fi
