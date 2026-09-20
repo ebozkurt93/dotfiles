@@ -13,7 +13,9 @@ local batteryCommand = [[
         | to_entries[]
         | select((.value | num) != null)
         | { side: .key, level: (.value | num) }
-      ] as $levels
+      ]
+      | sort_by(if .side == "left" then 0 elif .side == "right" then 1 else 2 end)
+      as $levels
     | select(($levels | length) > 0)
     | { device: $device, levels: $levels }
   ] as $keyboards
