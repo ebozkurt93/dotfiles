@@ -6,6 +6,16 @@ local stateSwitcherBinary = home .. "/bin/state-switcher"
 
 local menu = nil
 local refresh
+local refetchInterval = 600
+
+-- Mirrors github-prs' own cache path resolution so we can check its age.
+local function cacheFilePath()
+  local cacheFile = os.getenv("GITHUB_PRS_CACHE_FILE")
+  if cacheFile and cacheFile ~= "" then return cacheFile end
+  local cacheDir = os.getenv("XDG_CACHE_HOME")
+  if not cacheDir or cacheDir == "" then cacheDir = home .. "/.cache" end
+  return cacheDir .. "/github-prs/prs.json"
+end
 
 -- hs.task inherits Hammerspoon's own (launchd-minimal) PATH, which doesn't
 -- include ~/.nix-profile/bin where gh/jq live, so those binaries would
@@ -281,11 +291,30 @@ end
 
 helpers.onStateSwitcherChanged(refresh)
 
-local timer = hs.timer.doEvery(300, refresh):start()
+-- On restart, don't just start a fresh refetchInterval countdown: that could
+-- add up to another full interval on top of however stale the cache already
+-- was. Instead align the first refetch to the cache's actual remaining age.
+local result = { refresh = refresh, refetch = refetch }
+
+local function startRegularTimer()
+  result.timer = hs.timer.doEvery(refetchInterval, refetch):start()
+end
+
+-- Show the menubar item right away from whatever's cached, rather than
+-- leaving it absent for as long as the background refetch below takes.
 refresh()
 
-return {
-  timer = timer,
-  refresh = refresh,
-  refetch = refetch,
-}
+local cacheAttrs = hs.fs.attributes(cacheFilePath())
+local cacheAge = cacheAttrs and (os.time() - cacheAttrs.modification) or nil
+
+if not cacheAge or cacheAge >= refetchInterval then
+  refetch()
+  startRegularTimer()
+else
+  result.timer = hs.timer.doAfter(refetchInterval - cacheAge, function()
+    refetch()
+    startRegularTimer()
+  end)
+end
+
+return result
