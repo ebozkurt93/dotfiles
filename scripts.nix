@@ -35,8 +35,10 @@
   in
     # sh
     ''
-      export PATH=${lib.makeBinPath requiredPackages}:/usr/bin:/bin:$HOME/.nix-profile/bin:$PATH
-      cd $HOME/dotfiles/tmux/tmux-mover
-      nix develop -c make watch-restart
+      (
+        export PATH=${lib.makeBinPath requiredPackages}:/usr/bin:/bin:$HOME/.nix-profile/bin:$PATH
+        cd $HOME/dotfiles/tmux/tmux-mover
+        nix develop -c make watch-restart
+      )
     '';
 }
