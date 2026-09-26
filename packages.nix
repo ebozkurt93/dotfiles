@@ -53,8 +53,8 @@ with pkgs;
 
     # ai
     llmAgents.claude-code
-    codex
-    opencode
+    llmAgents.codex
+    # llmAgents.opencode
   ]
   ++ lib.optionals stdenv.isDarwin [
     blueutil
