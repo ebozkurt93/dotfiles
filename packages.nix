@@ -54,6 +54,7 @@ with pkgs;
     # ai
     llmAgents.claude-code
     llmAgents.codex
+    llmAgents.nono
     # llmAgents.opencode
   ]
   ++ lib.optionals stdenv.isDarwin [

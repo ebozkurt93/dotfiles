@@ -1,0 +1,197 @@
+{
+  "extends": ["claude", "codex"],
+  "meta": {
+    "name": "agents",
+    "version": "1.1.0",
+    "description": "Shared sandbox for Claude and Codex, built on nolabs-ai/claude@0.1.4 and nolabs-ai/codex@0.2.3"
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "read": [
+      "$HOME/personal-repositories",
+      "$HOME/bin",
+      "$HOME/dotfiles/helper_scripts",
+      "$HOME/.nix-profile",
+      "$HOME/.local/share/mise/installs",
+      "/nix/store"
+    ],
+    "deny": [
+      "$HOME/.config/gh",
+      "$HOME/.config/nono",
+      "$HOME/dotfiles/other/.config/nono"
+    ]
+  },
+  "environment": {
+    "allow_vars": [
+      "PATH", "HOME", "USER", "LOGNAME", "SHELL",
+      "TERM", "COLORTERM", "LANG", "LC_*", "TZ",
+      "TMPDIR", "EDITOR", "VISUAL", "XDG_*",
+      "ANTHROPIC_API_KEY", "OPENAI_API_KEY",
+      "CODEX_HOME"
+    ],
+    "set_vars": {
+      "GH_CONFIG_DIR": "/tmp/nono-agent-gh",
+      "GH_PROMPT_DISABLED": "1",
+      "GH_NO_UPDATE_NOTIFIER": "1"
+    }
+  },
+  "network": {
+    "allow_domain": [
+      "*"
+    ],
+    "deny_domain": [
+      "ssh.github.com"
+    ],
+    "tls_intercept": {
+      "ca_lifecycle": "trusted"
+    }
+  },
+  "credential_capture": {
+    "github_read": {
+      "command": ["gh", "auth", "token"],
+      "timeout_secs": 5,
+      "cache_ttl_secs": 900
+    }
+  },
+  "unsafe_macos_seatbelt_rules": [
+    "(allow user-preference-read)",
+    "(allow process-exec (literal \"/usr/bin/security\"))",
+    "(allow mach-lookup (global-name \"com.apple.security.agent\") (global-name \"com.apple.SecurityServer\") (global-name \"com.apple.securityd\") (global-name \"com.apple.trustd\") (global-name \"com.apple.ocspd\") (global-name \"com.apple.cfprefsd.daemon\") (global-name \"com.apple.xpcd\"))",
+    "(allow process-exec (subpath \"/nix/store\"))",
+    "(allow file-map-executable (subpath \"/nix/store\"))",
+    "(allow file-read* (subpath \"/nix/store\"))"
+  ],
+  "command_policies": {
+    "approval_backends": {
+      "terminal": { "type": "terminal", "timeout_secs": 120 }
+    },
+    "credentials": {
+      "github_read": {
+        "type": "proxy",
+        "upstream": "https://api.github.com",
+        "credential_key": "cmd://github_read",
+        "env_var": "GH_TOKEN",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}"
+      },
+      "ssh-agent": {
+        "type": "local-socket",
+        "path": "$SSH_AUTH_SOCK",
+        "mode": "connect",
+        "env_var": "SSH_AUTH_SOCK"
+      }
+    },
+    "commands": {
+      "git": {
+        "executable": "/usr/bin/git",
+        "can_use": ["ssh"],
+        "from": {
+          "session": {
+            "sandbox": {
+              "fs_read": ["$WORKDIR", "@git:hooks-path", "/nix/store"],
+              "unsafe_macos_seatbelt_rules": ["(allow process-exec (subpath \"/nix/store\"))", "(allow file-map-executable (subpath \"/nix/store\"))", "(allow file-read* (subpath \"/nix/store\"))"],
+              "fs_read_file": ["@git:config-files"],
+              "fs_write": ["$WORKDIR", "@git:common-dir"],
+              "environment": {
+                "allow_vars": ["PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_*", "TERM", "GIT_SSH_COMMAND"]
+              }
+            },
+            "invocation_policy": {
+              "default": "allow",
+              "approve": [
+                { "argv": { "contains": ["push"] }, "backend": "terminal", "reason": "push requires one-off approval" }
+              ]
+            }
+          }
+        }
+      },
+      "ssh": {
+        "executable": "/usr/bin/ssh",
+        "from": {
+          "session": "deny",
+          "git": {
+            "fs_read": ["/nix/store"],
+            "fs_read_file": ["$HOME/.ssh/known_hosts"],
+            "unsafe_macos_seatbelt_rules": ["(allow process-exec (subpath \"/nix/store\"))", "(allow file-map-executable (subpath \"/nix/store\"))", "(allow file-read* (subpath \"/nix/store\"))"],
+            "argv_prepend": ["-o", "IdentityFile=none"],
+            "use_credentials": ["ssh-agent"],
+            "network": { "allow_all": true },
+            "environment": {
+              "allow_vars": ["PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_*"]
+            }
+          }
+        }
+      },
+      "gh": {
+        "executable": "/Users/erdembozkurt/.nix-profile/bin/gh",
+        "from": {
+          "session": {
+            "sandbox": {
+              "fs_read": ["$WORKDIR", "/nix/store", "/tmp/nono-agent-gh"],
+              "fs_write": ["/tmp/nono-agent-gh"],
+              "unsafe_macos_seatbelt_rules": ["(allow process-exec (subpath \"/nix/store\"))", "(allow file-map-executable (subpath \"/nix/store\"))", "(allow file-read* (subpath \"/nix/store\"))"],
+              "credentials": [
+                {
+                  "name": "github_read",
+                  "endpoint_policy": {
+                    "default": { "decision": "approve", "backend": "terminal", "timeout_secs": 120 },
+                    "allow": [
+                      { "method": "GET", "path": "/**" },
+                      { "method": "HEAD", "path": "/**" }
+                    ]
+                  }
+                }
+              ],
+              "environment": {
+                "allow_vars": [
+                  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_*", "TERM", "GH_TOKEN",
+                  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy",
+                  "NONO_PROXY_TOKEN", "SSL_CERT_FILE"
+                ],
+                "set_vars": {
+                  "GH_CONFIG_DIR": "/tmp/nono-agent-gh",
+                  "GH_PROMPT_DISABLED": "1",
+                  "GH_NO_UPDATE_NOTIFIER": "1"
+                }
+              }
+            },
+            "invocation_policy": {
+              "default": "allow",
+              "approve": [
+                { "argv": { "prefix": ["issue", "comment"] }, "backend": "terminal", "reason": "commenting requires one-off approval" },
+                { "argv": { "prefix": ["issue", "create"] }, "backend": "terminal", "reason": "creating issues requires one-off approval" },
+                { "argv": { "prefix": ["issue", "close"] }, "backend": "terminal", "reason": "closing issues requires one-off approval" },
+                { "argv": { "prefix": ["issue", "edit"] }, "backend": "terminal", "reason": "editing issues requires one-off approval" },
+                { "argv": { "prefix": ["issue", "delete"] }, "backend": "terminal", "reason": "deleting issues requires one-off approval" },
+                { "argv": { "prefix": ["issue", "reopen"] }, "backend": "terminal", "reason": "reopening issues requires one-off approval" },
+                { "argv": { "prefix": ["issue", "lock"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["issue", "pin"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["issue", "transfer"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["pr", "create"] }, "backend": "terminal", "reason": "creating PRs requires one-off approval" },
+                { "argv": { "prefix": ["pr", "comment"] }, "backend": "terminal", "reason": "commenting requires one-off approval" },
+                { "argv": { "prefix": ["pr", "close"] }, "backend": "terminal", "reason": "closing PRs requires one-off approval" },
+                { "argv": { "prefix": ["pr", "merge"] }, "backend": "terminal", "reason": "merging requires one-off approval" },
+                { "argv": { "prefix": ["pr", "edit"] }, "backend": "terminal", "reason": "editing PRs requires one-off approval" },
+                { "argv": { "prefix": ["pr", "review"] }, "backend": "terminal", "reason": "reviews require one-off approval" },
+                { "argv": { "prefix": ["pr", "reopen"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["pr", "ready"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["repo", "edit"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["repo", "delete"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["repo", "archive"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["release", "create"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["release", "upload"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["release", "delete"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["workflow", "run"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["label", "create"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["label", "edit"] }, "backend": "terminal", "reason": "requires one-off approval" },
+                { "argv": { "prefix": ["label", "delete"] }, "backend": "terminal", "reason": "requires one-off approval" }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

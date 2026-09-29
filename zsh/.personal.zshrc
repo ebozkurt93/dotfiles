@@ -13,6 +13,24 @@ export LC_TIME="en_GB.UTF-8"
 [[ "$SNAPSHOT_FILE" == */.claude/shell-snapshots/* ]] && return
 
 # Functions
+# Experimental: NONO_SANDBOX=0 disables these wrappers for a command/session.
+# `command claude` / `command codex` also bypass the shell functions.
+function claude {
+  if [[ ${NONO_SANDBOX:-1} == 0 ]]; then
+    command claude "$@"
+  else
+    command nono run --allow-cwd --trust-proxy-ca -s --profile "${NONO_PROFILE:-$HOME/.config/nono/profiles/agents.json}" -- claude "$@"
+  fi
+}
+
+function codex {
+  if [[ ${NONO_SANDBOX:-1} == 0 ]]; then
+    command codex "$@"
+  else
+    command nono run --allow-cwd --trust-proxy-ca -s --profile "${NONO_PROFILE:-$HOME/.config/nono/profiles/agents.json}" -- codex "$@"
+  fi
+}
+
 function mcd
 {
   command mkdir -p $1 && cd $1
