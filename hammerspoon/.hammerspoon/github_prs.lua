@@ -4,6 +4,29 @@ local home = os.getenv("HOME")
 local ghPrsBinary = home .. "/bin/github-prs"
 local stateSwitcherBinary = home .. "/bin/state-switcher"
 
+-- github-prs json's own output carries full PR/commit/comment/review bodies
+-- and file diffs -- multiple MB for a busy PR list, slow for hs.task to
+-- stream. Trim it down here via a jq pipe rather than touching github-prs
+-- itself.
+local menubarJsonFilter = [[
+  map({
+    headRepository: (if .headRepository then {name: .headRepository.name} else null end),
+    number,
+    title,
+    author: (if .author then {login: .author.login} else null end),
+    isDraft,
+    reviewDecision,
+    mergeable,
+    statusCheckRollup: (if .statusCheckRollup then [.statusCheckRollup[] | {conclusion, status}] else null end),
+    additions,
+    deletions,
+    url,
+    comments: [ (.comments // [])[] | {author: (if .author then {login: .author.login} else null end), createdAt} ],
+    reviews: [ (.reviews // [])[] | {author: (if .author then {login: .author.login} else null end), submittedAt} ],
+    commits: [ (.commits // [])[] | {committedDate} ]
+  })
+]]
+
 local menu = nil
 local refresh
 local refetchInterval = 600
@@ -26,14 +49,26 @@ local taskPath = home .. "/.nix-profile/bin:/opt/homebrew/bin:/usr/local/bin:/us
 -- on large output, but once one's registered, the completion callback's own
 -- stdOut is no longer populated, so we accumulate manually. hs.task's docs
 -- warn the streaming callback may fire once more (with task == nil) right
--- after termination, so defer finalizing by one tick to catch that chunk.
+-- after termination to flush any trailing chunk -- react to that directly
+-- instead of guessing a fixed delay, with a timeout only as a fallback for
+-- when hs.task doesn't fire it.
+--
+-- hs.task also requires the caller to keep a strong reference to the task
+-- object for as long as it's running, or Lua's GC can collect it mid-flight,
+-- silently killing the process before its callbacks fire. Pin every
+-- in-flight task here and release it once its callback has run.
+local inFlightTasks = {}
+
 local function runWithPath(binary, args, callback)
   local outputChunks = {}
   local finished = false
+  local pendingExit = nil
+  local task
 
   local function finish(exitCode, stdErr)
     if finished then return end
     finished = true
+    inFlightTasks[task] = nil
     local stdOut = table.concat(outputChunks)
     if exitCode ~= 0 then
       print(string.format("github_prs.lua: %s exited %s: %s", binary, tostring(exitCode), stdErr or ""))
@@ -41,14 +76,21 @@ local function runWithPath(binary, args, callback)
     callback(exitCode, stdOut, stdErr)
   end
 
-  local task = hs.task.new(binary, function(exitCode, _, stdErr)
-    hs.timer.doAfter(0.1, function() finish(exitCode, stdErr) end)
-  end, function(_, stdOut)
+  task = hs.task.new(binary, function(exitCode, _, stdErr)
+    pendingExit = { exitCode, stdErr }
+    hs.timer.doAfter(1, function()
+      if pendingExit then finish(pendingExit[1], pendingExit[2]) end
+    end)
+  end, function(t, stdOut)
     if stdOut and stdOut ~= "" then
       table.insert(outputChunks, stdOut)
     end
+    if t == nil and pendingExit then
+      finish(pendingExit[1], pendingExit[2])
+    end
     return true
   end, args)
+  inFlightTasks[task] = true
   task:setEnvironment({ PATH = taskPath, HOME = home })
   task:start()
 end
@@ -228,8 +270,19 @@ local function nonDependabotCount(prs)
   return count
 end
 
+-- Two concurrent hs.task runs of ghPrsBinary (json read vs refetch, or
+-- either with itself) got their streamed stdout cross-contaminated in
+-- practice -- a string cut off mid-value with unrelated JSON spliced in.
+-- ghPrsBusy is a simple skip-if-busy guard against that; a skipped refetch
+-- just gets retried on the next timer tick, and a skipped json read gets
+-- retried by refetch's own completion calling refresh().
+local ghPrsBusy = false
+
 local function refetch()
+  if ghPrsBusy then return end
+  ghPrsBusy = true
   runWithPath(ghPrsBinary, { "refetch" }, function()
+    ghPrsBusy = false
     refresh()
   end)
 end
@@ -269,7 +322,11 @@ local function doRefresh()
     if not menu then
       menu = helpers.registerMenubar(hs.menubar.new(true, "eb-github-prs"))
     end
-    runWithPath(ghPrsBinary, { "json" }, function(exitCode, stdOut)
+    if ghPrsBusy then return end
+    ghPrsBusy = true
+    local shellCommand = string.format("%s json | jq -c '%s'", ghPrsBinary, menubarJsonFilter)
+    runWithPath("/bin/bash", { "-c", shellCommand }, function(exitCode, stdOut)
+      ghPrsBusy = false
       if not menu then return end
       if exitCode ~= 0 then
         menu:setTitle(githubTitle(" ?"))
@@ -304,17 +361,24 @@ end
 -- leaving it absent for as long as the background refetch below takes.
 refresh()
 
-local cacheAttrs = hs.fs.attributes(cacheFilePath())
-local cacheAge = cacheAttrs and (os.time() - cacheAttrs.modification) or nil
+-- Give that initial refresh() a couple seconds to finish its local, no-
+-- network round-trip (state-switcher check + reading the existing cache)
+-- before possibly calling refetch() -- otherwise refetch can grab
+-- ghPrsBusy first and the very first render gets skipped until the much
+-- slower refetch completes.
+hs.timer.doAfter(2, function()
+  local cacheAttrs = hs.fs.attributes(cacheFilePath())
+  local cacheAge = cacheAttrs and (os.time() - cacheAttrs.modification) or nil
 
-if not cacheAge or cacheAge >= refetchInterval then
-  refetch()
-  startRegularTimer()
-else
-  result.timer = hs.timer.doAfter(refetchInterval - cacheAge, function()
+  if not cacheAge or cacheAge >= refetchInterval then
     refetch()
     startRegularTimer()
-  end)
-end
+  else
+    result.timer = hs.timer.doAfter(refetchInterval - cacheAge, function()
+      refetch()
+      startRegularTimer()
+    end)
+  end
+end)
 
 return result
