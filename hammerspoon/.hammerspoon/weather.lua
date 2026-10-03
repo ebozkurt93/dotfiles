@@ -301,7 +301,7 @@ updateWeather = function(force)
     table.insert(commandParts, "--force")
   end
 
-  local shellCommand = "exec " .. table.concat(commandParts, " ")
+  local shellCommand = 'export PATH="$HOME/.nix-profile/bin:$PATH"; exec ' .. table.concat(commandParts, " ")
 
   hs.task.new("/bin/zsh", function(exitCode, stdOut, stdErr)
     if exitCode ~= 0 then
