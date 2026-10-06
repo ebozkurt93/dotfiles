@@ -789,7 +789,7 @@ func moveUp(m model) (tea.Model, tea.Cmd) {
 // the handler in Update only applies results still relevant to the current
 // selection.
 func stepSessionSelection(m model, direction int) (model, tea.Cmd) {
-	order := sessionOrder(activeState(m))
+	order := sessionOrder(activeState(m), m.agents)
 	if len(order) == 0 {
 		return m, nil
 	}
@@ -1097,7 +1097,7 @@ func selectedSessionIDs(m model) []string {
 		return nil
 	}
 	ids := []string{}
-	for _, id := range sessionOrder(m.state) {
+	for _, id := range sessionOrder(m.state, m.agents) {
 		if m.selectedSessions[id] {
 			ids = append(ids, id)
 		}

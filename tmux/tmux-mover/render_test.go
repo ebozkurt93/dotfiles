@@ -5,7 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/muesli/termenv"
 )
 
 func TestWrapLegendItemsKeepsItemsTogether(t *testing.T) {
@@ -209,5 +211,78 @@ func TestWrapLegendItemsGolden(t *testing.T) {
 	joined := ansi.Strip(strings.Join(lines, "\n"))
 	if !strings.Contains(joined, "a one") || !strings.Contains(joined, "b two") || !strings.Contains(joined, "c three") {
 		t.Fatalf("legend wrap mismatch:\n%s", joined)
+	}
+}
+
+func TestBuildSessionRowsShowsAttentionAndOrder(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "alpha"}, {ID: "$1", Name: "beta"}, {ID: "$2", Name: "gamma"}},
+		Windows: []Window{
+			{ID: "@0", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w"},
+			{ID: "@1", SessionID: "$1", Index: "0", IndexNum: 0, Name: "w"},
+			{ID: "@2", SessionID: "$2", Index: "0", IndexNum: 0, Name: "w"},
+		},
+		Panes: []Pane{
+			{ID: "%0", WindowID: "@0", SessionID: "$0"},
+			{ID: "%1", WindowID: "@1", SessionID: "$1"},
+			{ID: "%2", WindowID: "@2", SessionID: "$2"},
+		},
+	}
+	agents := map[string]AgentState{
+		"%0": {Kind: AgentClaude, Status: AgentStatusIdle},
+		"%1": {Kind: AgentClaude, Status: AgentStatusBusy},
+		"%2": {Kind: AgentClaude, Status: AgentStatusWaiting},
+	}
+
+	tree := buildSessionRows(state, "", 120, "", nil, agents)
+	if len(tree.rows) != 3 {
+		t.Fatalf("expected 3 rows, got %d", len(tree.rows))
+	}
+	wantNames := []string{"gamma", "beta", "alpha"}
+	wantLabels := []string{"1 waiting", "1 busy", "1 idle"}
+	for i, row := range tree.rows {
+		plain := ansi.Strip(row)
+		if !strings.Contains(plain, wantNames[i]) {
+			t.Fatalf("row %d: expected session %q, got %q", i, wantNames[i], plain)
+		}
+		if !strings.Contains(plain, "1 agent · "+wantLabels[i]) {
+			t.Fatalf("row %d: expected label %q, got %q", i, wantLabels[i], plain)
+		}
+	}
+}
+
+func TestSelectedSessionAgentsSegmentUsesRowStyle(t *testing.T) {
+	lipgloss.SetColorProfile(termenv.ANSI256)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@0", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w"}},
+		Panes:    []Pane{{ID: "%0", WindowID: "@0", SessionID: "$0"}},
+	}
+	agents := map[string]AgentState{"%0": {Kind: AgentClaude, Status: AgentStatusBusy}}
+
+	selected := buildSessionRows(state, "$0", 120, "", nil, agents).rows[0]
+	unselected := buildSessionRows(state, "", 120, "", nil, agents).rows[0]
+
+	if strings.Contains(selected, "\x1b[35m") {
+		t.Fatalf("selected row should not use the magenta agents color: %q", selected)
+	}
+	if !strings.Contains(unselected, "\x1b[35m") {
+		t.Fatalf("unselected row should color the agents segment: %q", unselected)
+	}
+}
+
+func TestBuildTreeRowsSessionHeaderShowsAgents(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "work"}},
+		Windows:  []Window{{ID: "@0", SessionID: "$0", Index: "0", IndexNum: 0, Name: "w"}},
+		Panes:    []Pane{{ID: "%0", WindowID: "@0", SessionID: "$0", Command: "bash", Path: "~/p"}},
+	}
+	agents := map[string]AgentState{"%0": {Kind: AgentClaude, Status: AgentStatusWaiting}}
+
+	tree := buildTreeRows(state, "%0", 120, nil, nil, "", "", agents, 0)
+	header := ansi.Strip(tree.rows[0])
+	if !strings.Contains(header, "work  1 agent · 1 waiting") {
+		t.Fatalf("expected session header with agent label, got %q", header)
 	}
 }

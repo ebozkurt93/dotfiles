@@ -434,3 +434,80 @@ func TestAgentOnlyStateEmptyWhenNoAgents(t *testing.T) {
 		t.Fatalf("expected empty state, got %+v", got)
 	}
 }
+
+func TestSessionsByAttentionWaitingFirst(t *testing.T) {
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}, {ID: "$2", Name: "c"}},
+		Panes: []Pane{
+			{ID: "%1", SessionID: "$0"},
+			{ID: "%2", SessionID: "$1"},
+			{ID: "%3", SessionID: "$2"},
+		},
+	}
+	agents := map[string]AgentState{
+		"%1": {Kind: AgentClaude, Status: AgentStatusIdle},
+		"%2": {Kind: AgentClaude, Status: AgentStatusWaiting},
+		"%3": {Kind: AgentClaude, Status: AgentStatusBusy},
+	}
+
+	got := []string{}
+	for _, s := range sessionsByAttention(state, agents) {
+		got = append(got, s.ID)
+	}
+	if want := "$1,$2,$0"; strings.Join(got, ",") != want {
+		t.Fatalf("expected order %q, got %q", want, strings.Join(got, ","))
+	}
+}
+
+func TestAttentionLabel(t *testing.T) {
+	if got := attentionLabel(sessionAttention{}); got != "" {
+		t.Fatalf("expected empty label, got %q", got)
+	}
+	if got, want := attentionLabel(sessionAttention{total: 4, waiting: 2, busy: 1, idle: 1}), "  4 agents · 2 waiting · 1 busy · 1 idle"; got != want {
+		t.Fatalf("expected %q, got %q", want, got)
+	}
+}
+
+func TestAttentionLabelCountsAndNouns(t *testing.T) {
+	cases := []struct {
+		name string
+		c    sessionAttention
+		want string
+	}{
+		{"single agent", sessionAttention{total: 1, waiting: 1}, "  1 agent · 1 waiting"},
+		{"several agents", sessionAttention{total: 4, waiting: 2, busy: 1, idle: 1}, "  4 agents · 2 waiting · 1 busy · 1 idle"},
+		{"unknown status", sessionAttention{total: 2, unknown: 2}, "  2 agents · 2 unknown"},
+		{"no agents", sessionAttention{}, ""},
+	}
+	for _, tc := range cases {
+		if got := attentionLabel(tc.c); got != tc.want {
+			t.Errorf("%s: expected %q, got %q", tc.name, tc.want, got)
+		}
+	}
+}
+
+func TestSessionAttentionCountsByStatus(t *testing.T) {
+	state := TmuxState{
+		Panes: []Pane{
+			{ID: "%1", SessionID: "$0"},
+			{ID: "%2", SessionID: "$0"},
+			{ID: "%3", SessionID: "$0"},
+			{ID: "%4", SessionID: "$0"},
+			{ID: "%5", SessionID: "$1"},
+			{ID: "%6", SessionID: "$1"},
+		},
+	}
+	agents := map[string]AgentState{
+		"%1": {Status: AgentStatusWaiting},
+		"%2": {Status: AgentStatusBusy},
+		"%3": {Status: AgentStatusIdle},
+		"%4": {Status: AgentStatusUnknown},
+	}
+	counts := sessionAttentionCounts(state, agents)
+	if got, want := counts["$0"], (sessionAttention{total: 4, waiting: 1, busy: 1, idle: 1, unknown: 1}); got != want {
+		t.Fatalf("session $0: expected %+v, got %+v", want, got)
+	}
+	if _, ok := counts["$1"]; ok {
+		t.Fatalf("session $1 has no agents, expected no entry, got %+v", counts["$1"])
+	}
+}

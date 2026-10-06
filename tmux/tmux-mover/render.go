@@ -53,8 +53,8 @@ func renderMainPanel(m model, width int, height int) string {
 	default:
 		filtered := activeState(m)
 		if m.sessionView {
-			effectiveSessionID := effectiveSelectedPaneID(sessionOrder(filtered), m.selectedSessionID, m.lastSelectedSessionID, m.selectedSessionIndex)
-			return renderSessionList(filtered, effectiveSessionID, m.scroll, width, height, m.selfSessionID, m.selectedSessions)
+			effectiveSessionID := effectiveSelectedPaneID(sessionOrder(filtered, m.agents), m.selectedSessionID, m.lastSelectedSessionID, m.selectedSessionIndex)
+			return renderSessionList(filtered, effectiveSessionID, m.scroll, width, height, m.selfSessionID, m.selectedSessions, m.agents)
 		}
 		order := buildPaneOrder(filtered)
 		effectiveID := effectiveSelectedPaneID(order, m.selectedPaneID, m.lastSelectedID, m.selectedIndex)
@@ -69,15 +69,27 @@ func renderMainPanel(m model, width int, height int) string {
 // panel chrome, but rows are sessions rather than the full pane tree, for
 // the m.sessionView toggle (mirrors how m.agentView swaps in
 // renderAgentDashboard).
-func renderSessionList(state TmuxState, selectedSessionID string, scroll int, width int, height int, activeSessionID string, selectedSessions map[string]bool) string {
-	tree := buildSessionRows(state, selectedSessionID, width, activeSessionID, selectedSessions)
+func renderSessionList(state TmuxState, selectedSessionID string, scroll int, width int, height int, activeSessionID string, selectedSessions map[string]bool, agents map[string]AgentState) string {
+	tree := buildSessionRows(state, selectedSessionID, width, activeSessionID, selectedSessions, agents)
 	visible := sliceRows(tree.rows, scroll, max(1, height-2))
 	content := lipgloss.JoinVertical(lipgloss.Left, visible...)
 	separator := mutedSeparator(max(1, width-2))
 	return panelBlock(width, height, lipgloss.JoinVertical(lipgloss.Left, tree.header, separator, content))
 }
 
-func buildSessionRows(state TmuxState, selectedSessionID string, width int, activeSessionID string, selectedSessions map[string]bool) treeRows {
+// attentionStyled colors the label; selected rows use reverse video instead.
+func attentionStyled(c sessionAttention, selected bool) string {
+	label := attentionLabel(c)
+	if label == "" {
+		return ""
+	}
+	if selected {
+		return lipgloss.NewStyle().Bold(true).Reverse(true).Render(label)
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(label)
+}
+
+func buildSessionRows(state TmuxState, selectedSessionID string, width int, activeSessionID string, selectedSessions map[string]bool, agents map[string]AgentState) treeRows {
 	rowWidth := max(10, width-2)
 
 	windowCount := map[string]int{}
@@ -88,8 +100,9 @@ func buildSessionRows(state TmuxState, selectedSessionID string, width int, acti
 	for _, p := range state.Panes {
 		paneCount[p.SessionID]++
 	}
+	attention := sessionAttentionCounts(state, agents)
 
-	sessions := orderedSessions(state)
+	sessions := sessionsByAttention(state, agents)
 	order := make([]string, len(sessions))
 	for i, s := range sessions {
 		order[i] = s.ID
@@ -127,7 +140,8 @@ func buildSessionRows(state TmuxState, selectedSessionID string, width int, acti
 		if selectedSessions != nil && selectedSessions[session.ID] {
 			selectMarker = "*"
 		}
-		text := truncateRow(fmt.Sprintf("%s%s%s  (%d window(s), %d pane(s))", selectMarker, marker, session.Name, windowCount[session.ID], paneCount[session.ID]), contentWidth)
+		label := attentionLabel(attention[session.ID])
+		text := truncateRow(fmt.Sprintf("%s%s%s  (%d window(s), %d pane(s))", selectMarker, marker, session.Name, windowCount[session.ID], paneCount[session.ID]), max(1, contentWidth-lipgloss.Width(label))) + attentionStyled(attention[session.ID], session.ID == selectedSessionID)
 		gutter := blankGutter
 		if hasSelectedIdx {
 			n := i - selectedIdx
@@ -575,6 +589,7 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 	sort.SliceStable(sessions, func(i, j int) bool {
 		return sessions[i].Name < sessions[j].Name
 	})
+	attention := sessionAttentionCounts(state, agents)
 
 	rows := make([]string, 0, len(state.Panes)+len(state.Windows)+len(state.Sessions))
 	selectedRow := -1
@@ -583,7 +598,7 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 		if activeSessionID != "" && session.ID == activeSessionID {
 			sessionPrefix = "• "
 		}
-		sessionRow := truncateRow(fmt.Sprintf("%s%s", sessionPrefix, session.Name), contentWidth)
+		sessionRow := truncateRow(fmt.Sprintf("%s%s", sessionPrefix, session.Name), max(1, contentWidth-lipgloss.Width(attentionLabel(attention[session.ID])))) + attentionStyled(attention[session.ID], false)
 		rows = append(rows, blankGutter+sessionStyle.Render(sessionRow))
 		for _, window := range windowsBySession[session.ID] {
 			windowMarker := " "

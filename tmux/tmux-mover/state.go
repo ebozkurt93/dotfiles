@@ -374,8 +374,8 @@ func windowChoicesForMove(m model) []choice {
 // (m.sessionView) displays and navigates them in — the ID-list equivalent of
 // buildPaneOrder for panes, so the existing generic effectiveSelectedPaneID/
 // findPaneIndex helpers work unmodified against sessions too.
-func sessionOrder(state TmuxState) []string {
-	sessions := orderedSessions(state)
+func sessionOrder(state TmuxState, agents map[string]AgentState) []string {
+	sessions := sessionsByAttention(state, agents)
 	ids := make([]string, len(sessions))
 	for i, s := range sessions {
 		ids[i] = s.ID
@@ -697,6 +697,82 @@ func orderedSessions(state TmuxState) []Session {
 		return sessions[i].Name < sessions[j].Name
 	})
 	return sessions
+}
+
+type sessionAttention struct {
+	total   int
+	waiting int
+	busy    int
+	idle    int
+	unknown int
+}
+
+func sessionAttentionCounts(state TmuxState, agents map[string]AgentState) map[string]sessionAttention {
+	counts := map[string]sessionAttention{}
+	for _, pane := range state.Panes {
+		agent, ok := agents[pane.ID]
+		if !ok {
+			continue
+		}
+		c := counts[pane.SessionID]
+		c.total++
+		switch agent.Status {
+		case AgentStatusWaiting:
+			c.waiting++
+		case AgentStatusBusy:
+			c.busy++
+		case AgentStatusIdle:
+			c.idle++
+		default:
+			c.unknown++
+		}
+		counts[pane.SessionID] = c
+	}
+	return counts
+}
+
+// sessionsByAttention sorts by name, with waiting sessions first, then busy.
+func sessionsByAttention(state TmuxState, agents map[string]AgentState) []Session {
+	sessions := orderedSessions(state)
+	counts := sessionAttentionCounts(state, agents)
+	rank := func(id string) int {
+		switch {
+		case counts[id].waiting > 0:
+			return 0
+		case counts[id].busy > 0:
+			return 1
+		default:
+			return 2
+		}
+	}
+	sort.SliceStable(sessions, func(i, j int) bool {
+		return rank(sessions[i].ID) < rank(sessions[j].ID)
+	})
+	return sessions
+}
+
+func attentionLabel(c sessionAttention) string {
+	if c.total == 0 {
+		return ""
+	}
+	noun := "agents"
+	if c.total == 1 {
+		noun = "agent"
+	}
+	parts := []string{fmt.Sprintf("%d %s", c.total, noun)}
+	if c.waiting > 0 {
+		parts = append(parts, fmt.Sprintf("%d waiting", c.waiting))
+	}
+	if c.busy > 0 {
+		parts = append(parts, fmt.Sprintf("%d busy", c.busy))
+	}
+	if c.idle > 0 {
+		parts = append(parts, fmt.Sprintf("%d idle", c.idle))
+	}
+	if c.unknown > 0 {
+		parts = append(parts, fmt.Sprintf("%d unknown", c.unknown))
+	}
+	return "  " + strings.Join(parts, " · ")
 }
 
 func filterPopupState(state TmuxState, popupWindowID string) TmuxState {
