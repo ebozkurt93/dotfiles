@@ -380,7 +380,7 @@ end tell
 ]]
 
   local osMajorVersion = hs.host.operatingSystemVersion().major
-  if osMajorVersion == 14 then
+  if osMajorVersion >= 14 then
     hs.osascript.javascript(sonomaSource)
   else
     hs.osascript.applescript(source)
