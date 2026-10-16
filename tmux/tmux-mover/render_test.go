@@ -238,8 +238,8 @@ func TestBuildSessionRowsShowsAttentionAndOrder(t *testing.T) {
 	if len(tree.rows) != 3 {
 		t.Fatalf("expected 3 rows, got %d", len(tree.rows))
 	}
-	wantNames := []string{"gamma", "beta", "alpha"}
-	wantLabels := []string{"1 waiting", "1 busy", "1 idle"}
+	wantNames := []string{"alpha", "beta", "gamma"}
+	wantLabels := []string{"1 idle", "1 busy", "1 waiting"}
 	for i, row := range tree.rows {
 		plain := ansi.Strip(row)
 		if !strings.Contains(plain, wantNames[i]) {

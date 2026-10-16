@@ -375,7 +375,7 @@ func windowChoicesForMove(m model) []choice {
 // buildPaneOrder for panes, so the existing generic effectiveSelectedPaneID/
 // findPaneIndex helpers work unmodified against sessions too.
 func sessionOrder(state TmuxState, agents map[string]AgentState) []string {
-	sessions := sessionsByAttention(state, agents)
+	sessions := orderedSessions(state)
 	ids := make([]string, len(sessions))
 	for i, s := range sessions {
 		ids[i] = s.ID
@@ -729,26 +729,6 @@ func sessionAttentionCounts(state TmuxState, agents map[string]AgentState) map[s
 		counts[pane.SessionID] = c
 	}
 	return counts
-}
-
-// sessionsByAttention sorts by name, with waiting sessions first, then busy.
-func sessionsByAttention(state TmuxState, agents map[string]AgentState) []Session {
-	sessions := orderedSessions(state)
-	counts := sessionAttentionCounts(state, agents)
-	rank := func(id string) int {
-		switch {
-		case counts[id].waiting > 0:
-			return 0
-		case counts[id].busy > 0:
-			return 1
-		default:
-			return 2
-		}
-	}
-	sort.SliceStable(sessions, func(i, j int) bool {
-		return rank(sessions[i].ID) < rank(sessions[j].ID)
-	})
-	return sessions
 }
 
 func attentionLabel(c sessionAttention) string {

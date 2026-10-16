@@ -1,11 +1,110 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/signal"
+	"regexp"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/term"
 )
+
+// overwriteOutput repaints rows in place instead of erasing them first.
+type overwriteOutput struct{ *os.File }
+
+func (o overwriteOutput) Write(b []byte) (int, error) {
+	if _, err := o.File.Write(overwriteFrame(b)); err != nil {
+		return 0, err
+	}
+	return len(b), nil
+}
+
+var frameTail = regexp.MustCompile(`\x1b\[\d+;\d+H$`)
+
+func overwriteFrame(b []byte) []byte {
+	const erase, up, down = "\x1b[2K", "\x1b[1A", "\x1b[1B"
+	var erased []bool // per up-move, whether the row was erased first
+	var back []byte
+	pending := false
+	pos := 0
+prefix:
+	for pos < len(b) {
+		rest := b[pos:]
+		switch {
+		case bytes.HasPrefix(rest, []byte(erase)):
+			pending = true
+			pos += len(erase)
+		case bytes.HasPrefix(rest, []byte(up)):
+			erased = append(erased, pending)
+			pending = false
+			pos += len(up)
+		default:
+			i := 2
+			if len(rest) < 3 || rest[0] != 0x1b || rest[1] != '[' {
+				break prefix
+			}
+			for i < len(rest) && rest[i] >= '0' && rest[i] <= '9' {
+				i++
+			}
+			if i == 2 || i >= len(rest) || rest[i] != 'D' {
+				break prefix
+			}
+			back = rest[:i+1]
+			pos += i + 1
+		}
+	}
+	if back == nil {
+		return b // first paint or non-frame write
+	}
+
+	body := b[pos:]
+	tail := frameTail.Find(body)
+	body = body[:len(body)-len(tail)]
+	painted := bytes.Count(body, []byte("\r\n")) + bytes.Count(body, []byte(down)) + 1
+	lastStart := 0
+	if i := bytes.LastIndex(body, []byte("\r\n")); i >= 0 {
+		lastStart = i + 2
+	}
+	if i := bytes.LastIndex(body, []byte(down)); i >= 0 && i+len(down) > lastStart {
+		lastStart = i + len(down)
+	}
+	lastPainted := lastStart < len(body)
+
+	var out []byte
+	rows := len(erased) + 1
+	for k, wasErased := range erased {
+		if wasErased && rows-1-k >= painted {
+			out = append(out, erase...)
+		}
+		out = append(out, up...)
+	}
+	out = append(out, back...)
+	body = bytes.ReplaceAll(body, []byte("\r\n"), []byte("\x1b[K\r\n"))
+	out = append(out, body...)
+	if lastPainted {
+		out = append(out, "\x1b[K"...)
+	}
+	return append(out, tail...)
+}
+
+func forwardResizes(p *tea.Program, f *os.File) {
+	send := func() {
+		if w, h, err := term.GetSize(int(f.Fd())); err == nil {
+			p.Send(tea.WindowSizeMsg{Width: w, Height: h})
+		}
+	}
+	go send()
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGWINCH)
+	go func() {
+		for range ch {
+			send()
+		}
+	}()
+}
 
 func main() {
 	if len(os.Args) > 1 {
@@ -22,7 +121,8 @@ func main() {
 		}
 	}
 
-	p := tea.NewProgram(model{keys: defaultKeymap()}, tea.WithAltScreen())
+	p := tea.NewProgram(model{keys: defaultKeymap()}, tea.WithAltScreen(), tea.WithOutput(overwriteOutput{os.Stdout}))
+	forwardResizes(p, os.Stdout)
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

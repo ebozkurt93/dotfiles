@@ -102,7 +102,7 @@ func buildSessionRows(state TmuxState, selectedSessionID string, width int, acti
 	}
 	attention := sessionAttentionCounts(state, agents)
 
-	sessions := sessionsByAttention(state, agents)
+	sessions := orderedSessions(state)
 	order := make([]string, len(sessions))
 	for i, s := range sessions {
 		order[i] = s.ID

@@ -435,26 +435,15 @@ func TestAgentOnlyStateEmptyWhenNoAgents(t *testing.T) {
 	}
 }
 
-func TestSessionsByAttentionWaitingFirst(t *testing.T) {
+func TestOrderedSessionsIgnoreAgentStatus(t *testing.T) {
 	state := TmuxState{
-		Sessions: []Session{{ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}, {ID: "$2", Name: "c"}},
-		Panes: []Pane{
-			{ID: "%1", SessionID: "$0"},
-			{ID: "%2", SessionID: "$1"},
-			{ID: "%3", SessionID: "$2"},
-		},
+		Sessions: []Session{{ID: "$2", Name: "c"}, {ID: "$0", Name: "a"}, {ID: "$1", Name: "b"}},
 	}
-	agents := map[string]AgentState{
-		"%1": {Kind: AgentClaude, Status: AgentStatusIdle},
-		"%2": {Kind: AgentClaude, Status: AgentStatusWaiting},
-		"%3": {Kind: AgentClaude, Status: AgentStatusBusy},
-	}
-
 	got := []string{}
-	for _, s := range sessionsByAttention(state, agents) {
+	for _, s := range orderedSessions(state) {
 		got = append(got, s.ID)
 	}
-	if want := "$1,$2,$0"; strings.Join(got, ",") != want {
+	if want := "$0,$1,$2"; strings.Join(got, ",") != want {
 		t.Fatalf("expected order %q, got %q", want, strings.Join(got, ","))
 	}
 }
