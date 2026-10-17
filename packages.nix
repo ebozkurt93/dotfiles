@@ -1,7 +1,20 @@
 {
   pkgs,
   llmAgents ? pkgs,
-}:
+}: let
+  codexNoDaemon = pkgs.symlinkJoin {
+    name = "codex-no-daemon";
+    paths = [llmAgents.codex];
+    postBuild = ''
+      rm "$out/bin/codex"
+      cat > "$out/bin/codex" <<'EOF'
+      #!/bin/sh
+      exec ${llmAgents.codex}/bin/codex --no-daemon "$@"
+      EOF
+      chmod +x "$out/bin/codex"
+    '';
+  };
+in
 with pkgs;
   [
     atuin
@@ -53,7 +66,7 @@ with pkgs;
 
     # ai
     llmAgents.claude-code
-    llmAgents.codex
+    codexNoDaemon
     # llmAgents.opencode
   ]
   ++ lib.optionals stdenv.isDarwin [
