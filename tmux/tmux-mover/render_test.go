@@ -286,3 +286,19 @@ func TestBuildTreeRowsSessionHeaderShowsAgents(t *testing.T) {
 		t.Fatalf("expected session header with agent label, got %q", header)
 	}
 }
+
+func TestDisplayCommandAndPath(t *testing.T) {
+	t.Setenv("HOME", "/home/u")
+	if got := displayCommand(".claude-wrapped"); got != "claude" {
+		t.Fatalf("got %q", got)
+	}
+	if got := displayCommand(".config"); got != ".config" {
+		t.Fatalf("plain names must be untouched, got %q", got)
+	}
+	if got := displayPath("/home/u/dotfiles"); got != "~/dotfiles" {
+		t.Fatalf("got %q", got)
+	}
+	if got := displayPath("/home/user2/x"); got != "/home/user2/x" {
+		t.Fatalf("got %q", got)
+	}
+}

@@ -471,7 +471,7 @@ func deletePaneLabel(state TmuxState, paneID string) string {
 	windowIndex := ""
 	for _, w := range state.Windows {
 		if w.ID == pane.WindowID {
-			windowName = w.Name
+			windowName = displayCommand(w.Name)
 			windowIndex = w.Index
 			break
 		}
@@ -496,10 +496,10 @@ func deletePaneLabel(state TmuxState, paneID string) string {
 		}
 	}
 	if pane.Command != "" {
-		parts = append(parts, pane.Command)
+		parts = append(parts, displayCommand(pane.Command))
 	}
 	if pane.Path != "" {
-		parts = append(parts, pane.Path)
+		parts = append(parts, displayPath(pane.Path))
 	}
 	if pane.Title != "" {
 		parts = append(parts, fmt.Sprintf("(%s)", pane.Title))
@@ -615,7 +615,7 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 			if activeWindowID != "" && window.ID == activeWindowID {
 				windowPrefix = "•"
 			}
-			windowRow := truncateRow(fmt.Sprintf("%s %s %s:%s", windowPrefix, windowMarker, window.Index, window.Name), contentWidth)
+			windowRow := truncateRow(fmt.Sprintf("%s %s %s:%s", windowPrefix, windowMarker, window.Index, displayCommand(window.Name)), contentWidth)
 			rows = append(rows, blankGutter+windowStyle.Render(windowRow))
 			panes := panesByWindow[window.ID]
 			for _, pane := range panes {
@@ -669,8 +669,10 @@ func agentStatusColor(status AgentStatus) lipgloss.Color {
 		return lipgloss.Color("11") // bright yellow: needs you
 	case AgentStatusBusy:
 		return lipgloss.Color("12") // bright blue: actively working
+	case AgentStatusIdle:
+		return lipgloss.Color("10") // bright green: finished, ready
 	default:
-		return lipgloss.Color("8") // gray: idle / unknown
+		return lipgloss.Color("8") // gray: unknown
 	}
 }
 
@@ -793,7 +795,7 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 		location := deletePaneLabelLocation(state, pane)
 		label := agent.Task
 		if label == "" {
-			label = pane.Command
+			label = displayCommand(pane.Command)
 		}
 		marker := " "
 		if m.selectedPanes != nil && m.selectedPanes[pane.ID] {
@@ -887,7 +889,7 @@ func deletePaneLabelLocation(state TmuxState, pane Pane) string {
 	windowIndex := ""
 	for _, w := range state.Windows {
 		if w.ID == pane.WindowID {
-			windowName = w.Name
+			windowName = displayCommand(w.Name)
 			windowIndex = w.Index
 			break
 		}
@@ -904,9 +906,9 @@ func deletePaneLabelLocation(state TmuxState, pane Pane) string {
 		windowLabel = fmt.Sprintf("%s:%s", windowIndex, windowName)
 	}
 	if sessionName != "" {
-		return fmt.Sprintf("%s / %s — %s", sessionName, windowLabel, pane.Path)
+		return fmt.Sprintf("%s / %s — %s", sessionName, windowLabel, displayPath(pane.Path))
 	}
-	return fmt.Sprintf("%s — %s", windowLabel, pane.Path)
+	return fmt.Sprintf("%s — %s", windowLabel, displayPath(pane.Path))
 }
 
 func renderPreview(text string, err error, width int, height int) string {
@@ -1168,7 +1170,10 @@ func wrapLegendItems(items []string, width int) []string {
 
 // displayCommand shows Nix-wrapped binaries (".claude-wrapped") under their real name.
 func displayCommand(cmd string) string {
-	return strings.TrimSuffix(strings.TrimPrefix(cmd, "."), "-wrapped")
+	if !strings.HasSuffix(cmd, "-wrapped") {
+		return cmd
+	}
+	return strings.TrimPrefix(strings.TrimSuffix(cmd, "-wrapped"), ".")
 }
 
 // displayPath shows paths under $HOME as ~/...
