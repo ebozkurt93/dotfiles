@@ -302,3 +302,59 @@ func TestDisplayCommandAndPath(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestAgentProject(t *testing.T) {
+	t.Setenv("HOME", "/home/u")
+	cases := map[string]string{
+		"/home/u/dotfiles/tmux/tmux-mover": "tmux/tmux-mover",
+		"/home/u":                          "~",
+		"/home/u/solo":                     "~/solo",
+		"/home/u/a-very-long-parent-directory-name/leaf-folder": "leaf-folder",
+	}
+	for path, want := range cases {
+		if got := agentProject(Pane{Path: path}); got != want {
+			t.Fatalf("agentProject(%q) = %q, want %q", path, got, want)
+		}
+	}
+	if got := agentProject(Pane{Command: ".claude-wrapped"}); got != "claude" {
+		t.Fatalf("pathless pane should fall back to command, got %q", got)
+	}
+}
+
+func TestAgentDashboardRowColumnOrder(t *testing.T) {
+	t.Setenv("HOME", "/home/u")
+	state := TmuxState{
+		Sessions: []Session{{ID: "$0", Name: "book"}},
+		Windows:  []Window{{ID: "@0", SessionID: "$0", Index: "1", IndexNum: 0, Name: "claude"}},
+		Panes:    []Pane{{ID: "%0", WindowID: "@0", SessionID: "$0", Command: ".claude-wrapped", Path: "/home/u/dotfiles/tmux/tmux-mover"}},
+	}
+	agents := map[string]AgentState{"%0": {Kind: AgentClaude, Status: AgentStatusIdle, Task: "Fix the picker"}}
+	m := model{state: state, agents: agents, keys: defaultKeymap(), agentView: true}
+
+	rows := buildAgentDashboardRows(m, state, "%0", 120)
+	var agentRow string
+	for _, r := range rows.rows {
+		if s := ansi.Strip(r); strings.Contains(s, "Fix the picker") {
+			agentRow = s
+		}
+	}
+	if agentRow == "" {
+		t.Fatalf("agent row not found in %v", rows.rows)
+	}
+	idx := func(sub string) int { return strings.Index(agentRow, sub) }
+	if !(idx("book") < idx("tmux/tmux-mover") && idx("tmux/tmux-mover") < idx("Claude") && idx("Claude") < idx("Fix the picker")) {
+		t.Fatalf("expected session, project, agent, task order, got %q", agentRow)
+	}
+	if strings.Contains(agentRow, "idle") {
+		t.Fatalf("status word should not be in the row: %q", agentRow)
+	}
+	if len(rows.rows) != 2 {
+		t.Fatalf("expected a section header plus one row per agent, got %d rows", len(rows.rows))
+	}
+}
+
+func TestStyleAgentRowFallsBackWhenTruncated(t *testing.T) {
+	if got := styleAgentRow("book  tmux/tm", "book  ", "tmux/tmux-mover  ", "Claude  ", lipgloss.NewStyle()); got != "book  tmux/tm" {
+		t.Fatalf("truncated row must stay plain, got %q", got)
+	}
+}

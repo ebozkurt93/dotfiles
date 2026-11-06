@@ -342,6 +342,7 @@ func buildManyAgentPanesState() (TmuxState, map[string]AgentState) {
 		AgentStatusWaiting,
 		AgentStatusBusy,
 		AgentStatusIdle, AgentStatusIdle, AgentStatusIdle, AgentStatusIdle,
+		AgentStatusIdle, AgentStatusIdle, AgentStatusIdle, AgentStatusIdle,
 	}
 	for i, status := range statuses {
 		windowID := "@" + string(rune('0'+i))
@@ -373,13 +374,13 @@ func TestEnsureVisibleScrollsAgentDashboardToKeepSelectionVisible(t *testing.T) 
 	// Select the last (deepest) pane and confirm ensureVisible scrolls down
 	// to reveal it instead of leaving the dashboard rendering top-anchored.
 	m := base
-	m.selectedPaneID = "%5"
-	m.lastSelectedID = "%5"
+	m.selectedPaneID = "%9"
+	m.lastSelectedID = "%9"
 	m = ensureVisible(m)
 
 	listWidth, _, listHeight, _, _, _, _, _, _ := layoutDims(m, max(1, m.width-2))
 	visibleRows := max(1, listHeight-2)
-	dashAfter := buildAgentDashboardRows(m, state, "%5", max(10, listWidth-2))
+	dashAfter := buildAgentDashboardRows(m, state, "%9", max(10, listWidth-2))
 
 	if dashAfter.selectedRow < m.scroll || dashAfter.selectedRow >= m.scroll+visibleRows {
 		t.Fatalf("selected row %d not within visible window [%d, %d)", dashAfter.selectedRow, m.scroll, m.scroll+visibleRows)

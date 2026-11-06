@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -734,9 +735,7 @@ func renderAgentDashboard(m model, state TmuxState, selectedPaneID string, scrol
 // scroll math works identically for both views, just fed a different row
 // source depending on m.agentView.
 func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, rowWidth int) treeRows {
-	normalStyle := lipgloss.NewStyle().Width(rowWidth)
 	selectedStyle := lipgloss.NewStyle().Width(rowWidth).Bold(true).Reverse(true)
-	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Width(rowWidth)
 	mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 
 	sectionTitle := map[AgentStatus]string{
@@ -768,6 +767,18 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 	blankGutter := strings.Repeat(" ", numWidth+1)
 	contentWidth := max(1, rowWidth-numWidth-1)
 
+	sessionName := map[string]string{}
+	for _, s := range state.Sessions {
+		sessionName[s.ID] = s.Name
+	}
+	projCol, sessCol, kindCol := 0, 0, 0
+	for _, id := range order {
+		agent := m.agents[id]
+		sessCol = max(sessCol, min(agentSessionMaxWidth, runewidth.StringWidth(sessionName[paneByID[id].SessionID])))
+		projCol = max(projCol, min(agentProjectMaxWidth, runewidth.StringWidth(agentProject(paneByID[id]))))
+		kindCol = max(kindCol, runewidth.StringWidth(agent.Kind.Label()))
+	}
+
 	rows := []string{}
 	selectedRow := -1
 	lastStatus := AgentStatus(-1)
@@ -792,27 +803,28 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 		}
 
 		dot, dotWidth := agentStatusDot(agent, m.frame)
-		location := deletePaneLabelLocation(state, pane)
-		label := agent.Task
-		if label == "" {
-			label = displayCommand(pane.Command)
-		}
 		marker := " "
 		if m.selectedPanes != nil && m.selectedPanes[pane.ID] {
 			marker = "*"
 		}
-		primary := fmt.Sprintf("%s %s [%s]", marker, label, agent.Kind.Label())
+		task := agent.Task
+		if task == "" {
+			task = displayCommand(pane.Command)
+		}
+		sessPart := marker + " " + padRight(truncateRow(sessionName[pane.SessionID], sessCol), sessCol)
+		projPart := "  " + padRight(truncateRow(agentProject(pane), projCol), projCol)
+		kindPart := "  " + padRight(agent.Kind.Label(), kindCol) + "  "
+		head := sessPart + projPart + kindPart
 
 		// The background-job marker is independent of the status section a
 		// row sits under: a pane can render fully idle (you can type right
 		// now) while a run_in_background Bash-tool task is still alive in
 		// its process tree — this flags that case rather than folding it
 		// into the Busy/Working status itself. Rendered as its own
-		// pre-styled suffix (like dot above) rather than embedded in
-		// primary, so its color survives primary's own style wrapping; the
-		// rotating-circle animation is deliberately a different shape/motion
-		// than agentStatusDot's braille spin so the two read as distinct at
-		// a glance.
+		// pre-styled suffix (like dot above) so its color survives the row
+		// style wrapping; the rotating-circle animation is deliberately a
+		// different shape/motion than agentStatusDot's braille spin so the
+		// two read as distinct at a glance.
 		backgroundMarker := ""
 		backgroundMarkerWidth := 0
 		if agent.HasBackgroundJob {
@@ -833,8 +845,7 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 			unseenMarkerWidth = 4
 		}
 
-		primaryWidth := max(1, contentWidth-dotWidth-backgroundMarkerWidth-unseenMarkerWidth)
-		primary = truncateRow(primary, primaryWidth)
+		text := truncateRow(head+task, max(1, contentWidth-dotWidth-backgroundMarkerWidth-unseenMarkerWidth))
 		gutter := blankGutter
 		if hasSelectedIdx {
 			if idx, ok := paneIdxByID[pane.ID]; ok {
@@ -849,21 +860,19 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 				gutter = style.Render(fmt.Sprintf("%d", n)) + " "
 			}
 		}
-		// Width is set to primary's own natural width (not the full
-		// available row width) so the style adds no trailing padding —
-		// otherwise the markers would land at the far right edge of the
-		// row instead of right next to the text they're describing.
+		// Width is the text's own natural width (not the full row) so the
+		// style adds no trailing padding — otherwise the markers would land
+		// at the far right edge instead of next to the text they describe.
 		line := gutter + dot
 		if pane.ID == selectedPaneID {
 			selectedRow = len(rows)
-			line += selectedStyle.Width(lipgloss.Width(primary)).Render(primary)
+			line += selectedStyle.Width(lipgloss.Width(text)).Render(text)
 		} else {
-			line += normalStyle.Width(lipgloss.Width(primary)).Render(primary)
+			line += styleAgentRow(text, sessPart, projPart, kindPart, mutedStyle)
 		}
 		line += backgroundMarker
 		line += unseenMarker
 		rows = append(rows, line)
-		rows = append(rows, blankGutter+metaStyle.Render("    "+truncateRow(location, max(1, contentWidth-4))))
 	}
 
 	if len(order) == 0 {
@@ -882,33 +891,6 @@ func buildAgentDashboardRows(m model, state TmuxState, selectedPaneID string, ro
 	}
 
 	return treeRows{header: header, rows: rows, selectedRow: selectedRow}
-}
-
-func deletePaneLabelLocation(state TmuxState, pane Pane) string {
-	windowName := ""
-	windowIndex := ""
-	for _, w := range state.Windows {
-		if w.ID == pane.WindowID {
-			windowName = displayCommand(w.Name)
-			windowIndex = w.Index
-			break
-		}
-	}
-	sessionName := ""
-	for _, s := range state.Sessions {
-		if s.ID == pane.SessionID {
-			sessionName = s.Name
-			break
-		}
-	}
-	windowLabel := windowName
-	if windowIndex != "" {
-		windowLabel = fmt.Sprintf("%s:%s", windowIndex, windowName)
-	}
-	if sessionName != "" {
-		return fmt.Sprintf("%s / %s — %s", sessionName, windowLabel, displayPath(pane.Path))
-	}
-	return fmt.Sprintf("%s — %s", windowLabel, displayPath(pane.Path))
 }
 
 func renderPreview(text string, err error, width int, height int) string {
@@ -1183,4 +1165,38 @@ func displayPath(path string) string {
 		return path
 	}
 	return "~" + strings.TrimPrefix(path, home)
+}
+
+const (
+	agentProjectMaxWidth = 28
+	agentSessionMaxWidth = 16
+)
+
+// agentProject is the last two path components (home-relative), the directory
+// you recognise an agent by.
+func agentProject(pane Pane) string {
+	path := displayPath(pane.Path)
+	if path == "" {
+		return displayCommand(pane.Command)
+	}
+	if path == "~" || path == "/" {
+		return path
+	}
+	leaf := filepath.Base(path)
+	parent := filepath.Base(filepath.Dir(path))
+	if parent == "." || parent == "/" || runewidth.StringWidth(parent+"/"+leaf) > agentProjectMaxWidth {
+		return leaf
+	}
+	return parent + "/" + leaf
+}
+
+// styleAgentRow keeps the session at normal weight, makes the project bold and
+// mutes the agent name. Falls back to plain text if the row was truncated into
+// the columns.
+func styleAgentRow(text string, sessPart string, projPart string, kindPart string, muted lipgloss.Style) string {
+	head := sessPart + projPart + kindPart
+	if !strings.HasPrefix(text, head) {
+		return text
+	}
+	return sessPart + lipgloss.NewStyle().Bold(true).Render(projPart) + muted.Render(kindPart) + text[len(head):]
 }
