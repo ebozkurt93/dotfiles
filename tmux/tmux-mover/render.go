@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -561,6 +562,11 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 	windowStyle := lipgloss.NewStyle().Bold(true).Width(contentWidth).Foreground(lipgloss.Color("6"))
 	sessionStyle := lipgloss.NewStyle().Bold(true).Width(contentWidth).Foreground(lipgloss.Color("4"))
 
+	appCol := 0
+	for _, pane := range state.Panes {
+		appCol = max(appCol, min(16, runewidth.StringWidth(displayCommand(pane.Command))))
+	}
+
 	panesByWindow := make(map[string][]Pane)
 	for _, pane := range state.Panes {
 		panesByWindow[pane.WindowID] = append(panesByWindow[pane.WindowID], pane)
@@ -618,7 +624,8 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 					paneMarker = "*"
 				}
 				dot, dotWidth := agentStatusDot(agents[pane.ID], frame)
-				text := fmt.Sprintf("    %s %s  %s", paneMarker, pane.Command, pane.Path)
+				cmd := displayCommand(pane.Command)
+				text := fmt.Sprintf("    %s %s%s  %s", paneMarker, cmd, strings.Repeat(" ", max(0, appCol-runewidth.StringWidth(cmd))), displayPath(pane.Path))
 				text = truncateRow(text, max(1, contentWidth-dotWidth))
 				gutter := blankGutter
 				if hasSelectedIdx {
@@ -1157,4 +1164,18 @@ func wrapLegendItems(items []string, width int) []string {
 		lines = append(lines, current)
 	}
 	return lines
+}
+
+// displayCommand shows Nix-wrapped binaries (".claude-wrapped") under their real name.
+func displayCommand(cmd string) string {
+	return strings.TrimSuffix(strings.TrimPrefix(cmd, "."), "-wrapped")
+}
+
+// displayPath shows paths under $HOME as ~/...
+func displayPath(path string) string {
+	home := os.Getenv("HOME")
+	if home == "" || (path != home && !strings.HasPrefix(path, home+"/")) {
+		return path
+	}
+	return "~" + strings.TrimPrefix(path, home)
 }
