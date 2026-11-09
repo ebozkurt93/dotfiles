@@ -438,7 +438,7 @@ func TestUpdateConfirmKillSessionPreventsKillWhenNoFallbackSession(t *testing.T)
 }
 
 func TestUpdateNewSessionInputAndCreate(t *testing.T) {
-	fake := &fakeRunner{}
+	fake := &fakeRunner{output: "$5\t@9\t%9\n"}
 	prev := tmuxRunner
 	tmuxRunner = fake
 	t.Cleanup(func() { tmuxRunner = prev })
@@ -463,8 +463,11 @@ func TestUpdateNewSessionInputAndCreate(t *testing.T) {
 	if len(fake.calls) != 1 {
 		t.Fatalf("expected 1 tmux call, got %d", len(fake.calls))
 	}
-	if strings.Join(fake.calls[0], " ") != "new-session -d -s a" {
+	if strings.Join(fake.calls[0], " ") != "new-session -d -P -F #{session_id}\t#{window_id}\t#{pane_id} -s a" {
 		t.Fatalf("unexpected tmux call: %s", strings.Join(fake.calls[0], " "))
+	}
+	if final.selectedPaneID != "%9" {
+		t.Fatalf("expected new session's pane selected, got %q", final.selectedPaneID)
 	}
 }
 

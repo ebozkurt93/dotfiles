@@ -910,16 +910,21 @@ func acceptAction(m model) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(loadStateCmd(), loadPreviewCmd(m.selectedPaneID))
 	case ModeNewSession:
 		name := strings.TrimSpace(m.input)
-		if err := applySessionCreate(name); err != nil {
+		_, _, newPaneID, err := applySessionCreateWithIDs(name)
+		if err != nil {
 			m.status = fmt.Sprintf("Error: %s", err)
 		} else if name == "" {
 			m.status = "Created new session"
 		} else {
 			m.status = fmt.Sprintf("Created session %s", name)
 		}
+		if err == nil {
+			m.selectedPaneID = newPaneID
+			m.lastSelectedID = newPaneID
+		}
 		m.mode = ModeList
 		m.input = ""
-		return m, loadStateCmd()
+		return m, tea.Batch(loadStateCmd(), loadPreviewCmd(newPaneID))
 	case ModeNewSessionMovePane:
 		name := strings.TrimSpace(m.input)
 		selected := selectedPaneIDs(m)

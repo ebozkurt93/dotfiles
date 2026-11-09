@@ -627,7 +627,19 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 				dot, dotWidth := agentStatusDot(agents[pane.ID], frame)
 				cmd := displayCommand(pane.Command)
 				text := fmt.Sprintf("    %s %s%s  %s", paneMarker, cmd, strings.Repeat(" ", max(0, appCol-runewidth.StringWidth(cmd))), displayPath(pane.Path))
-				text = truncateRow(text, max(1, contentWidth-dotWidth))
+				if task := agents[pane.ID].Task; task != "" {
+					text += "  " + task
+				}
+				unseenMarker, unseenWidth := "", 0
+				if agents[pane.ID].Unseen {
+					unseenMarker = " " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")).Render("NEW")
+					unseenWidth = 4
+				}
+				text = truncateRow(text, max(1, contentWidth-dotWidth-unseenWidth))
+				rowTextWidth := contentWidth - dotWidth
+				if unseenWidth > 0 {
+					rowTextWidth = lipgloss.Width(text)
+				}
 				gutter := blankGutter
 				if hasSelectedIdx {
 					if idx, ok := paneIdxByID[pane.ID]; ok {
@@ -644,9 +656,9 @@ func buildTreeRows(state TmuxState, selectedPaneID string, width int, selectedPa
 				}
 				if pane.ID == selectedPaneID {
 					selectedRow = len(rows)
-					rows = append(rows, gutter+dot+selectedStyle.Width(contentWidth-dotWidth).Render(text))
+					rows = append(rows, gutter+dot+selectedStyle.Width(rowTextWidth).Render(text)+unseenMarker)
 				} else {
-					rows = append(rows, gutter+dot+normalStyle.Width(contentWidth-dotWidth).Render(text))
+					rows = append(rows, gutter+dot+normalStyle.Width(rowTextWidth).Render(text)+unseenMarker)
 				}
 			}
 		}
